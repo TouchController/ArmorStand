@@ -12,18 +12,20 @@ import top.fifthlight.blazerod.model.node.getWorldTransform
 import top.fifthlight.blazerod.util.drawBox
 import kotlin.math.*
 
-class IkTarget(
+class IkTargetNodeComponent(
     val ikIndex: Int,
     val limitRadian: Float,
     val loopCount: Int,
     val chains: List<Chain>,
     val effectorNodeIndex: Int,
     val transformId: TransformId,
-) : RenderNodeComponent<IkTarget>() {
+) : RenderNodeComponent<IkTargetNodeComponent>() {
     override fun onClosed() {}
 
-    override val type: Type<IkTarget>
+    override val type: Type<IkTargetNodeComponent>
         get() = Type.IkTarget
+
+    override fun onAttached(instance: ModelInstance) {}
 
     companion object {
         private val updatePhases = listOf(

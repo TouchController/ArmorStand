@@ -35,8 +35,3 @@ jobs:
             bazel-bin/blazerod/model/model-pmx/model-pmx.jar
             bazel-bin/blazerod/model/model-vmd/model-vmd.jar
             bazel-bin/blazerod/example/ball_block/ball_block.jar
-      - name: upload to modrinth
-        if: github.ref == 'refs/heads/master'
-        env:
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-        run: bazel run @//rule/upload_modrinth

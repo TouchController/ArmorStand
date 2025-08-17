@@ -14,6 +14,7 @@ import top.fifthlight.armorstand.util.RendererManager
 import top.fifthlight.blazerod.model.renderer.InstancedRenderer
 import top.fifthlight.blazerod.model.resource.CameraTransform
 import top.fifthlight.blazerod.model.resource.RenderCamera
+import top.fifthlight.blazerod.util.TimeUtil
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -67,6 +68,7 @@ object PlayerRenderer {
         consumers: VertexConsumerProvider,
         light: Int,
     ): Boolean {
+        val time = System.nanoTime().toFloat() / TimeUtil.NANOSECONDS_PER_SECOND.toFloat()
         val entry = ModelInstanceManager.get(uuid, System.nanoTime())
         if (entry !is ModelInstanceManager.ModelInstanceItem.Model) {
             return false
@@ -77,14 +79,14 @@ object PlayerRenderer {
 
         controller.update(uuid, vanillaState)
         controller.apply(instance)
-        instance.updateRenderData()
+        instance.updateRenderData(time)
 
         val backupItem = matrixStack.peek().copy()
         matrixStack.pop()
         matrixStack.push()
 
         if (ArmorStandClient.debugBone) {
-            instance.debugRender(matrixStack.peek().positionMatrix, consumers)
+            instance.debugRender(matrixStack.peek().positionMatrix, consumers, time)
         } else {
             matrix.set(matrixStack.peek().positionMatrix)
             matrix.scale(ConfigHolder.config.value.modelScale)

@@ -20,7 +20,7 @@ import top.fifthlight.blazerod.model.RenderScene
 import top.fifthlight.blazerod.model.RenderTask
 import top.fifthlight.blazerod.model.data.MorphTargetBuffer
 import top.fifthlight.blazerod.model.data.RenderSkinBuffer
-import top.fifthlight.blazerod.model.node.component.Primitive
+import top.fifthlight.blazerod.model.node.component.PrimitiveNodeComponent
 import top.fifthlight.blazerod.model.resource.RenderMaterial
 import top.fifthlight.blazerod.model.resource.RenderPrimitive
 import top.fifthlight.blazerod.model.uniform.InstanceDataUniformBuffer
@@ -376,7 +376,7 @@ class VertexShaderTransformRenderer private constructor() :
         depthFrameBuffer: GpuTextureView?,
         tasks: List<RenderTask>,
         scene: RenderScene,
-        component: Primitive,
+        component: PrimitiveNodeComponent,
     ) {
         val primitive = component.primitive
         val material = primitive.material

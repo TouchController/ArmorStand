@@ -12,6 +12,7 @@ sealed class UpdatePhase(
     enum class Type {
         IK_UPDATE,
         INFLUENCE_TRANSFORM_UPDATE,
+        PHYSICS_UPDATE,
         GLOBAL_TRANSFORM_PROPAGATION,
         RENDER_DATA_UPDATE,
         CAMERA_UPDATE,
@@ -21,6 +22,8 @@ sealed class UpdatePhase(
     data object IkUpdate : UpdatePhase(Type.IK_UPDATE)
 
     data object InfluenceTransformUpdate : UpdatePhase(Type.INFLUENCE_TRANSFORM_UPDATE)
+
+    data object PhysicsUpdate : UpdatePhase(Type.PHYSICS_UPDATE)
 
     data object GlobalTransformPropagation : UpdatePhase(Type.GLOBAL_TRANSFORM_PROPAGATION)
 

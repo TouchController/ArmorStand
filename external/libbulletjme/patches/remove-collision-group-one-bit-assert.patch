@@ -1,0 +1,17 @@
+--- a/src/main/java/com/jme3/bullet/collision/PhysicsCollisionObject.java
++++ b/src/main/java/com/jme3/bullet/collision/PhysicsCollisionObject.java
+@@ -452,5 +452,4 @@
+     public int getCollisionGroup() {
+         assert collisionGroup == getCollisionGroup(nativeId());
+-        assert Integer.bitCount(collisionGroup) == 1 : collisionGroup;
+         return collisionGroup;
+     }
+@@ -1023,8 +1023,6 @@
+     public void setCollisionGroup(int collisionGroup) {
+-        Validate.require(
+-                Integer.bitCount(collisionGroup) == 1, "exactly one bit set");
+
+         this.collisionGroup = collisionGroup;
+         long objectId = nativeId();
+         setCollisionGroup(objectId, collisionGroup);
+     }

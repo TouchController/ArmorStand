@@ -1,6 +1,5 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 load("//rule:fabric_mod_json_jar.bzl", "fabric_mod_json_jar")
-load("//rule:merge_jar.bzl", "merge_jar")
 load("//:properties.bzl", "blazerod_version")
 
 fabric_mod_json_jar(

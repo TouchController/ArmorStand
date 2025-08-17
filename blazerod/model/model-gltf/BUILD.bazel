@@ -2,7 +2,6 @@ load("@rules_java//java:defs.bzl", "java_library")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
 load("//:properties.bzl", "blazerod_version")
 load("//rule:fabric_mod_json_jar.bzl", "fabric_mod_json_jar")
-load("//rule:merge_jar.bzl", "merge_jar")
 
 java_library(
     name = "default_models",

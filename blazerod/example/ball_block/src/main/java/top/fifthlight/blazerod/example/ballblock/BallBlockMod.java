@@ -70,7 +70,8 @@ public class BallBlockMod implements ClientModInitializer {
                 matrix.getScale().mul(0.5f);
                 matrix.getTranslation().add(0.5f, 0.5f, 0.5f);
             });
-            BALL_INSTANCE.updateRenderData();
+            // No physics applied
+            BALL_INSTANCE.updateRenderData(0f);
         });
     }
 

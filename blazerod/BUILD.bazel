@@ -2,7 +2,6 @@ load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 load("//rule:fabric_mod_json_jar.bzl", "fabric_mod_json_jar")
 load("@rules_java//java:defs.bzl", "java_library")
 load("//:properties.bzl", "blazerod_version")
-load("//rule:merge_jar.bzl", "merge_jar")
 load("//rule:merge_jij.bzl", "merge_jij")
 
 java_library(
@@ -51,5 +50,7 @@ merge_jij(
         "//blazerod/model/model-pmx": "blazerod-model-formats-pmx:=",
         "//blazerod/model/model-vmd": "blazerod-model-formats-vmd:=",
         "//blazerod/render": "blazerod-render:=",
+        "@libbulletjme//:libbulletjme": "libbulletjme_blazerod:22.0.1+patch1",
+        "@libbulletjme//:libbulletjme_natives": "libbulletjme_natives_blazerod:22.0.1+patch1",
     },
 )

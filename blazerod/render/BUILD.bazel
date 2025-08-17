@@ -5,7 +5,6 @@ load("//rule:apply_access_widener.bzl", "apply_access_widener")
 load("//rule:decompile_jar.bzl", "decompile_jar")
 load("//rule:extract_access_widener.bzl", "extract_access_widener")
 load("//rule:fabric_mod_json_jar.bzl", "fabric_mod_json_jar")
-load("//rule:merge_jar.bzl", "merge_jar")
 load("//rule:remap_jar.bzl", "remap_jar")
 
 extract_access_widener(
@@ -86,6 +85,7 @@ kt_jvm_library(
         "@maven//:net_fabricmc_fabric_loader",
         "@maven//:net_fabricmc_sponge_mixin",
         "@minecraft//:%s_client_libraries" % game_version,
+        "@libbulletjme//:libbulletjme",
     ],
 )
 

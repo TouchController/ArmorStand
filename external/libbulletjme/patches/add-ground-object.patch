@@ -1,0 +1,162 @@
+--- a/src/main/native/glue/jmeCollisionSpace.h
++++ b/src/main/native/glue/jmeCollisionSpace.h
+@@ -42,7 +42,10 @@
+ #include "BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h"
+ #include "LinearMath/btThreads.h"
+
++class jmeCollisionSpace;
++
+ struct jmeFilterCallback : public btOverlapFilterCallback {
++    jmeCollisionSpace *m_pCollisionSpace;
+     bool needBroadphaseCollision(btBroadphaseProxy*, btBroadphaseProxy*) const;
+ };
+
+@@ -62,6 +65,10 @@
+      * exclusive access to the JavaVM and JNIEnv during parallel for loops:
+      */
+     btSpinMutex m_mutex;
++    /*
++     * A object that will collide with any object:
++     */
++    const btCollisionObject *m_groundObject;
+
+     void attachThread();
+     btBroadphaseInterface * createBroadphase(const btVector3 & min,
+@@ -109,6 +116,16 @@
+     getJavaPhysicsSpace() {
+         return m_javaSpace;
+     }
++
++    void
++    setGroundObject(const btCollisionObject * groundObject) {
++        m_groundObject = groundObject;
++    }
++
++    const btCollisionObject *
++    getGroundObject() {
++        return m_groundObject;
++    }
+ };
+
+ #endif
+
+--- a/src/main/native/glue/jmeCollisionSpace.cpp
++++ b/src/main/native/glue/jmeCollisionSpace.cpp
+@@ -43,6 +43,17 @@
+  */
+ bool jmeFilterCallback::needBroadphaseCollision(btBroadphaseProxy *pProxy0,
+         btBroadphaseProxy *pProxy1) const {
++    if (m_pCollisionSpace != NULL) {
++        const btCollisionObject *groundObject = m_pCollisionSpace->getGroundObject();
++        if (groundObject != NULL) {
++            if (pProxy0->m_clientObject == groundObject) {
++                return true;
++            }
++            if (pProxy1->m_clientObject == groundObject) {
++                return true;
++            }
++        }
++    }
+     /*
+      * Test the Bullet collision-filter groups.
+      */
+@@ -107,6 +118,8 @@
+
+     m_javaSpace = pEnv->NewWeakGlobalRef(javaSpace); // TODO leak
+     EXCEPTION_CHK(pEnv,);
++
++    m_groundObject = NULL;
+ }
+
+ void jmeCollisionSpace::attachThread() {
+@@ -144,7 +157,9 @@
+     btOverlappingPairCache * const
+             pPairCache = pBroadphase->getOverlappingPairCache();
+     pPairCache->setInternalGhostPairCallback(new btGhostPairCallback()); //dance036
+-    pPairCache->setOverlapFilterCallback(new jmeFilterCallback()); //dance011
++    jmeFilterCallback* pCallback = new jmeFilterCallback();
++    pCallback->m_pCollisionSpace = this;
++    pPairCache->setOverlapFilterCallback(pCallback); //dance011
+
+     return pBroadphase;
+ }
+
+--- a/src/main/java/com/jme3/bullet/CollisionSpace.java
++++ b/src/main/java/com/jme3/bullet/CollisionSpace.java
+@@ -226,6 +226,23 @@
+     }
+
+     /**
++     * Set the specified collision object as the ground object.
++     * Ground object will collide with any object.
++     * You can only have one ground object in the same time. If you already
++     * has a ground object, calling this method will override the ground
++     * object set previously.
++     *
++     * @param pco the ground object to set
++     */
++    public void setGroundObject(PhysicsCollisionObject pco) {
++        Validate.nonNull(pco, "collision object");
++
++        long spaceId = nativeId();
++        long nativeId = pco.nativeId();
++        setGroundObject(spaceId, nativeId);
++    }
++
++    /**
+      * Perform a contact test. This will not detect contacts with soft bodies.
+      *
+      * @param pco the collision object to test (not null, unaffected)
+@@ -833,6 +850,8 @@
+     // native private methods
+
+     native private static void addCollisionObject(long spaceId, long pcoId);
++
++    native private static void setGroundObject(long spaceId, long pcoId);
+
+     native private static int contactTest(
+             long spaceId, long pcoId, PhysicsCollisionListener listener);
+
+--- a/src/main/native/glue/com_jme3_bullet_CollisionSpace.cpp
++++ b/src/main/native/glue/com_jme3_bullet_CollisionSpace.cpp
+@@ -66,6 +66,22 @@
+ }
+
+ /*
++ * Class:     com_jme3_bullet_CollisionSpace
++ * Method:    setGroundObject
++ * Signature: (JJ)V
++ */
++JNIEXPORT void JNICALL Java_com_jme3_bullet_CollisionSpace_setGroundObject
++(JNIEnv *pEnv, jclass, jlong spaceId, jlong pcoId) {
++    jmeCollisionSpace * const
++            pSpace = reinterpret_cast<jmeCollisionSpace *> (spaceId);
++    NULL_CHK(pEnv, pSpace, "The collision space does not exist.",)
++    btCollisionObject * const
++            pCollisionObject = reinterpret_cast<btCollisionObject *> (pcoId);
++    NULL_CHK(pEnv, pCollisionObject, "The collision object does not exist.",);
++    pSpace->setGroundObject(pCollisionObject);
++}
++
++/*
+  * Callback used in contact tests.
+  */
+ struct JmeContactResultCallback
+
+--- a/src/main/native/glue/com_jme3_bullet_CollisionSpace.h
++++ b/src/main/native/glue/com_jme3_bullet_CollisionSpace.h
+@@ -17,6 +17,14 @@
+
+ /*
+  * Class:     com_jme3_bullet_CollisionSpace
++ * Method:    setGroundObject
++ * Signature: (JJ)V
++ */
++JNIEXPORT void JNICALL Java_com_jme3_bullet_CollisionSpace_setGroundObject
++  (JNIEnv *, jclass, jlong, jlong);
++
++/*
++ * Class:     com_jme3_bullet_CollisionSpace
+  * Method:    contactTest
+  * Signature: (JJLcom/jme3/bullet/collision/PhysicsCollisionListener;)I
+  */

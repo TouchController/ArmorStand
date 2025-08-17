@@ -5,7 +5,7 @@ import top.fifthlight.blazerod.model.node.RenderNode
 import top.fifthlight.blazerod.model.node.UpdatePhase
 import top.fifthlight.blazerod.model.node.getWorldTransform
 
-class Camera : RenderNodeComponent<Camera> {
+class CameraNodeComponent : RenderNodeComponent<CameraNodeComponent> {
     val cameraIndex: Int
 
     constructor(cameraIndex: Int) : super() {
@@ -14,8 +14,10 @@ class Camera : RenderNodeComponent<Camera> {
 
     override fun onClosed() {}
 
-    override val type: Type<Camera>
+    override val type: Type<CameraNodeComponent>
         get() = Type.Camera
+
+    override fun onAttached(instance: ModelInstance) {}
 
     companion object {
         private val updatePhases = listOf(UpdatePhase.Type.CAMERA_UPDATE)

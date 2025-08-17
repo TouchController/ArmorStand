@@ -1,0 +1,5 @@
+--- a/jni/private/os_cpu_utils.bzl
++++ b/jni/private/os_cpu_utils.bzl
+@@ -19,1 +19,2 @@
+     "arm",
++    "armv7",

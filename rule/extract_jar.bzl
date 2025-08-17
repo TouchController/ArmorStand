@@ -22,7 +22,7 @@ extract_jar = rule(
     implementation = _extract_jar_impl,
     attrs = {
         "input": attr.label(
-            allow_single_file = [".jar", ".zip"],
+            allow_single_file = [".jar", ".zip", ".aar"],
             mandatory = True,
             doc = "Input JAR file",
         ),

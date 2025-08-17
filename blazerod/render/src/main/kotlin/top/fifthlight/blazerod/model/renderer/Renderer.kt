@@ -6,7 +6,7 @@ import top.fifthlight.blazerod.model.RenderTask
 import top.fifthlight.blazerod.model.TaskMap
 import top.fifthlight.blazerod.model.data.MorphTargetBuffer
 import top.fifthlight.blazerod.model.data.RenderSkinBuffer
-import top.fifthlight.blazerod.model.node.component.Primitive
+import top.fifthlight.blazerod.model.node.component.PrimitiveNodeComponent
 import top.fifthlight.blazerod.model.resource.RenderPrimitive
 
 sealed class Renderer<R : Renderer<R, T>, T : Renderer.Type<R, T>> : AutoCloseable {
@@ -101,6 +101,6 @@ abstract class TaskMapInstancedRenderer<R : InstancedRenderer<R, T>, T : Rendere
         depthFrameBuffer: GpuTextureView?,
         tasks: List<RenderTask>,
         scene: RenderScene,
-        component: Primitive,
+        component: PrimitiveNodeComponent,
     )
 }

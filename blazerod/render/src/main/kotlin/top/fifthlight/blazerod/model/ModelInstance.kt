@@ -1,5 +1,9 @@
 package top.fifthlight.blazerod.model
 
+import com.jme3.bullet.PhysicsSpace
+import com.jme3.bullet.collision.shapes.PlaneCollisionShape
+import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Plane
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.util.Identifier
 import org.joml.Matrix4f
@@ -12,24 +16,39 @@ import top.fifthlight.blazerod.model.node.TransformMap
 import top.fifthlight.blazerod.model.node.UpdatePhase
 import top.fifthlight.blazerod.model.node.markNodeTransformDirty
 import top.fifthlight.blazerod.model.resource.CameraTransform
-import top.fifthlight.blazerod.util.AbstractRefCount
-import top.fifthlight.blazerod.util.CowBuffer
-import top.fifthlight.blazerod.util.copy
-import top.fifthlight.blazerod.util.mapToArray
+import top.fifthlight.blazerod.physics.PhysicsLibrary
+import top.fifthlight.blazerod.util.*
 import java.util.function.Consumer
 
 class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
     companion object {
         private val TYPE_ID = Identifier.of("blazerod", "model_instance")
+        private const val PHYSICS_FPS = 120f
     }
 
     override val typeId: Identifier
         get() = TYPE_ID
 
     val modelData = ModelData(scene)
+    internal var lastPhysicsTime = -1f
+    internal val physicsWorld = if (PhysicsLibrary.isPhysicsAvailable && scene.hasPhysics) {
+        val world = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
+        world.accuracy = 1f / PHYSICS_FPS
+
+        world.setGravity(JmeVector3f(0f, -9.8f * 10f, 0f))
+
+        val groundRigidBody = PhysicsRigidBody(PlaneCollisionShape(Plane(JmeVector3f.UNIT_Y, 0f)))
+        world.addCollisionObject(groundRigidBody)
+        world.setGroundObject(groundRigidBody)
+
+        world
+    } else {
+        null
+    }
 
     init {
         scene.increaseReferenceCount()
+        scene.attachToInstance(this)
     }
 
     class ModelData(scene: RenderScene) : AutoCloseable {
@@ -142,12 +161,12 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
         scene.updateCamera(this)
     }
 
-    fun debugRender(viewProjectionMatrix: Matrix4fc, consumers: VertexConsumerProvider) {
-        scene.debugRender(this, viewProjectionMatrix, consumers)
+    fun debugRender(viewProjectionMatrix: Matrix4fc, consumers: VertexConsumerProvider, time: Float) {
+        scene.debugRender(this, viewProjectionMatrix, consumers, time)
     }
 
-    fun updateRenderData() {
-        scene.updateRenderData(this)
+    fun updateRenderData(time: Float) {
+        scene.updateRenderData(this, time)
     }
 
     internal fun updateNodeTransform(nodeIndex: Int) {
@@ -187,5 +206,6 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
     override fun onClosed() {
         scene.decreaseReferenceCount()
         modelData.close()
+        physicsWorld?.destroy()
     }
 }

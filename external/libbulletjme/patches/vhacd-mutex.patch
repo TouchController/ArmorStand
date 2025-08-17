@@ -1,0 +1,13 @@
+# patch from https://github.com/godotengine/godot/issues/31555
+--- a/src/main/native/v-hacd/inc/vhacdMutex.h
++++ b/src/main/native/v-hacd/inc/vhacdMutex.h
+@@ -71,7 +71,8 @@
+ #include <pthread.h>
+ #endif
+
+-#if defined(__APPLE__)
++// PTHREAD_MUTEX_RECURSIVE_NP isn't available in musl
++#if defined(__APPLE__) || !defined(__GLIBC__)
+ #define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
+ #endif
+

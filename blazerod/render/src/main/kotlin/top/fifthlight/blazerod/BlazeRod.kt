@@ -11,6 +11,7 @@ import top.fifthlight.blazerod.debug.*
 import top.fifthlight.blazerod.event.RenderEvents
 import top.fifthlight.blazerod.model.resource.RenderTexture
 import top.fifthlight.blazerod.model.uniform.UniformBuffer
+import top.fifthlight.blazerod.physics.PhysicsLibrary
 import top.fifthlight.blazerod.util.ThreadExecutorDispatcher
 import top.fifthlight.blazerod.util.cleanupObjectPools
 import javax.swing.SwingUtilities
@@ -47,6 +48,8 @@ object BlazeRod: ClientModInitializer {
                 }
             }
         }
+
+        PhysicsLibrary.init()
 
         RenderEvents.INITIALIZE_DEVICE.register {
             // Trigger its loading in render thread

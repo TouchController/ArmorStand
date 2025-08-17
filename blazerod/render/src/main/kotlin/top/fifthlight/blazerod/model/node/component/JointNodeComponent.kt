@@ -7,14 +7,16 @@ import top.fifthlight.blazerod.model.node.RenderNode
 import top.fifthlight.blazerod.model.node.UpdatePhase
 import top.fifthlight.blazerod.model.node.getWorldTransform
 
-class Joint(
+class JointNodeComponent(
     val skinIndex: Int,
     val jointIndex: Int,
-) : RenderNodeComponent<Joint>() {
+) : RenderNodeComponent<JointNodeComponent>() {
     override fun onClosed() {}
 
-    override val type: Type<Joint>
+    override val type: Type<JointNodeComponent>
         get() = Type.Joint
+
+    override fun onAttached(instance: ModelInstance) {}
 
     companion object {
         private val updatePhases = listOf(UpdatePhase.Type.RENDER_DATA_UPDATE, UpdatePhase.Type.DEBUG_RENDER)

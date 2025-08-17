@@ -1,7 +1,6 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 load("//:properties.bzl", "blazerod_version")
 load("//rule:fabric_mod_json_jar.bzl", "fabric_mod_json_jar")
-load("//rule:merge_jar.bzl", "merge_jar")
 
 formats = [
     "gltf",

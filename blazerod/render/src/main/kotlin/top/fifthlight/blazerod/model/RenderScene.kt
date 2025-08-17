@@ -6,8 +6,8 @@ import net.minecraft.util.Identifier
 import org.joml.Matrix4fc
 import top.fifthlight.blazerod.model.node.RenderNode
 import top.fifthlight.blazerod.model.node.UpdatePhase
-import top.fifthlight.blazerod.model.node.component.IkTarget
-import top.fifthlight.blazerod.model.node.component.Primitive
+import top.fifthlight.blazerod.model.node.component.IkTargetNodeComponent
+import top.fifthlight.blazerod.model.node.component.PrimitiveNodeComponent
 import top.fifthlight.blazerod.model.node.component.RenderNodeComponent
 import top.fifthlight.blazerod.model.node.forEach
 import top.fifthlight.blazerod.model.resource.RenderCamera
@@ -26,6 +26,7 @@ class RenderScene(
 ) : AbstractRefCount() {
     companion object {
         private val TYPE_ID = Identifier.of("blazerod", "scene")
+        private const val PHYSICS_MAX_SUB_STEP_COUNT = 10
     }
 
     override val typeId: Identifier
@@ -33,22 +34,24 @@ class RenderScene(
 
     private val sortedNodes: List<RenderNode>
     private val debugRenderNodes: List<RenderNode>
-    val primitiveComponents: List<Primitive>
-    val morphedPrimitiveComponents: List<Primitive>
-    val ikTargetComponents: List<IkTarget>
+    val primitiveComponents: List<PrimitiveNodeComponent>
+    val morphedPrimitiveComponents: List<PrimitiveNodeComponent>
+    val ikTargetComponents: List<IkTargetNodeComponent>
     val nodeIdMap: Map<NodeId, RenderNode>
     val nodeNameMap: Map<String, RenderNode>
     val humanoidTagMap: Map<HumanoidTag, RenderNode>
+    val hasPhysics: Boolean
     init {
         rootNode.increaseReferenceCount()
         val nodes = mutableListOf<RenderNode>()
         val debugRenderNodes = mutableListOf<RenderNode>()
-        val primitiveComponents = mutableListOf<Primitive>()
-        val morphedPrimitives = Int2ReferenceOpenHashMap<Primitive>()
-        val ikTargets = Int2ReferenceOpenHashMap<IkTarget>()
+        val primitiveComponents = mutableListOf<PrimitiveNodeComponent>()
+        val morphedPrimitives = Int2ReferenceOpenHashMap<PrimitiveNodeComponent>()
+        val ikTargets = Int2ReferenceOpenHashMap<IkTargetNodeComponent>()
         val nodeIdMap = mutableMapOf<NodeId, RenderNode>()
         val nodeNameMap = mutableMapOf<String, RenderNode>()
         val humanoidTagMap = mutableMapOf<HumanoidTag, RenderNode>()
+        var hasPhysics = false
         rootNode.forEach { node ->
             nodes.add(node)
             node.nodeId?.let { nodeIdMap.put(it, node) }
@@ -56,6 +59,9 @@ class RenderScene(
             node.humanoidTags.forEach { humanoidTagMap[it] = node }
             if (node.hasPhase(UpdatePhase.Type.DEBUG_RENDER)) {
                 debugRenderNodes.add(node)
+            }
+            if (node.hasPhase(UpdatePhase.Type.PHYSICS_UPDATE)) {
+                hasPhysics = true
             }
             node.getComponentsOfType(RenderNodeComponent.Type.Primitive).let { components ->
                 primitiveComponents.addAll(components)
@@ -84,6 +90,7 @@ class RenderScene(
         this.nodeIdMap = nodeIdMap
         this.nodeNameMap = nodeNameMap
         this.humanoidTagMap = humanoidTagMap
+        this.hasPhysics = hasPhysics
     }
 
     private fun executePhase(instance: ModelInstance, phase: UpdatePhase) {
@@ -106,7 +113,12 @@ class RenderScene(
         executePhase(instance, UpdatePhase.CameraUpdate)
     }
 
-    fun debugRender(instance: ModelInstance, viewProjectionMatrix: Matrix4fc, consumers: VertexConsumerProvider) {
+    fun debugRender(
+        instance: ModelInstance,
+        viewProjectionMatrix: Matrix4fc,
+        consumers: VertexConsumerProvider,
+        time: Float, // For physics, in seconds
+    ) {
         if (debugRenderNodes.isEmpty()) {
             return
         }
@@ -116,12 +128,26 @@ class RenderScene(
             executePhase(instance, UpdatePhase.InfluenceTransformUpdate)
             executePhase(instance, UpdatePhase.GlobalTransformPropagation)
         }
+        instance.physicsWorld?.let { world ->
+            if (instance.lastPhysicsTime < 0) {
+                instance.lastPhysicsTime = time
+                return@let
+            }
+            val timeStep = time - instance.lastPhysicsTime
+            instance.lastPhysicsTime = time
+            world.update(timeStep, PHYSICS_MAX_SUB_STEP_COUNT)
+            executePhase(instance, UpdatePhase.PhysicsUpdate)
+            executePhase(instance, UpdatePhase.GlobalTransformPropagation)
+        }
         UpdatePhase.DebugRender.acquire(viewProjectionMatrix, consumers).use {
             executePhase(instance, it)
         }
     }
 
-    fun updateRenderData(instance: ModelInstance) {
+    fun updateRenderData(
+        instance: ModelInstance,
+        time: Float, // For physics, in seconds
+    ) {
         if (instance.modelData.undirtyNodeCount == nodes.size) {
             return
         }
@@ -129,7 +155,26 @@ class RenderScene(
         executePhase(instance, UpdatePhase.IkUpdate)
         executePhase(instance, UpdatePhase.InfluenceTransformUpdate)
         executePhase(instance, UpdatePhase.GlobalTransformPropagation)
+        instance.physicsWorld?.let { world ->
+            if (instance.lastPhysicsTime < 0) {
+                instance.lastPhysicsTime = time
+                return@let
+            }
+            val timeStep = time - instance.lastPhysicsTime
+            instance.lastPhysicsTime = time
+            world.update(timeStep, PHYSICS_MAX_SUB_STEP_COUNT)
+            executePhase(instance, UpdatePhase.PhysicsUpdate)
+            executePhase(instance, UpdatePhase.GlobalTransformPropagation)
+        }
         executePhase(instance, UpdatePhase.RenderDataUpdate)
+    }
+
+    fun attachToInstance(instance: ModelInstance) {
+        for (node in nodes) {
+            for (component in node.components) {
+                component.onAttached(instance)
+            }
+        }
     }
 
     override fun onClosed() {

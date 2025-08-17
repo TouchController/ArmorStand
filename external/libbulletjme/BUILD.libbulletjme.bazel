@@ -1,0 +1,38 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_jni//jni:defs.bzl", "cc_jni_library")
+
+java_library(
+    name = "libbulletjme",
+    visibility = ["//visibility:public"],
+    srcs = glob(["src/main/java/**/*.java"]),
+)
+
+_workspace_root = package_relative_label("@libbulletjme//:__pkg__").workspace_root
+
+cc_jni_library(
+    name = "libbulletjme_natives",
+    visibility = ["//visibility:public"],
+    srcs = glob(["src/main/native/**/*.cpp", "src/main/native/**/*.h", "src/main/native/**/*.inl"]),
+    platforms = [
+        "@//:android_arm32",
+        "@//:android_arm64",
+        "@//:android_x86",
+        "@//:android_x86_64",
+        "@//:linux_arm64_glibc",
+        "@//:linux_x86_64_glibc",
+        "@//:windows_arm64",
+        "@//:windows_x86_64",
+    ],
+    copts = [
+        "-w",
+        "-I" + _workspace_root + "/src/main/native/bullet3",
+        "-I" + _workspace_root + "/src/main/native/bullet3/BulletDynamics/Featherstone",
+        "-I" + _workspace_root + "/src/main/native/bullet3/LinearMath",
+        "-I" + _workspace_root + "/src/main/native/v-hacd/inc",
+        "-I" + _workspace_root + "/src/main/native/v-hacd/public",
+    ],
+    linkopts = select({
+        "@platforms//os:windows": ["-lws2_32"],
+        "//conditions:default": [],
+    }),
+)

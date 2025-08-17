@@ -7,18 +7,20 @@ import top.fifthlight.blazerod.model.TransformId
 import top.fifthlight.blazerod.model.node.RenderNode
 import top.fifthlight.blazerod.model.node.UpdatePhase
 
-class InfluenceSource(
+class InfluenceSourceNodeComponent(
     val target: TransformId,
     val targetNodeIndex: Int,
     val influence: Float,
     val influenceRotation: Boolean = false,
     val influenceTranslation: Boolean = false,
     val appendLocal: Boolean = false,
-) : RenderNodeComponent<InfluenceSource>() {
+) : RenderNodeComponent<InfluenceSourceNodeComponent>() {
     override fun onClosed() {}
 
-    override val type: Type<InfluenceSource>
+    override val type: Type<InfluenceSourceNodeComponent>
         get() = Type.InfluenceSource
+
+    override fun onAttached(instance: ModelInstance) {}
 
     companion object {
         private val updatePhases =

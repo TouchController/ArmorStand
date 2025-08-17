@@ -7,13 +7,13 @@ import top.fifthlight.blazerod.model.node.UpdatePhase
 import top.fifthlight.blazerod.model.node.getWorldTransform
 import top.fifthlight.blazerod.model.resource.RenderPrimitive
 
-class Primitive(
+class PrimitiveNodeComponent(
     val primitiveIndex: Int,
     val primitive: RenderPrimitive,
     val skinIndex: Int?,
     val morphedPrimitiveIndex: Int?,
     val firstPersonFlag: Mesh.FirstPersonFlag = Mesh.FirstPersonFlag.BOTH,
-) : RenderNodeComponent<Primitive>() {
+) : RenderNodeComponent<PrimitiveNodeComponent>() {
     init {
         primitive.increaseReferenceCount()
     }
@@ -22,8 +22,10 @@ class Primitive(
         primitive.decreaseReferenceCount()
     }
 
-    override val type: Type<Primitive>
+    override val type: Type<PrimitiveNodeComponent>
         get() = Type.Primitive
+
+    override fun onAttached(instance: ModelInstance) {}
 
     companion object {
         private val updatePhases = listOf(UpdatePhase.Type.RENDER_DATA_UPDATE)

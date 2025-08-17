@@ -1,0 +1,6 @@
+# To fix compiling on Linux
+--- a/src/main/native/glue/com_jme3_bullet_collision_shapes_infos_BoundingValueHierarchy.cpp
++++ b/src/main/native/glue/com_jme3_bullet_collision_shapes_infos_BoundingValueHierarchy.cpp
+@@ -38,1 +38,1 @@
+-#include <Winsock2.h> // for htons()
++#include <winsock2.h> // for htons()

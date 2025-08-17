@@ -180,6 +180,8 @@ merge_jij(
         "//blazerod/model/model-pmx": "blazerod-model-formats-pmx:=",
         "//blazerod/model/model-vmd": "blazerod-model-formats-vmd:=",
         "//blazerod/render": "blazerod-render:=",
+        "@libbulletjme//:libbulletjme": "libbulletjme_blazerod:22.0.1+patch1",
+        "@libbulletjme//:libbulletjme_natives": "libbulletjme_natives_blazerod:22.0.1+patch1",
     },
 )
 
@@ -247,6 +249,7 @@ java_binary(
         "@maven//:net_fabricmc_yarn_v2",
         "@maven//:org_anarres_jcpp",
         "@maven//:org_antlr_antlr4_runtime",
+        "@libbulletjme//:libbulletjme_natives",
     ],
 )
 
