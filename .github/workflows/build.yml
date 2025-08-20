@@ -15,12 +15,37 @@ jobs:
       - uses: bazel-contrib/setup-bazel@0.14.0
         with:
           bazelisk-cache: true
-          disk-cache: ${{ github.workflow }}
-          repository-cache: true
       - name: build
-        run: bazel build @//mod @//blazerod @//blazerod/model/model-base @//blazerod/model/model-formats @//blazerod/model/model-gltf @//blazerod/model/model-pmd @//blazerod/model/model-pmx @//blazerod/model/model-vmd @//blazerod/example/ball_block --verbose_failures
+        run: |
+          bazel build \
+            --remote_cache=${{ vars.NATIVELINK_COM_REMOTE_CACHE_URL }} \
+            --remote_header=${{ secrets.NATIVELINK_COM_API_HEADER }} \
+            --bes_backend=${{ vars.NATIVELINK_COM_BES_URL }} \
+            --bes_header=${{ secrets.NATIVELINK_COM_API_HEADER }} \
+            --bes_results_url=${{ vars.NATIVELINK_COM_BES_RESULTS_URL }} \
+            --remote_header=x-nativelink-project=nativelink-ci \
+            --verbose_failures \
+            @//mod \
+            @//blazerod \
+            @//blazerod/model/model-base \
+            @//blazerod/model/model-formats \
+            @//blazerod/model/model-gltf \
+            @//blazerod/model/model-pmd \
+            @//blazerod/model/model-pmx \
+            @//blazerod/model/model-vmd \
+            @//blazerod/example/ball_block
       - name: test
-        run: bazel test @//blazerod/model/model-gltf:glb_load_test @//blazerod/render:standalone_tests --verbose_failures
+        run: |
+          bazel test \
+            --remote_cache=${{ vars.NATIVELINK_COM_REMOTE_CACHE_URL }} \
+            --remote_header=${{ secrets.NATIVELINK_COM_API_HEADER }} \
+            --bes_backend=${{ vars.NATIVELINK_COM_BES_URL }} \
+            --bes_header=${{ secrets.NATIVELINK_COM_API_HEADER }} \
+            --bes_results_url=${{ vars.NATIVELINK_COM_BES_RESULTS_URL }} \
+            --remote_header=x-nativelink-project=nativelink-ci \
+            --verbose_failures \
+            @//blazerod/model/model-gltf:glb_load_test \
+            @//blazerod/render:standalone_tests
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
