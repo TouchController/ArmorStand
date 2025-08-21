@@ -25,8 +25,6 @@ class IkTargetNodeComponent(
     override val type: Type<IkTargetNodeComponent>
         get() = Type.IkTarget
 
-    override fun onAttached(instance: ModelInstance) {}
-
     companion object {
         private val updatePhases = listOf(
             UpdatePhase.Type.IK_UPDATE,

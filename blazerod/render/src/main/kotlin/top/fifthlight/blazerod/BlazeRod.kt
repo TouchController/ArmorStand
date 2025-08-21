@@ -49,7 +49,9 @@ object BlazeRod: ClientModInitializer {
             }
         }
 
-        PhysicsLibrary.init()
+        if (System.getProperty("blazerod.no_physics") != "true") {
+            PhysicsLibrary.init()
+        }
 
         RenderEvents.INITIALIZE_DEVICE.register {
             // Trigger its loading in render thread

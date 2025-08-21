@@ -30,18 +30,8 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
         get() = TYPE_ID
 
     val modelData = ModelData(scene)
-    internal var lastPhysicsTime = -1f
-    internal val physicsWorld = if (PhysicsLibrary.isPhysicsAvailable && scene.hasPhysics) {
-        val world = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT)
-        world.accuracy = 1f / PHYSICS_FPS
-
-        world.setGravity(JmeVector3f(0f, -9.8f * 10f, 0f))
-
-        val groundRigidBody = PhysicsRigidBody(PlaneCollisionShape(Plane(JmeVector3f.UNIT_Y, 0f)))
-        world.addCollisionObject(groundRigidBody)
-        world.setGroundObject(groundRigidBody)
-
-        world
+    internal val physicsData = if (PhysicsLibrary.isPhysicsAvailable && scene.hasPhysics) {
+        PhysicsData(scene)
     } else {
         null
     }
@@ -49,6 +39,26 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
     init {
         scene.increaseReferenceCount()
         scene.attachToInstance(this)
+    }
+
+    internal class PhysicsData(scene: RenderScene) : AutoCloseable {
+        val world = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT).apply {
+            accuracy = 1f / PHYSICS_FPS
+
+            setGravity(JmeVector3f(0f, -9.8f * 10f, 0f))
+
+            val groundRigidBody = PhysicsRigidBody(PlaneCollisionShape(Plane(JmeVector3f.UNIT_Y, 0f)))
+            addCollisionObject(groundRigidBody)
+            setGroundObject(groundRigidBody)
+        }
+        var lastPhysicsTime = -1f
+        val rigidBodies = Array<PhysicsRigidBody?>(scene.rigidBodyComponents.size) { null }
+
+        fun getRigidBody(index: Int) = rigidBodies[index] ?: error("Rigid body not initialized")
+
+        override fun close() {
+            world.destroy()
+        }
     }
 
     class ModelData(scene: RenderScene) : AutoCloseable {
@@ -206,6 +216,6 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
     override fun onClosed() {
         scene.decreaseReferenceCount()
         modelData.close()
-        physicsWorld?.destroy()
+        physicsData?.close()
     }
 }

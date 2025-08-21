@@ -79,6 +79,7 @@ class PmxLoader : ModelFileLoader {
         private val childBoneMap = mutableMapOf<Int, MutableList<Int>>()
         private val rootBones = mutableListOf<Int>()
         private lateinit var rigidBodies: List<PmxRigidBody>
+        private var boneToRigidBodyMap = mutableMapOf<Int, MutableList<Int>>()
         private lateinit var joints: List<PmxJoint>
 
         private fun loadRgbColor(buffer: ByteBuffer): RgbColor {
@@ -907,7 +908,7 @@ class PmxLoader : ModelFileLoader {
                 else -> throw PmxLoadException("Unsupported rigid body physics mode: $byte")
             }
 
-            rigidBodies = (0 until rigidBodyCount).map {
+            rigidBodies = (0 until rigidBodyCount).map { index ->
                 PmxRigidBody(
                     nameLocal = loadString(buffer),
                     nameUniversal = loadString(buffer),
@@ -915,7 +916,7 @@ class PmxLoader : ModelFileLoader {
                     groupId = buffer.get().toUByte().toInt(),
                     nonCollisionGroup = buffer.getShort().toUShort().toInt(),
                     shape = loadShapeType(buffer.get()),
-                    shapeSize = loadVector3f(buffer).invertZ(),
+                    shapeSize = loadVector3f(buffer),
                     shapePosition = loadVector3f(buffer).invertZ(),
                     shapeRotation = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 },
                     mass = buffer.getFloat(),
@@ -924,7 +925,17 @@ class PmxLoader : ModelFileLoader {
                     repulsion = buffer.getFloat(),
                     frictionForce = buffer.getFloat(),
                     physicsMode = loadPhysicsMode(buffer.get())
-                )
+                ).also {
+                    if (it.relatedBoneIndex in bones.indices) {
+                        boneToRigidBodyMap.getOrPut(it.relatedBoneIndex, ::mutableListOf).add(index)
+                    } else if (bones.isNotEmpty()) {
+                        // Allocate to first bone
+                        // https://github.com/benikabocha/saba/blob/29b8efa8b31c8e746f9a88020fb0ad9dcdcf3332/src/Saba/Model/MMD/MMDPhysics.cpp#L434
+                        boneToRigidBodyMap.getOrPut(0, ::mutableListOf).add(index)
+                    } else {
+                        // No bone? Ignore
+                    }
+                }
             }
         }
 
@@ -934,15 +945,9 @@ class PmxLoader : ModelFileLoader {
                 throw PmxLoadException("Bad PMX model: joints count less than zero")
             }
 
-            fun loadJointType(byte: Byte): PmxJoint.JointType = when (byte.toInt()) {
-                0 -> PmxJoint.JointType.SPRING_6DOF
-                1 -> PmxJoint.JointType.DOF_6
-                2 -> PmxJoint.JointType.P2P
-                3 -> PmxJoint.JointType.CONE_TWIST
-                4 -> PmxJoint.JointType.SLIDER
-                5 -> PmxJoint.JointType.HINGE
-                else -> throw PmxLoadException("Unsupported joint type: $byte")
-            }
+            fun loadJointType(byte: Byte): PmxJoint.JointType = PmxJoint.JointType.entries.firstOrNull {
+                byte.toInt() == it.value
+            } ?: throw PmxLoadException("Unsupported joint type: $byte")
 
             joints = (0 until jointCount).map {
                 PmxJoint(
@@ -987,7 +992,7 @@ class PmxLoader : ModelFileLoader {
                 } ?: listOf()
 
                 val components = buildList {
-                    val ikData = targetToIkDataMap[index]?.forEach { data ->
+                    targetToIkDataMap[index]?.forEach { data ->
                         add(
                             NodeComponent.IkTargetComponent(
                                 ikTarget = IkTarget(
@@ -1021,6 +1026,37 @@ class PmxLoader : ModelFileLoader {
                                     appendLocal = data.inheritLocal,
                                 ),
                                 transformId = TransformId.INFLUENCE,
+                            )
+                        )
+                    }
+                    boneToRigidBodyMap[index]?.forEach { index ->
+                        add(
+                            NodeComponent.RigidBodyComponent(
+                                rigidBody = rigidBodies[index].let { rigidBody ->
+                                    RigidBody(
+                                        name = rigidBody.nameLocal.takeIf(String::isNotBlank),
+                                        collisionGroup = rigidBody.groupId,
+                                        collisionMask = rigidBody.nonCollisionGroup,
+                                        shape = when (rigidBody.shape) {
+                                            PmxRigidBody.ShapeType.SPHERE -> RigidBody.ShapeType.SPHERE
+                                            PmxRigidBody.ShapeType.BOX -> RigidBody.ShapeType.BOX
+                                            PmxRigidBody.ShapeType.CAPSULE -> RigidBody.ShapeType.CAPSULE
+                                        },
+                                        shapeSize = rigidBody.shapeSize,
+                                        shapePosition = rigidBody.shapePosition,
+                                        shapeRotation = rigidBody.shapeRotation,
+                                        mass = rigidBody.mass,
+                                        moveAttenuation = rigidBody.moveAttenuation,
+                                        rotationDamping = rigidBody.rotationDamping,
+                                        repulsion = rigidBody.repulsion,
+                                        frictionForce = rigidBody.frictionForce,
+                                        physicsMode = when (rigidBody.physicsMode) {
+                                            PmxRigidBody.PhysicsMode.FOLLOW_BONE -> RigidBody.PhysicsMode.FOLLOW_BONE
+                                            PmxRigidBody.PhysicsMode.PHYSICS -> RigidBody.PhysicsMode.PHYSICS
+                                            PmxRigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
+                                        },
+                                    )
+                                },
                             )
                         )
                     }
@@ -1165,6 +1201,30 @@ class PmxLoader : ModelFileLoader {
                 model = Model(
                     scenes = listOf(scene),
                     skins = listOf(skin),
+                    physicalJoints = this.joints.mapNotNull { joint ->
+                        if (joint.rigidBodyIndexA !in rigidBodies.indices) {
+                            return@mapNotNull null
+                        }
+                        if (joint.rigidBodyIndexB !in rigidBodies.indices) {
+                            return@mapNotNull null
+                        }
+                        PhysicalJoint(
+                            name = joint.nameLocal.takeIf(String::isNotBlank),
+                            type = when (joint.type) {
+                                PmxJoint.JointType.SPRING_6DOF -> PhysicalJoint.JointType.SPRING_6DOF
+                            },
+                            rigidBodyA = RigidBodyIndex(modelId, joint.rigidBodyIndexA),
+                            rigidBodyB = RigidBodyIndex(modelId, joint.rigidBodyIndexB),
+                            position = joint.position,
+                            rotation = joint.rotation,
+                            positionMin = joint.positionMinimum,
+                            positionMax = joint.positionMaximum,
+                            rotationMin = joint.rotationMinimum,
+                            rotationMax = joint.rotationMaximum,
+                            positionSpring = joint.positionSpring,
+                            rotationSpring = joint.rotationSpring,
+                        )
+                    },
                     expressions = buildList {
                         for (target in morphTargets) {
                             val expression = Expression.Target(

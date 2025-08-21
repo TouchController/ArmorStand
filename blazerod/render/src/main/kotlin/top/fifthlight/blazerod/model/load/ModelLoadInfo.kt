@@ -11,6 +11,7 @@ import top.fifthlight.blazerod.render.RefCountedGpuBuffer
 import java.nio.ByteBuffer
 import top.fifthlight.blazerod.model.Camera as ModelCamera
 import top.fifthlight.blazerod.model.IkTarget as ModelIkTarget
+import top.fifthlight.blazerod.model.RigidBody as ModelRigidBody
 
 data class TextureLoadData(
     val name: String?,
@@ -129,6 +130,11 @@ data class NodeLoadInfo(
         data class InfluenceSource(
             val influence: Influence,
             val transformId: TransformId,
+        ) : Component()
+
+        data class RigidBody(
+            val rigidBodyIndex: Int,
+            val rigidBody: ModelRigidBody,
         ) : Component()
     }
 }

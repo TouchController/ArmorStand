@@ -9,6 +9,7 @@ import top.fifthlight.blazerod.model.node.UpdatePhase
 import top.fifthlight.blazerod.model.node.component.IkTargetNodeComponent
 import top.fifthlight.blazerod.model.node.component.PrimitiveNodeComponent
 import top.fifthlight.blazerod.model.node.component.RenderNodeComponent
+import top.fifthlight.blazerod.model.node.component.RigidBodyNodeComponent
 import top.fifthlight.blazerod.model.node.forEach
 import top.fifthlight.blazerod.model.resource.RenderCamera
 import top.fifthlight.blazerod.model.resource.RenderExpression
@@ -37,6 +38,7 @@ class RenderScene(
     val primitiveComponents: List<PrimitiveNodeComponent>
     val morphedPrimitiveComponents: List<PrimitiveNodeComponent>
     val ikTargetComponents: List<IkTargetNodeComponent>
+    val rigidBodyComponents: List<RigidBodyNodeComponent>
     val nodeIdMap: Map<NodeId, RenderNode>
     val nodeNameMap: Map<String, RenderNode>
     val humanoidTagMap: Map<HumanoidTag, RenderNode>
@@ -48,6 +50,7 @@ class RenderScene(
         val primitiveComponents = mutableListOf<PrimitiveNodeComponent>()
         val morphedPrimitives = Int2ReferenceOpenHashMap<PrimitiveNodeComponent>()
         val ikTargets = Int2ReferenceOpenHashMap<IkTargetNodeComponent>()
+        val rigidBodyComponents = Int2ReferenceOpenHashMap<RigidBodyNodeComponent>()
         val nodeIdMap = mutableMapOf<NodeId, RenderNode>()
         val nodeNameMap = mutableMapOf<String, RenderNode>()
         val humanoidTagMap = mutableMapOf<HumanoidTag, RenderNode>()
@@ -59,9 +62,6 @@ class RenderScene(
             node.humanoidTags.forEach { humanoidTagMap[it] = node }
             if (node.hasPhase(UpdatePhase.Type.DEBUG_RENDER)) {
                 debugRenderNodes.add(node)
-            }
-            if (node.hasPhase(UpdatePhase.Type.PHYSICS_UPDATE)) {
-                hasPhysics = true
             }
             node.getComponentsOfType(RenderNodeComponent.Type.Primitive).let { components ->
                 primitiveComponents.addAll(components)
@@ -77,6 +77,10 @@ class RenderScene(
             node.getComponentsOfType(RenderNodeComponent.Type.IkTarget).forEach { component ->
                 ikTargets.put(component.ikIndex, component)
             }
+            node.getComponentsOfType(RenderNodeComponent.Type.RigidBody).forEach { component ->
+                hasPhysics = true
+                rigidBodyComponents.put(component.rigidBodyIndex, component)
+            }
         }
         this.sortedNodes = nodes
         this.debugRenderNodes = debugRenderNodes
@@ -86,6 +90,9 @@ class RenderScene(
         }
         this.ikTargetComponents = (0 until ikTargets.size).map {
             ikTargets.get(it) ?: error("Ik target index not found: $it")
+        }
+        this.rigidBodyComponents = (0 until rigidBodyComponents.size).map {
+            rigidBodyComponents.get(it) ?: error("Rigid body index not found: $it")
         }
         this.nodeIdMap = nodeIdMap
         this.nodeNameMap = nodeNameMap
@@ -128,15 +135,16 @@ class RenderScene(
             executePhase(instance, UpdatePhase.InfluenceTransformUpdate)
             executePhase(instance, UpdatePhase.GlobalTransformPropagation)
         }
-        instance.physicsWorld?.let { world ->
-            if (instance.lastPhysicsTime < 0) {
-                instance.lastPhysicsTime = time
+        instance.physicsData?.let { data ->
+            if (data.lastPhysicsTime < 0) {
+                data.lastPhysicsTime = time
                 return@let
             }
-            val timeStep = time - instance.lastPhysicsTime
-            instance.lastPhysicsTime = time
-            world.update(timeStep, PHYSICS_MAX_SUB_STEP_COUNT)
-            executePhase(instance, UpdatePhase.PhysicsUpdate)
+            val timeStep = time - data.lastPhysicsTime
+            data.lastPhysicsTime = time
+            executePhase(instance, UpdatePhase.PhysicsUpdatePre)
+            data.world.update(timeStep, PHYSICS_MAX_SUB_STEP_COUNT)
+            executePhase(instance, UpdatePhase.PhysicsUpdatePost)
             executePhase(instance, UpdatePhase.GlobalTransformPropagation)
         }
         UpdatePhase.DebugRender.acquire(viewProjectionMatrix, consumers).use {
@@ -155,24 +163,29 @@ class RenderScene(
         executePhase(instance, UpdatePhase.IkUpdate)
         executePhase(instance, UpdatePhase.InfluenceTransformUpdate)
         executePhase(instance, UpdatePhase.GlobalTransformPropagation)
-        instance.physicsWorld?.let { world ->
-            if (instance.lastPhysicsTime < 0) {
-                instance.lastPhysicsTime = time
+        instance.physicsData?.let { data ->
+            if (data.lastPhysicsTime < 0) {
+                data.lastPhysicsTime = time
                 return@let
             }
-            val timeStep = time - instance.lastPhysicsTime
-            instance.lastPhysicsTime = time
-            world.update(timeStep, PHYSICS_MAX_SUB_STEP_COUNT)
-            executePhase(instance, UpdatePhase.PhysicsUpdate)
+            val timeStep = time - data.lastPhysicsTime
+            data.lastPhysicsTime = time
+            executePhase(instance, UpdatePhase.PhysicsUpdatePre)
+            data.world.update(timeStep, PHYSICS_MAX_SUB_STEP_COUNT)
+            executePhase(instance, UpdatePhase.PhysicsUpdatePost)
             executePhase(instance, UpdatePhase.GlobalTransformPropagation)
         }
         executePhase(instance, UpdatePhase.RenderDataUpdate)
     }
 
-    fun attachToInstance(instance: ModelInstance) {
+    internal fun attachToInstance(instance: ModelInstance) {
+        executePhase(instance, UpdatePhase.GlobalTransformPropagation)
+        executePhase(instance, UpdatePhase.IkUpdate)
+        executePhase(instance, UpdatePhase.InfluenceTransformUpdate)
+        executePhase(instance, UpdatePhase.GlobalTransformPropagation)
         for (node in nodes) {
             for (component in node.components) {
-                component.onAttached(instance)
+                component.onAttached(instance, node)
             }
         }
     }

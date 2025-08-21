@@ -19,10 +19,5 @@ data class PmxJoint(
 ) {
     enum class JointType(val value: Int) {
         SPRING_6DOF(0),
-        DOF_6(1),
-        P2P(2),
-        CONE_TWIST(3),
-        SLIDER(4),
-        HINGE(5)
     }
 }

@@ -20,8 +20,6 @@ class InfluenceSourceNodeComponent(
     override val type: Type<InfluenceSourceNodeComponent>
         get() = Type.InfluenceSource
 
-    override fun onAttached(instance: ModelInstance) {}
-
     companion object {
         private val updatePhases =
             listOf(UpdatePhase.Type.INFLUENCE_TRANSFORM_UPDATE)

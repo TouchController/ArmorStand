@@ -462,6 +462,7 @@ class ModelPreprocessor private constructor(
     }
 
     private var ikCount = 0
+    private var rigidBodyCount = 0
     private val nodes = mutableListOf<NodeLoadInfo>()
     private fun loadNode(node: Node): Int {
         val skinJointData = skinJointsData[node.id]
@@ -515,6 +516,15 @@ class ModelPreprocessor private constructor(
                                 NodeLoadInfo.Component.InfluenceSource(
                                     influence = component.influence,
                                     transformId = component.transformId,
+                                )
+                            )
+                        }
+
+                        is NodeComponent.RigidBodyComponent -> {
+                            add(
+                                NodeLoadInfo.Component.RigidBody(
+                                    rigidBodyIndex = rigidBodyCount++,
+                                    rigidBody = component.rigidBody,
                                 )
                             )
                         }

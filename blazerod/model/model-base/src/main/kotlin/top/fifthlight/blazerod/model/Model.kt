@@ -4,6 +4,7 @@ data class Model(
     val scenes: List<Scene>,
     val defaultScene: Scene? = null,
     val skins: List<Skin>,
+    val physicalJoints: List<PhysicalJoint> = listOf(),
     val expressions: List<Expression> = listOf(),
 ) {
     init {

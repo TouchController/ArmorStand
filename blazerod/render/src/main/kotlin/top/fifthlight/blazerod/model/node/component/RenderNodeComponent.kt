@@ -40,7 +40,7 @@ sealed class RenderNodeComponent<C : RenderNodeComponent<C>> : AbstractRefCount(
 
     abstract val type: Type<C>
 
-    abstract fun onAttached(instance: ModelInstance)
+    open fun onAttached(instance: ModelInstance, node: RenderNode) {}
 
     abstract val updatePhases: List<UpdatePhase.Type>
     abstract fun update(phase: UpdatePhase, node: RenderNode, instance: ModelInstance)

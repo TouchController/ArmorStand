@@ -17,8 +17,6 @@ class CameraNodeComponent : RenderNodeComponent<CameraNodeComponent> {
     override val type: Type<CameraNodeComponent>
         get() = Type.Camera
 
-    override fun onAttached(instance: ModelInstance) {}
-
     companion object {
         private val updatePhases = listOf(UpdatePhase.Type.CAMERA_UPDATE)
     }

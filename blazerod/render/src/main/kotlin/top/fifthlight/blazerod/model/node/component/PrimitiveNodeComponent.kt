@@ -25,8 +25,6 @@ class PrimitiveNodeComponent(
     override val type: Type<PrimitiveNodeComponent>
         get() = Type.Primitive
 
-    override fun onAttached(instance: ModelInstance) {}
-
     companion object {
         private val updatePhases = listOf(UpdatePhase.Type.RENDER_DATA_UPDATE)
     }
