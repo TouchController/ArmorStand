@@ -11,10 +11,7 @@ import top.fifthlight.blazerod.model.node.component.PrimitiveNodeComponent
 import top.fifthlight.blazerod.model.node.component.RenderNodeComponent
 import top.fifthlight.blazerod.model.node.component.RigidBodyNodeComponent
 import top.fifthlight.blazerod.model.node.forEach
-import top.fifthlight.blazerod.model.resource.RenderCamera
-import top.fifthlight.blazerod.model.resource.RenderExpression
-import top.fifthlight.blazerod.model.resource.RenderExpressionGroup
-import top.fifthlight.blazerod.model.resource.RenderSkin
+import top.fifthlight.blazerod.model.resource.*
 import top.fifthlight.blazerod.util.AbstractRefCount
 
 class RenderScene(
@@ -24,6 +21,7 @@ class RenderScene(
     val expressions: List<RenderExpression>,
     val expressionGroups: List<RenderExpressionGroup>,
     val cameras: List<RenderCamera>,
+    val physicsJoints: List<RenderPhysicsJoint>,
 ) : AbstractRefCount() {
     companion object {
         private val TYPE_ID = Identifier.of("blazerod", "scene")
@@ -102,7 +100,7 @@ class RenderScene(
 
     private fun executePhase(instance: ModelInstance, phase: UpdatePhase) {
         for (node in sortedNodes) {
-            node.update(phase, node, instance)
+            node.update(phase, instance)
         }
     }
 

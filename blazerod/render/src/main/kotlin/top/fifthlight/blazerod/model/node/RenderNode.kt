@@ -1,6 +1,7 @@
 package top.fifthlight.blazerod.model.node
 
 import net.minecraft.util.Identifier
+import org.joml.Matrix4fc
 import top.fifthlight.blazerod.model.*
 import top.fifthlight.blazerod.model.node.component.RenderNodeComponent
 import top.fifthlight.blazerod.util.AbstractRefCount
@@ -65,24 +66,24 @@ class RenderNode(
         typeComponents[type] as? List<T> ?: listOf()
     fun hasComponentOfType(type: RenderNodeComponent.Type<*>): Boolean = type in typeComponents.keys
 
-    fun update(phase: UpdatePhase, node: RenderNode, instance: ModelInstance) {
+    fun update(phase: UpdatePhase, instance: ModelInstance) {
         if (phase == UpdatePhase.GlobalTransformPropagation) {
-            if (!instance.isNodeTransformDirty(node)) {
+            if (!instance.isNodeTransformDirty(this)) {
                 return
             }
             val parent = parent
             val transformMap = instance.getTransformMap(this)
-            val worldTransform = instance.getWorldTransform(this)
+            val worldTransform = instance.modelData.worldTransforms[nodeIndex]
             val currentLocalTransform = transformMap.getSum(TransformId.LAST)
             if (parent != null) {
                 instance.getWorldTransform(parent).mul(currentLocalTransform, worldTransform)
             } else {
                 worldTransform.set(currentLocalTransform)
             }
-            instance.cleanNodeTransformDirty(node)
+            instance.cleanNodeTransformDirty(this)
         } else {
             phaseComponents[phase.type]?.forEach { component ->
-                component.update(phase, node, instance)
+                component.update(phase, this, instance)
             }
         }
     }
@@ -100,9 +101,9 @@ fun RenderNode.forEach(action: (RenderNode) -> Unit) {
 }
 
 fun ModelInstance.getTransformMap(node: RenderNode) = modelData.transformMaps[node.nodeIndex]
-fun ModelInstance.getWorldTransform(node: RenderNode) = modelData.worldTransforms[node.nodeIndex]
+fun ModelInstance.getWorldTransform(node: RenderNode): Matrix4fc = modelData.worldTransforms[node.nodeIndex]
 fun ModelInstance.getTransformMap(nodeIndex: Int) = modelData.transformMaps[nodeIndex]
-fun ModelInstance.getWorldTransform(nodeIndex: Int) = modelData.worldTransforms[nodeIndex]
+fun ModelInstance.getWorldTransform(nodeIndex: Int): Matrix4fc = modelData.worldTransforms[nodeIndex]
 private fun ModelInstance.isNodeTransformDirty(node: RenderNode) = modelData.transformDirty[node.nodeIndex]
 fun ModelInstance.markNodeTransformDirty(node: RenderNode) {
     if (!modelData.transformDirty[node.nodeIndex]) {

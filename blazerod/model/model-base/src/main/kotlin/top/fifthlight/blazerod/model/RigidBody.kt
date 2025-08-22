@@ -31,7 +31,7 @@ data class RigidBody(
     }
 }
 
-data class RigidBodyIndex(
+data class RigidBodyId(
     val modelId: UUID,
     val index: Int,
 )

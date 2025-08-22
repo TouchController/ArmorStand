@@ -1,12 +1,13 @@
-package top.fifthlight.blazerod.model
+package top.fifthlight.blazerod.model.resource
 
 import org.joml.Vector3fc
+import top.fifthlight.blazerod.model.PhysicalJoint
 
-data class PhysicalJoint(
+data class RenderPhysicsJoint(
     val name: String? = null,
-    val type: JointType,
-    val rigidBodyA: RigidBodyId,
-    val rigidBodyB: RigidBodyId,
+    val type: PhysicalJoint.JointType,
+    val rigidBodyAIndex: Int,
+    val rigidBodyBIndex: Int,
     val position: Vector3fc,
     val rotation: Vector3fc,
     val positionMin: Vector3fc,
@@ -15,8 +16,4 @@ data class PhysicalJoint(
     val rotationMax: Vector3fc,
     val positionSpring: Vector3fc,
     val rotationSpring: Vector3fc,
-) {
-    enum class JointType {
-        SPRING_6DOF,
-    }
-}
+)

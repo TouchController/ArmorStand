@@ -7,6 +7,7 @@ import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
 import net.minecraft.util.Colors
 import org.joml.Matrix4f
+import org.joml.Vector3f
 import top.fifthlight.blazerod.model.ModelInstance
 import top.fifthlight.blazerod.model.RigidBody
 import top.fifthlight.blazerod.model.node.RenderNode
@@ -32,9 +33,28 @@ class RigidBodyNodeComponent(
             )
         }
     }
+    private val scaleMustBeUniform = when (rigidBodyData.shape) {
+        RigidBody.ShapeType.SPHERE -> true
+        RigidBody.ShapeType.BOX -> false
+        RigidBody.ShapeType.CAPSULE -> true
+    }
 
+    private fun Transform.normalizeScale() = if (scaleMustBeUniform) {
+        // Sometimes we have a small error on the scale
+        setScale(jmeNodeTransform.scale.x)
+    } else {
+        this
+    }
+
+    private val nodeTransformMatrix = Matrix4f()
     private val jmeNodeTransformMatrix = JmeMatrix4f()
     private val jmeNodeTransform = Transform()
+
+    // node world transform -> rigid body world transform
+    private val offsetMatrix = Matrix4f()
+
+    // rigid body world transform -> node world transform
+    private val inverseOffsetMatrix = Matrix4f()
 
     override fun onAttached(instance: ModelInstance, node: RenderNode) {
         instance.physicsData?.let { data ->
@@ -44,17 +64,24 @@ class RigidBodyNodeComponent(
                     else -> rigidBodyData.mass
                 }
             )
-            instance.getWorldTransform(node).get(jmeNodeTransformMatrix)
-            val scaleMustBeUniform = when (rigidBodyData.shape) {
-                RigidBody.ShapeType.SPHERE -> true
-                RigidBody.ShapeType.BOX -> false
-                RigidBody.ShapeType.CAPSULE -> true
+            val rootNodeTransform = instance.scene.rootNode.absoluteTransform
+                ?.matrix?.get(nodeTransformMatrix)
+                ?: nodeTransformMatrix.identity()
+            instance.getWorldTransform(node)
+                .invert(offsetMatrix)
+                .mul(rootNodeTransform)
+                .translate(rigidBodyData.shapePosition)
+                .rotateYXZ(rigidBodyData.shapeRotation)
+                .invert(inverseOffsetMatrix)
+            val jmeNodeTransformMatrix = rootNodeTransform
+                .translate(rigidBodyData.shapePosition)
+                .rotateYXZ(rigidBodyData.shapeRotation)
+                .get(jmeNodeTransformMatrix)
+            jmeNodeTransform.apply {
+                fromTransformMatrix(jmeNodeTransformMatrix)
+                normalizeScale()
             }
-            jmeNodeTransform.fromTransformMatrix(jmeNodeTransformMatrix)
-            if (scaleMustBeUniform) {
-                // Sometimes we have a small error on the scale
-                jmeNodeTransform.setScale(jmeNodeTransform.scale.x)
-            }
+
             rigidBody.setPhysicsTransform(jmeNodeTransform)
 
             rigidBody.collisionGroup = rigidBodyData.collisionGroup
@@ -88,7 +115,9 @@ class RigidBodyNodeComponent(
     override val updatePhases: List<UpdatePhase.Type>
         get() = updatePhase
 
-    private val nodeTransformMatrix = Matrix4f()
+    private val inverseNodeWorldMatrix = Matrix4f()
+    private val translation = Vector3f()
+    private val jmeTranslation = JmeVector3f()
     override fun update(
         phase: UpdatePhase,
         node: RenderNode,
@@ -98,11 +127,55 @@ class RigidBodyNodeComponent(
         val rigidBody = physicsData.getRigidBody(rigidBodyIndex)
         when (phase) {
             is UpdatePhase.PhysicsUpdatePre -> {
+                when (rigidBodyData.physicsMode) {
+                    RigidBody.PhysicsMode.FOLLOW_BONE -> {
+                        val jmeNodeTransformMatrix = instance.getWorldTransform(node)
+                            .mul(offsetMatrix, nodeTransformMatrix)
+                            .get(jmeNodeTransformMatrix)
+                        jmeNodeTransform.apply {
+                            fromTransformMatrix(jmeNodeTransformMatrix)
+                            normalizeScale()
+                        }
+                        rigidBody.setPhysicsTransform(jmeNodeTransform)
+                    }
 
+                    RigidBody.PhysicsMode.PHYSICS -> {
+                        // no-op
+                    }
+
+                    RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
+                        // only apply position
+                        instance.getWorldTransform(node)
+                            .getTranslation(translation)
+                            .get(jmeTranslation)
+                        rigidBody.setPhysicsLocation(jmeTranslation)
+                    }
+                }
             }
 
             is UpdatePhase.PhysicsUpdatePost -> {
+                when (rigidBodyData.physicsMode) {
+                    RigidBody.PhysicsMode.FOLLOW_BONE -> {
+                        // no-op
+                    }
 
+                    RigidBody.PhysicsMode.PHYSICS -> {
+                        /*val nodeTransformMatrix = rigidBody.getTransform(jmeNodeTransform)
+                            .toTransformMatrix(jmeNodeTransformMatrix)
+                            .get(nodeTransformMatrix)
+                            .mul(inverseOffsetMatrix)
+                        val inverseNodeWorldMatrix = instance.getWorldTransform(node)
+                            .invert(inverseNodeWorldMatrix)
+                        val deltaTransformMatrix = nodeTransformMatrix.mul(inverseNodeWorldMatrix)
+                        instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
+                            matrix.mul(deltaTransformMatrix)
+                        }*/
+                    }
+
+                    RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
+                        // only apply rotation
+                    }
+                }
             }
 
             is UpdatePhase.DebugRender -> {

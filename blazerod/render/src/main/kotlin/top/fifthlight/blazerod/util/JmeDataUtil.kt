@@ -1,10 +1,7 @@
 package top.fifthlight.blazerod.util
 
 import com.jme3.math.Transform
-import org.joml.Matrix4f
-import org.joml.Matrix4fc
-import org.joml.Vector3f
-import org.joml.Vector3fc
+import org.joml.*
 
 typealias JmeVector3f = com.jme3.math.Vector3f
 
@@ -57,6 +54,21 @@ fun Matrix4f.set(jmeMatrix4f: JmeMatrix4f) = apply {
 fun JmeMatrix4f.get(matrix4f: Matrix4f) = matrix4f.set(this)
 fun JmeMatrix4f.set(matrix4fc: Matrix4fc) = matrix4fc.get(this)
 fun Matrix4fc.toJme() = JmeMatrix4f().set(this)
+
+typealias JmeMatrix3f = com.jme3.math.Matrix3f
+
+typealias JmeQuaternion = com.jme3.math.Quaternion
+
+fun Quaternionfc.get(jmeQuaternion: JmeQuaternion): JmeQuaternion = jmeQuaternion.set(x(), y(), z(), w())
+fun Quaternionf.set(jmeQuaternion: JmeQuaternion): Quaternionf =
+    set(jmeQuaternion.x, jmeQuaternion.y, jmeQuaternion.z, jmeQuaternion.w)
+
+fun JmeQuaternion.get(quaternionf: Quaternionf): Quaternionf = quaternionf.set(x, y, z, w)
+fun JmeQuaternion.set(quaternionf: Quaternionfc): JmeQuaternion =
+    this.set(quaternionf.x(), quaternionf.y(), quaternionf.z(), quaternionf.w())
+
+fun Quaternionfc.toJme() = JmeQuaternion().set(this)
+
 fun Matrix4f.set(transform: Transform) = transform.get(this)
 fun Transform.get(matrix4f: Matrix4f) = matrix4f.translationRotateScale(
     translation.x,

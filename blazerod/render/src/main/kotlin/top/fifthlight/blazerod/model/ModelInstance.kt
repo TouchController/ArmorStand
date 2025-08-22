@@ -2,12 +2,16 @@ package top.fifthlight.blazerod.model
 
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.shapes.PlaneCollisionShape
+import com.jme3.bullet.joints.SixDofSpringJoint
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Plane
+import com.jme3.math.Transform
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.util.Identifier
 import org.joml.Matrix4f
 import org.joml.Matrix4fc
+import org.joml.Quaternionf
+import org.joml.Vector3f
 import top.fifthlight.blazerod.model.data.ModelMatricesBuffer
 import top.fifthlight.blazerod.model.data.MorphTargetBuffer
 import top.fifthlight.blazerod.model.data.RenderSkinBuffer
@@ -39,15 +43,19 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
     init {
         scene.increaseReferenceCount()
         scene.attachToInstance(this)
+        physicsData?.initJoints()
     }
 
     internal class PhysicsData(scene: RenderScene) : AutoCloseable {
+        private val rootNode = scene.rootNode
+        private val physicsJoints = scene.physicsJoints
+
         val world = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT).apply {
             accuracy = 1f / PHYSICS_FPS
 
-            setGravity(JmeVector3f(0f, -9.8f * 10f, 0f))
+            setGravity(JmeVector3f(0f, -9.8f, 0f))
 
-            val groundRigidBody = PhysicsRigidBody(PlaneCollisionShape(Plane(JmeVector3f.UNIT_Y, 0f)))
+            val groundRigidBody = PhysicsRigidBody(PlaneCollisionShape(Plane(JmeVector3f.UNIT_Y, 0f)), 0f)
             addCollisionObject(groundRigidBody)
             setGroundObject(groundRigidBody)
         }
@@ -55,6 +63,46 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
         val rigidBodies = Array<PhysicsRigidBody?>(scene.rigidBodyComponents.size) { null }
 
         fun getRigidBody(index: Int) = rigidBodies[index] ?: error("Rigid body not initialized")
+
+        fun initJoints() = physicsJoints.forEach { jointData ->
+            val rootNodeTransform = Matrix4f().apply {
+                rootNode.absoluteTransform?.matrix?.get(this)
+            }
+            val transformMatrix = rootNodeTransform.translate(jointData.position, Matrix4f())
+                .rotate(Quaternionf().rotationZYX(jointData.rotation))
+                .mul(rootNodeTransform)
+
+            val rigidBodyA = getRigidBody(jointData.rigidBodyAIndex)
+            val rigidBodyB = getRigidBody(jointData.rigidBodyBIndex)
+            val invA = rigidBodyA.getTransform(Transform())
+                .toTransformMatrix()
+                .get(Matrix4f())
+                .invert()
+                .mul(transformMatrix)
+            val invB = rigidBodyB.getTransform(Transform())
+                .toTransformMatrix()
+                .get(Matrix4f())
+                .invert()
+                .mul(transformMatrix)
+            val joint = when (jointData.type) {
+                PhysicalJoint.JointType.SPRING_6DOF -> {
+                    SixDofSpringJoint(
+                        rigidBodyA,
+                        rigidBodyB,
+                        invA.getTranslation(Vector3f()).toJme(),
+                        invB.getTranslation(Vector3f()).toJme(),
+                        invA.getUnnormalizedRotation(Quaternionf()).toJme().toRotationMatrix(JmeMatrix3f()),
+                        invB.getUnnormalizedRotation(Quaternionf()).toJme().toRotationMatrix(JmeMatrix3f()),
+                        true,
+                    )
+                }
+            }
+            joint.setLinearLowerLimit(jointData.positionMin.toJme())
+            joint.setLinearUpperLimit(jointData.positionMax.toJme())
+            joint.setAngularLowerLimit(jointData.rotationMin.toJme())
+            joint.setAngularUpperLimit(jointData.rotationMax.toJme())
+            // TODO spring
+        }
 
         override fun close() {
             world.destroy()
@@ -125,6 +173,15 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
         transform.setMatrix(transformId, matrix)
     }
 
+    fun setTransformMatrix(nodeIndex: Int, transformId: TransformId, updater: Consumer<NodeTransform.Matrix>) =
+        setTransformMatrix(nodeIndex, transformId) { updater.accept(this) }
+
+    fun setTransformMatrix(nodeIndex: Int, transformId: TransformId, updater: NodeTransform.Matrix.() -> Unit) {
+        markNodeTransformDirty(scene.nodes[nodeIndex])
+        val transform = modelData.transformMaps[nodeIndex]
+        transform.updateMatrix(transformId, updater)
+    }
+
     fun setTransformDecomposed(nodeIndex: Int, transformId: TransformId, decomposed: NodeTransformView.Decomposed) {
         markNodeTransformDirty(scene.nodes[nodeIndex])
         val transform = modelData.transformMaps[nodeIndex]
@@ -188,7 +245,7 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
         if (modelData.undirtyNodeCount == scene.nodes.size) {
             return
         }
-        node.update(UpdatePhase.GlobalTransformPropagation, node, this)
+        node.update(UpdatePhase.GlobalTransformPropagation, this)
         for (child in node.children) {
             updateNodeTransform(child)
         }

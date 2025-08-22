@@ -70,6 +70,7 @@ sealed class NodeComponent {
     }
 
     data class RigidBodyComponent(
+        val rigidBodyId: RigidBodyId,
         val rigidBody: RigidBody,
     ) : NodeComponent() {
         override val type: Type

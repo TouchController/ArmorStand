@@ -950,20 +950,38 @@ class PmxLoader : ModelFileLoader {
             } ?: throw PmxLoadException("Unsupported joint type: $byte")
 
             joints = (0 until jointCount).map {
+                val nameLocal = loadString(buffer)
+                val nameUniversal = loadString(buffer)
+                val type = loadJointType(buffer.get())
+                val rigidBodyIndexA = loadRigidBodyIndex(buffer)
+                val rigidBodyIndexB = loadRigidBodyIndex(buffer)
+                val position = loadVector3f(buffer).invertZ()
+                val rotation = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 }
+
+                val positionMinimumOrig = loadVector3f(buffer)
+                val positionMaximumOrig = loadVector3f(buffer)
+                val positionMinimum = Vector3f(positionMinimumOrig.x, positionMinimumOrig.y, -positionMaximumOrig.z)
+                val positionMaximum = Vector3f(positionMaximumOrig.x, positionMaximumOrig.y, -positionMinimumOrig.z)
+
+                val rotationMinimum = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 }
+                val rotationMaximum = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 }
+                val positionSpring = loadVector3f(buffer).invertZ()
+                val rotationSpring = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 }
+
                 PmxJoint(
-                    nameLocal = loadString(buffer),
-                    nameUniversal = loadString(buffer),
-                    type = loadJointType(buffer.get()),
-                    rigidBodyIndexA = loadRigidBodyIndex(buffer),
-                    rigidBodyIndexB = loadRigidBodyIndex(buffer),
-                    position = loadVector3f(buffer).invertZ(),
-                    rotation = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 },
-                    positionMinimum = loadVector3f(buffer).invertZ(),
-                    positionMaximum = loadVector3f(buffer).invertZ(),
-                    rotationMinimum = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 },
-                    rotationMaximum = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 },
-                    positionSpring = loadVector3f(buffer).invertZ(),
-                    rotationSpring = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 },
+                    nameLocal = nameLocal,
+                    nameUniversal = nameUniversal,
+                    type = type,
+                    rigidBodyIndexA = rigidBodyIndexA,
+                    rigidBodyIndexB = rigidBodyIndexB,
+                    position = position,
+                    rotation = rotation,
+                    positionMinimum = positionMinimum,
+                    positionMaximum = positionMaximum,
+                    rotationMinimum = rotationMinimum,
+                    rotationMaximum = rotationMaximum,
+                    positionSpring = positionSpring,
+                    rotationSpring = rotationSpring,
                 )
             }
         }
@@ -1032,6 +1050,7 @@ class PmxLoader : ModelFileLoader {
                     boneToRigidBodyMap[index]?.forEach { index ->
                         add(
                             NodeComponent.RigidBodyComponent(
+                                rigidBodyId = RigidBodyId(modelId, index),
                                 rigidBody = rigidBodies[index].let { rigidBody ->
                                     RigidBody(
                                         name = rigidBody.nameLocal.takeIf(String::isNotBlank),
@@ -1213,8 +1232,8 @@ class PmxLoader : ModelFileLoader {
                             type = when (joint.type) {
                                 PmxJoint.JointType.SPRING_6DOF -> PhysicalJoint.JointType.SPRING_6DOF
                             },
-                            rigidBodyA = RigidBodyIndex(modelId, joint.rigidBodyIndexA),
-                            rigidBodyB = RigidBodyIndex(modelId, joint.rigidBodyIndexB),
+                            rigidBodyA = RigidBodyId(modelId, joint.rigidBodyIndexA),
+                            rigidBodyB = RigidBodyId(modelId, joint.rigidBodyIndexB),
                             position = joint.position,
                             rotation = joint.rotation,
                             positionMin = joint.positionMinimum,
