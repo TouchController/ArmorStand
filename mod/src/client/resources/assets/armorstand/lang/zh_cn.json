@@ -8,6 +8,7 @@
   "armorstand.config.invert_head_direction": "反转抬头方向",
   "armorstand.config.open_model_directory": "打开模型文件夹",
   "armorstand.config.renderer_select": "选择渲染器",
+  "armorstand.config.vmc": "OSC/VMC",
   "armorstand.config.sort.name.asc": "排序：名称顺序",
   "armorstand.config.sort.name.desc": "排序：名称逆序",
   "armorstand.config.sort.last_changed.asc": "排序：时间顺序",
@@ -93,5 +94,12 @@
   "armorstand.renderer.speed.fast": "快",
   "armorstand.renderer.shader_compatible": "光影兼容",
   "armorstand.renderer.is_available": "可用性",
-  "armorstand.renderer.is_current": "当前使用"
+  "armorstand.renderer.is_current": "当前使用",
+  "armorstand.vmc": "OSC/VMC",
+  "armorstand.vmc.running": "运行中，端口：%s",
+  "armorstand.vmc.stopped": "未运行",
+  "armorstand.vmc.failed": "启动失败: %s",
+  "armorstand.vmc.start": "启动",
+  "armorstand.vmc.stop": "停止",
+  "armorstand.vmc.port": "端口："
 }

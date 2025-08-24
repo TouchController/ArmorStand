@@ -7,6 +7,7 @@ import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.MinecraftClient
 import top.fifthlight.armorstand.ArmorStand
 import top.fifthlight.armorstand.config.ConfigHolder
+import top.fifthlight.armorstand.vmc.VmcMarionetteManager
 import top.fifthlight.blazerod.animation.AnimationItem
 import top.fifthlight.blazerod.animation.AnimationLoader
 import top.fifthlight.blazerod.model.Metadata
@@ -141,10 +142,7 @@ object ModelInstanceManager {
             return null
         }
 
-        val path = ClientModelPathManager.getPath(uuid)
-        if (path == null) {
-            return null
-        }
+        val path = ClientModelPathManager.getPath(uuid) ?: return null
 
         val lastAccessTime = if (isSelf) {
             -1
@@ -188,9 +186,11 @@ object ModelInstanceManager {
                     lastAccessTime = lastAccessTime,
                     instance = ModelInstance(scene),
                     controller = run {
+                        val vmcRunning = VmcMarionetteManager.state.value is VmcMarionetteManager.State.Running
                         val animationSet = FullAnimationSet.from(cache.animationSet)
                         val animation = cache.animations.firstOrNull()
                         when {
+                            isSelf && vmcRunning -> ModelController.Vmc(scene)
                             animationSet != null -> ModelController.LiveSwitched(scene, animationSet)
                             animation != null -> ModelController.Predefined(animation)
                             else -> ModelController.LiveUpdated(scene)

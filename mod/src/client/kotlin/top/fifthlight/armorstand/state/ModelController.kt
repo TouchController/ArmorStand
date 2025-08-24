@@ -9,6 +9,7 @@ import top.fifthlight.armorstand.config.ConfigHolder
 import top.fifthlight.armorstand.extension.internal.PlayerEntityRenderStateExtInternal
 import top.fifthlight.armorstand.ui.model.AnimationViewModel
 import top.fifthlight.armorstand.util.toRadian
+import top.fifthlight.armorstand.vmc.VmcMarionetteManager
 import top.fifthlight.blazerod.animation.AnimationItem
 import top.fifthlight.blazerod.animation.Timeline
 import top.fifthlight.blazerod.model.*
@@ -27,6 +28,10 @@ sealed class ModelController {
     ) {
         fun update(instance: ModelInstance, func: NodeTransform.Decomposed.() -> Unit) {
             instance.setTransformDecomposed(nodeIndex, TransformId.RELATIVE_ANIMATION, func)
+        }
+
+        fun updateAbsolute(instance: ModelInstance, func: NodeTransform.Decomposed.() -> Unit) {
+            instance.setTransformDecomposed(nodeIndex, TransformId.ABSOLUTE, func)
         }
     }
 
@@ -115,7 +120,7 @@ sealed class ModelController {
         private var blinkProgress: Float = 0f
 
         constructor(scene: RenderScene) : this(
-            center = scene.getBone(HumanoidTag.CENTER),
+            center = scene.getBone(HumanoidTag.HIPS),
             head = scene.getBone(HumanoidTag.HEAD),
             blinkExpression = scene.getExpression(Expression.Tag.BLINK),
         )
@@ -331,6 +336,38 @@ sealed class ModelController {
                 rotation.rotationYXZ(headYaw, headPitch, 0f)
             }
             blinkExpression?.apply(instance, blinkProgress)
+        }
+    }
+
+    class Vmc(
+        private val scene: RenderScene,
+    ) : ModelController() {
+        private val bones = mutableMapOf<HumanoidTag, Optional<JointItem>>()
+        private val expressions = mutableMapOf<Expression.Tag, Optional<ExpressionItem>>()
+
+        override fun apply(instance: ModelInstance) {
+            val state = VmcMarionetteManager.getState() ?: return
+            state.rootTransform?.let {
+                instance.setTransformDecomposed(scene.rootNode.nodeIndex, TransformId.ABSOLUTE) {
+                    translation.set(it.position)
+                    rotation.set(it.rotation)
+                }
+            }
+            state.boneTransforms.forEach { (bone, value) ->
+                val item = bones.getOrPut(bone) { Optional.ofNullable(scene.getBone(bone)) }
+                item.ifPresent {
+                    it.updateAbsolute(instance) {
+                        translation.set(value.position)
+                        rotation.set(value.rotation)
+                    }
+                }
+            }
+            state.blendShapes.forEach { (tag, value) ->
+                val item = expressions.getOrPut(tag) { Optional.ofNullable(scene.getExpression(tag)) }
+                item.ifPresent {
+                    it.apply(instance, value)
+                }
+            }
         }
     }
 }

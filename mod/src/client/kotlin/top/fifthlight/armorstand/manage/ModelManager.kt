@@ -5,8 +5,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import net.minecraft.util.Identifier
 import top.fifthlight.armorstand.ArmorStand
 import top.fifthlight.armorstand.ArmorStandClient
@@ -18,13 +16,16 @@ import top.fifthlight.blazerod.model.Texture
 import top.fifthlight.blazerod.util.ObjectPool
 import top.fifthlight.blazerod.util.Pool
 import top.fifthlight.blazerod.util.ThreadSafeObjectPool
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.*
+import java.nio.file.attribute.BasicFileAttributes
 import java.security.MessageDigest
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
+import java.time.Instant
 import kotlin.io.path.*
 import kotlin.time.measureTime
 
@@ -291,7 +292,7 @@ object ModelManager {
                     setString(1, path.normalize().toString())
                 }
             }
-            _lastScanTime.getAndUpdate { it?.let { Clock.System.now() } }
+            _lastScanTime.getAndUpdate { it?.let { Instant.now() } }
         }
     }
 
@@ -390,6 +391,8 @@ object ModelManager {
 
     private val _lastScanTime = MutableStateFlow<Instant?>(null)
     val lastScanTime = _lastScanTime.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun doScan() = withContext(Dispatchers.IO) {
         transaction {
             execute("DROP TABLE IF EXISTS scanned_file_sha256;")
@@ -559,8 +562,8 @@ object ModelManager {
         val time = measureTime {
             coroutineScope {
                 val processDispatcher = Dispatchers.IO.limitedParallelism(4)
-                modelDir.visitFileTree {
-                    onVisitFile { file, _ ->
+                Files.walkFileTree(modelDir, object : SimpleFileVisitor<Path>() {
+                    override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
                         if (file.extension in ModelLoaders.scanExtensions) {
                             launch {
                                 withContext(processDispatcher) {
@@ -572,9 +575,14 @@ object ModelManager {
                                 }
                             }
                         }
-                        FileVisitResult.CONTINUE
+                        return FileVisitResult.CONTINUE
                     }
-                }
+
+                    override fun visitFileFailed(file: Path, exc: IOException): FileVisitResult {
+                        LOGGER.info("Failed to visit path $file", exc)
+                        return FileVisitResult.CONTINUE
+                    }
+                })
             }
         }
 
@@ -613,7 +621,7 @@ object ModelManager {
             execute("DROP TABLE scanned_thumbnail_sha256")
         }
 
-        _lastScanTime.value = Clock.System.now()
+        _lastScanTime.value = Instant.now()
         LOGGER.info("Finish scanning models, took $time")
     }
 

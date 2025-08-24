@@ -751,8 +751,7 @@ class PmxLoader : ModelFileLoader {
                 val nameLocal = loadString(buffer)
                 val nameUniversal = loadString(buffer)
                 val expressionTag =
-                    Expression.Tag.entries.firstOrNull { it.pmxJapanese.equals(nameLocal, ignoreCase = true) }
-                        ?: Expression.Tag.entries.firstOrNull { it.pmxEnglish.equals(nameUniversal, ignoreCase = true) }
+                    Expression.Tag.fromPmxJapanese(nameLocal) ?: Expression.Tag.fromPmxEnglish(nameUniversal)
                 val panelType = buffer.get().toInt()
                     .let { type -> PmxMorphPanelType.entries.firstOrNull { it.value == type } }
                     ?: throw PmxLoadException("Unknown panel type")

@@ -1,5 +1,6 @@
 package top.fifthlight.fabazel.remapper
 
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.fabricmc.tinyremapper.NonClassCopyMode
 import net.fabricmc.tinyremapper.OutputConsumerPath
@@ -104,24 +105,26 @@ object TinyRemapperWorker {
                     .assumeArchive(true)
                     .build()
                     .use { output ->
-                    val nonClassFilesProcessors = buildList {
-                        if (removeJarInJar) {
-                            add(JarInJarRemover)
+                        val nonClassFilesProcessors = buildList {
+                            if (removeJarInJar) {
+                                add(JarInJarRemover)
+                            }
+                            addAll(NonClassCopyMode.FIX_META_INF.remappers)
+                            if (remapAccessWidener) {
+                                add(
+                                    AccessWidenerRemapper(
+                                        entry.remapper,
+                                        fromNamespace,
+                                        toNamespace
+                                    )
+                                )
+                            }
                         }
-                        addAll(NonClassCopyMode.FIX_META_INF.remappers)
-                        if (remapAccessWidener) {
-                            add(AccessWidenerRemapper(
-                                entry.remapper,
-                                fromNamespace,
-                                toNamespace
-                            ))
-                        }
+                        output.addNonClassFiles(input, remapper, nonClassFilesProcessors)
+                        remapper.readInputs(input)
+                        classpath.forEach { remapper.readClassPath(it) }
+                        remapper.apply(output)
                     }
-                    output.addNonClassFiles(input, remapper, nonClassFilesProcessors)
-                    remapper.readInputs(input)
-                    classpath.forEach { remapper.readClassPath(it) }
-                    remapper.apply(output)
-                }
             } finally {
                 remapper.finish()
             }

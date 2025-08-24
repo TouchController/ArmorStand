@@ -31,6 +31,7 @@ data class GlobalConfig(
     val thirdPersonDistanceScale: Float = 1f,
     val invertHeadDirection: Boolean = false,
     val renderer: RendererKey = RendererKey.VERTEX_SHADER_TRANSFORM,
+    val vmcUdpPort: Int = 9000,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(GlobalConfig::class.java)

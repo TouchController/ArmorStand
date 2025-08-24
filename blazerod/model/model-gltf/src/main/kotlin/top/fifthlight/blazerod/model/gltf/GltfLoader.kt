@@ -565,9 +565,7 @@ internal class GltfLoader(
             expressions = vrmV0.map { expression ->
                 Expression.Target(
                     name = expression.name,
-                    tag = Expression.Tag.entries.firstOrNull {
-                        it.vrm0Name.equals(expression.presetName, ignoreCase = true)
-                    },
+                    tag = expression.presetName?.let(Expression.Tag::fromVrm0Name),
                     bindings = expression.binds?.map { bind ->
                         Expression.Target.Binding.MeshMorphTarget(
                             meshId = MeshId(uuid, bind.mesh),
@@ -587,9 +585,7 @@ internal class GltfLoader(
                 Expression.Target(
                     name = name,
                     isBinary = value.isBinary ?: false,
-                    tag = Expression.Tag.entries.firstOrNull {
-                        it.vrm1Name.equals(name, ignoreCase = true)
-                    },
+                    tag = Expression.Tag.fromVrm1Name(name),
                     bindings = value.morphTargetBinds?.map { bind ->
                         Expression.Target.Binding.NodeMorphTarget(
                             nodeId = NodeId(uuid, bind.node),

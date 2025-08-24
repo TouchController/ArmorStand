@@ -1,5 +1,6 @@
 package top.fifthlight.fabazel.remapper
 
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import net.fabricmc.tinyremapper.OutputConsumerPath

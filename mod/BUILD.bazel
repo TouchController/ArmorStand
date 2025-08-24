@@ -132,6 +132,7 @@ kt_jvm_library(
         "//:kotlin_serialization",
         "//blazerod:blazerod_without_jij",
         "@maven//:com_h2database_h2",
+        "@maven//:com_illposed_osc_javaosc_core",
         "@maven//:io_github_llamalad7_mixinextras_fabric",
         "@maven//:net_fabricmc_fabric_language_kotlin",
         "@maven//:net_fabricmc_fabric_loader",
@@ -172,6 +173,7 @@ merge_jij(
     visibility = ["//visibility:public"],
     deps = {
         "@maven//:com_h2database_h2": "com_h2database_h2:2.3.232",
+        "@maven//:com_illposed_osc_javaosc_core": "javaosc-core:0.9",
         "//blazerod:blazerod_without_jij": "blazerod:=",
         "//blazerod/model/model-base": "blazerod-model-base:=",
         "//blazerod/model/model-formats": "blazerod-model-formats:=",
@@ -242,6 +244,7 @@ java_binary(
         "//game:remapped_iris",
         "//game:remapped_sodium",
         "@maven//:com_h2database_h2",
+        "@maven//:com_illposed_osc_javaosc_core",
         "@maven//:io_github_douira_glsl_transformer",
         "@maven//:io_github_llamalad7_mixinextras_fabric",
         "@maven//:net_fabricmc_fabric_language_kotlin",

@@ -90,6 +90,29 @@ sealed class Expression {
             vrm0Name = "LookRight",
             vrm1Name = "lookRight",
         );
+
+        companion object {
+            private val vrm0NameMap = entries
+                .mapNotNull { it.takeIf { it.vrm0Name != null } }
+                .associateBy { it.vrm0Name!!.lowercase() }
+
+            private val vrm1NameMap = entries
+                .mapNotNull { it.takeIf { it.vrm1Name != null } }
+                .associateBy { it.vrm1Name!!.lowercase() }
+
+            private val pmxJapaneseMap = entries
+                .mapNotNull { it.takeIf { it.pmxJapanese != null } }
+                .associateBy { it.pmxJapanese!!.lowercase() }
+
+            private val pmxEnglishMap = entries
+                .mapNotNull { it.takeIf { it.pmxEnglish != null } }
+                .associateBy { it.pmxEnglish!!.lowercase() }
+
+            fun fromVrm0Name(name: String): Tag? = vrm0NameMap[name.lowercase()]
+            fun fromVrm1Name(name: String): Tag? = vrm1NameMap[name.lowercase()]
+            fun fromPmxJapanese(name: String): Tag? = pmxJapaneseMap[name.lowercase()]
+            fun fromPmxEnglish(name: String): Tag? = pmxEnglishMap[name.lowercase()]
+        }
     }
 
     data class Target(
@@ -97,19 +120,19 @@ sealed class Expression {
         override val tag: Tag? = null,
         val isBinary: Boolean = false,
         val bindings: List<Binding>,
-    ): Expression() {
+    ) : Expression() {
         sealed class Binding {
             data class NodeMorphTarget(
                 val nodeId: NodeId,
                 val index: Int,
                 val weight: Float,
-            ): Binding()
+            ) : Binding()
 
             data class MeshMorphTarget(
                 val meshId: MeshId,
                 val index: Int,
                 val weight: Float,
-            ): Binding()
+            ) : Binding()
         }
     }
 
@@ -117,7 +140,7 @@ sealed class Expression {
         override val name: String? = null,
         override val tag: Tag? = null,
         val targets: List<TargetItem>,
-    ): Expression() {
+    ) : Expression() {
         data class TargetItem(
             val target: Target,
             val influence: Float,

@@ -60,20 +60,21 @@ maven.install(
         "net.fabricmc:fabric-loader:0.16.14",
         "com.terraformersmc:modmenu:15.0.0-beta.3",
         "net.fabricmc.fabric-api:fabric-api:0.129.0+1.21.8",
-        "net.fabricmc:fabric-language-kotlin:1.13.1+kotlin.2.1.10",
+        "net.fabricmc:fabric-language-kotlin:1.11.0+kotlin.2.0.0",
         "net.fabricmc:sponge-mixin:0.15.4+mixin.0.8.7",
         "io.github.llamalad7:mixinextras-fabric:0.4.1",
         "eu.pb4:placeholder-api:2.6.3+1.21.5",
 
         # regular dependencies
         "org.joml:joml:1.10.8",
-        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",
+        "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3",
         "it.unimi.dsi:fastutil:8.5.15",
         "org.jetbrains:annotations:26.0.2",
         "com.h2database:h2:2.3.232",
         "org.antlr:antlr4-runtime:4.13.1",
         "io.github.douira:glsl-transformer:2.0.1",
         "org.anarres:jcpp:1.4.14",
+        "com.illposed.osc:javaosc-core:0.9",
 
         # test dependencies
         "org.jetbrains.kotlin:kotlin-test-junit5:2.1.10",

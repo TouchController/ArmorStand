@@ -242,6 +242,10 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
         currentClient.setScreen(RendererSelectScreen(this))
     }.build()
 
+    private val vmcButton = ButtonWidget.builder(Text.translatable("armorstand.config.vmc")) {
+        currentClient.setScreen(VmcConfigScreen(this))
+    }.build()
+
     private val previewTab = LayoutScreenTab(
         title = Text.translatable("armorstand.config.tab.preview"),
         padding = Insets(8),
@@ -292,6 +296,7 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
                 ).apply {
                     listOf(
                         rendererSelectButton,
+                        vmcButton,
                         sendModelDataButton,
                         showOtherPlayersButton,
                         hidePlayerShadowButton,

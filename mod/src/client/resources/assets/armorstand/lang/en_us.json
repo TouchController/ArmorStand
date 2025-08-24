@@ -8,6 +8,7 @@
   "armorstand.config.invert_head_direction": "Invert head direction",
   "armorstand.config.open_model_directory": "Open Model Folder",
   "armorstand.config.renderer_select": "Select renderer",
+  "armorstand.config.vmc": "OSC/VMC",
   "armorstand.config.sort.name.asc": "Sort: A-Z",
   "armorstand.config.sort.name.desc": "Sort: Z-A",
   "armorstand.config.sort.last_changed.asc": "Sort: First changed",
@@ -93,5 +94,12 @@
   "armorstand.renderer.speed.fast": "Fast",
   "armorstand.renderer.shader_compatible": "Shader compatible",
   "armorstand.renderer.is_available": "Available",
-  "armorstand.renderer.is_current": "Current"
+  "armorstand.renderer.is_current": "Current",
+  "armorstand.vmc": "OSC/VMC",
+  "armorstand.vmc.running": "Running, port: %s",
+  "armorstand.vmc.stopped": "Not running",
+  "armorstand.vmc.failed": "Start failed: %s",
+  "armorstand.vmc.start": "Start",
+  "armorstand.vmc.stop": "Stop",
+  "armorstand.vmc.port": "Port:"
 }
