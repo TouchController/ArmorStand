@@ -1,9 +1,9 @@
 package top.fifthlight.blazerod.physics
 
-import kotlinx.io.IOException
 import net.fabricmc.loader.api.FabricLoader
 import org.slf4j.LoggerFactory
 import top.fifthlight.blazerod.BlazeRod
+import java.io.IOException
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
