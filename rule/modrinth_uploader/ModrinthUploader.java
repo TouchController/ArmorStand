@@ -3,6 +3,8 @@ package top.fifthlight.fabazel.modrinthuploader;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.mizosoft.methanol.MediaType;
+import com.github.mizosoft.methanol.MoreBodyPublishers;
 import com.github.mizosoft.methanol.MultipartBodyPublisher;
 import de.swiesend.secretservice.simple.SimpleCollection;
 import org.slf4j.LoggerFactory;
@@ -113,7 +115,7 @@ public class ModrinthUploader {
             var mapper = new ObjectMapper();
             var body = MultipartBodyPublisher.newBuilder()
                     .textPart("data", mapper.writeValueAsString(uploadData))
-                    .filePart("primary_file", Path.of(filePath))
+                    .formPart("primary_file", fileName, MoreBodyPublishers.ofMediaType(HttpRequest.BodyPublishers.ofFile(Path.of(filePath)), MediaType.APPLICATION_OCTET_STREAM))
                     .build();
             var request = HttpRequest.newBuilder(URI.create("https://api.modrinth.com/v2/version"))
                     .header("Authorization", token)
