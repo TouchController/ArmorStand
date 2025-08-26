@@ -24,6 +24,24 @@ alias(
     actual = "InterpolationTest.glb",
 )
 
+alias(
+    name = "alicia_solid_mmd",
+    visibility = ["//visibility:public"],
+    actual = "Alicia"
+)
+
+alias(
+    name = "alicia_solid_pmx",
+    visibility = ["//visibility:public"],
+    actual = "Alicia/Alicia_solid.pmx",
+)
+
+alias(
+    name = "alicia_blade_pmx",
+    visibility = ["//visibility:public"],
+    actual = "Alicia/Alicia_blade.pmx",
+)
+
 java_library(
     name = "default_models",
     resource_strip_prefix = "blazerod/model/example-models",
