@@ -54,45 +54,6 @@ modrinth_dependency = rule(
     },
 )
 
-_upload_script_template = """
-#!/bin/bash
-
-# A wrapper script to call the Java side modrinth uploader.
-# Full of nasty stuff here.
-
-# --- begin runfiles.bash initialization v3 ---
-# Copy-pasted from the Bazel Bash runfiles library v3.
-set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
-source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
- source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
- source "$0.runfiles/$f" 2>/dev/null || \
- source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
- source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
- { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
-# --- end runfiles.bash initialization v3 ---
-
-workspace_name='%s'
-changelog_path="$(rlocation "$workspace_name"/'%s')"
-file_path="$(rlocation "$workspace_name"/'%s')"
-exec_path='%s'
-
-TEMP_FILE="$(mktemp)"
-trap 'rm -f "$TEMP_FILE"' EXIT
-cat >"$TEMP_FILE" <<'MODRINTH_UPLOAD_ARG_FILE'
-%s
-MODRINTH_UPLOAD_ARG_FILE
-readarray -t args <$TEMP_FILE
-rm "$TEMP_FILE"
-
-if [ -n "$changelog_path" ]
-then
-    args=("--changelog" "$changelog_path" "${args[@]}")
-fi
-args=("${args[@]}" "$file_path")
-
-JAVA_RUNFILES="$(realpath ..)" "$(rlocation "$workspace_name"/"$exec_path")" "${args[@]}"
-"""
-
 def _upload_modrinth_impl(ctx):
     input_file = ctx.file.file
     changelog_file = ctx.file.changelog
@@ -132,15 +93,16 @@ def _upload_modrinth_impl(ctx):
         ctx.attr._modrinth_uploader_binary[DefaultInfo].default_runfiles,
     )
 
-    ctx.actions.write(
+    ctx.actions.expand_template(
         output = ctx.outputs.executable,
-        content = _upload_script_template % (
-            ctx.workspace_name,
-            changelog_file.short_path if changelog_file else "",
-            input_file.short_path,
-            ctx.executable._modrinth_uploader_binary.short_path,
-            "\n".join([arg.replace("'", "\\'") for arg in args]),
-        ),
+        template = ctx.file._modrinth_uploader_wrapper,
+        substitutions = {
+            "{WORKSPACE_NAME}": ctx.workspace_name,
+            "{CHANGELOG_PATH}": changelog_file.short_path if changelog_file else "",
+            "{FILE_PATH}": input_file.short_path,
+            "{EXEC_PATH}": ctx.executable._modrinth_uploader_binary.short_path,
+            "{ARGS}": "\n".join([arg.replace("'", "\\'") for arg in args]),
+        },
         is_executable = True,
     )
 
@@ -203,6 +165,10 @@ upload_modrinth = rule(
             default = "//rule/modrinth_uploader",
             executable = True,
             cfg = "exec",
+        ),
+        "_modrinth_uploader_wrapper": attr.label(
+            default = "//rule/modrinth_uploader:modrinth_uploader_wrapper",
+            allow_single_file = [".bash"],
         ),
         "_rlocation_library": attr.label(
             default = "@bazel_tools//tools/bash/runfiles",

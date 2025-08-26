@@ -138,6 +138,11 @@ def _minecraft_assets_repo_impl(rctx):
         build_content.append("    ],")
         build_content.append(")")
 
+    build_content.append("alias(")
+    build_content.append('    name = "assets",')
+    build_content.append('    actual = ".",')
+    build_content.append(")")
+
     rctx.file(
         "BUILD.bazel",
         content = "\n".join(build_content),

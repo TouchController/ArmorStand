@@ -1,5 +1,11 @@
 load("@rules_java//java:defs.bzl", "java_binary")
 
+alias(
+    name = "modrinth_uploader_wrapper",
+    visibility = ["//visibility:public"],
+    actual = "modrinth_uploader_wrapper.bash",
+)
+
 java_binary(
     name = "modrinth_token_saver",
     visibility = ["//visibility:public"],
