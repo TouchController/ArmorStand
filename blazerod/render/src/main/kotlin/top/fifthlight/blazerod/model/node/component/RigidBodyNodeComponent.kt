@@ -10,6 +10,7 @@ import org.joml.Matrix4f
 import org.joml.Vector3f
 import top.fifthlight.blazerod.model.ModelInstance
 import top.fifthlight.blazerod.model.RigidBody
+import top.fifthlight.blazerod.model.TransformId
 import top.fifthlight.blazerod.model.node.RenderNode
 import top.fifthlight.blazerod.model.node.UpdatePhase
 import top.fifthlight.blazerod.model.node.getWorldTransform
@@ -160,16 +161,16 @@ class RigidBodyNodeComponent(
                     }
 
                     RigidBody.PhysicsMode.PHYSICS -> {
-                        /*val nodeTransformMatrix = rigidBody.getTransform(jmeNodeTransform)
+                        val nodeTransformMatrix = rigidBody.getTransform(jmeNodeTransform)
                             .toTransformMatrix(jmeNodeTransformMatrix)
                             .get(nodeTransformMatrix)
                             .mul(inverseOffsetMatrix)
                         val inverseNodeWorldMatrix = instance.getWorldTransform(node)
                             .invert(inverseNodeWorldMatrix)
-                        val deltaTransformMatrix = nodeTransformMatrix.mul(inverseNodeWorldMatrix)
+                        val deltaTransformMatrix = nodeTransformMatrix.mulLocal(inverseNodeWorldMatrix)
                         instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
                             matrix.mul(deltaTransformMatrix)
-                        }*/
+                        }
                     }
 
                     RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {

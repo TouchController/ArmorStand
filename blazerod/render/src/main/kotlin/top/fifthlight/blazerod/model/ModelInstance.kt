@@ -5,7 +5,6 @@ import com.jme3.bullet.collision.shapes.PlaneCollisionShape
 import com.jme3.bullet.joints.SixDofSpringJoint
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Plane
-import com.jme3.math.Transform
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.util.Identifier
 import org.joml.Matrix4f
@@ -48,6 +47,7 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
 
     internal class PhysicsData(scene: RenderScene) : AutoCloseable {
         private val rootNode = scene.rootNode
+        private val rigidBodyComponents = scene.rigidBodyComponents
         private val physicsJoints = scene.physicsJoints
 
         val world = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT).apply {
@@ -68,31 +68,45 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
             val rootNodeTransform = Matrix4f().apply {
                 rootNode.absoluteTransform?.matrix?.get(this)
             }
-            val transformMatrix = rootNodeTransform.translate(jointData.position, Matrix4f())
-                .rotate(Quaternionf().rotationZYX(jointData.rotation))
-                .mul(rootNodeTransform)
+            val jointPositionWorld = Vector3f().let {
+                rootNodeTransform.transformPosition(jointData.position, it)
+            }.toJme()
+            val jointRotationWorld = Quaternionf()
+                .let { rootNodeTransform.getUnnormalizedRotation(it) }
+                .rotationZYX(jointData.rotation)
+                .toJme()
 
             val rigidBodyA = getRigidBody(jointData.rigidBodyAIndex)
+            val rigidBodyPositionWorldA = rigidBodyA.getPhysicsLocation(null)
+            val rigidBodyRotationWorldA = rigidBodyA.getPhysicsRotation(null)
+
             val rigidBodyB = getRigidBody(jointData.rigidBodyBIndex)
-            val invA = rigidBodyA.getTransform(Transform())
-                .toTransformMatrix()
-                .get(Matrix4f())
-                .invert()
-                .mul(transformMatrix)
-            val invB = rigidBodyB.getTransform(Transform())
-                .toTransformMatrix()
-                .get(Matrix4f())
-                .invert()
-                .mul(transformMatrix)
+            val rigidBodyPositionWorldB = rigidBodyB.getPhysicsLocation(null)
+            val rigidBodyRotationWorldB = rigidBodyB.getPhysicsRotation(null)
+
+            val pivotInA = rigidBodyRotationWorldA.inverse()
+                .toRotationMatrix()
+                .mult(jointPositionWorld.subtract(rigidBodyPositionWorldA), null)
+            val rotInA = rigidBodyRotationWorldA.inverse()
+                .mult(jointRotationWorld)
+                .toRotationMatrix()
+
+            val pivotInB = rigidBodyRotationWorldB.inverse()
+                .toRotationMatrix()
+                .mult(jointPositionWorld.subtract(rigidBodyPositionWorldB), null)
+            val rotInB = rigidBodyRotationWorldB.inverse()
+                .mult(jointRotationWorld)
+                .toRotationMatrix()
+
             val joint = when (jointData.type) {
                 PhysicalJoint.JointType.SPRING_6DOF -> {
                     SixDofSpringJoint(
                         rigidBodyA,
                         rigidBodyB,
-                        invA.getTranslation(Vector3f()).toJme(),
-                        invB.getTranslation(Vector3f()).toJme(),
-                        invA.getUnnormalizedRotation(Quaternionf()).toJme().toRotationMatrix(JmeMatrix3f()),
-                        invB.getUnnormalizedRotation(Quaternionf()).toJme().toRotationMatrix(JmeMatrix3f()),
+                        pivotInA,
+                        pivotInB,
+                        rotInA,
+                        rotInB,
                         true,
                     )
                 }
@@ -101,7 +115,32 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
             joint.setLinearUpperLimit(jointData.positionMax.toJme())
             joint.setAngularLowerLimit(jointData.rotationMin.toJme())
             joint.setAngularUpperLimit(jointData.rotationMax.toJme())
-            // TODO spring
+            if (jointData.positionSpring.x() != 0f) {
+                joint.enableSpring(0, true)
+                joint.setStiffness(0, jointData.positionSpring.x())
+            }
+            if (jointData.positionSpring.y() != 0f) {
+                joint.enableSpring(1, true)
+                joint.setStiffness(1, jointData.positionSpring.y())
+            }
+            if (jointData.positionSpring.z() != 0f) {
+                joint.enableSpring(2, true)
+                joint.setStiffness(2, jointData.positionSpring.z())
+            }
+            if (jointData.rotationSpring.x() != 0f) {
+                joint.enableSpring(3, true)
+                joint.setStiffness(3, jointData.rotationSpring.x())
+            }
+            if (jointData.rotationSpring.y() != 0f) {
+                joint.enableSpring(4, true)
+                joint.setStiffness(4, jointData.rotationSpring.y())
+            }
+            if (jointData.rotationSpring.z() != 0f) {
+                joint.enableSpring(5, true)
+                joint.setStiffness(5, jointData.rotationSpring.z())
+            }
+
+            world.addJoint(joint)
         }
 
         override fun close() {

@@ -10,4 +10,4 @@ internal fun Matrix4fc.rotateYXZ(angles: Vector3fc, dst: Matrix4f): Matrix4f =
 
 internal fun Matrix4f.rotateYXZ(angles: Vector3fc) = rotateYXZ(angles, this)
 
-internal fun Quaternionf.rotationZYX(angles: Vector3fc) = rotationYXZ(angles.y(), angles.x(), angles.z())
+internal fun Quaternionf.rotationZYX(angles: Vector3fc) = rotationZYX(angles.z(), angles.y(), angles.x())
