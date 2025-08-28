@@ -1,0 +1,50 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+alias(
+    name = "example-models",
+    visibility = ["//visibility:public"],
+    actual = ".",
+)
+
+alias(
+    name = "alicia_solid_vrm",
+    visibility = ["//visibility:public"],
+    actual = "AliciaSolid.vrm",
+)
+
+alias(
+    name = "armorstand_vrm",
+    visibility = ["//visibility:public"],
+    actual = "armorstand.vrm",
+)
+
+alias(
+    name = "interpolation_test_glb",
+    visibility = ["//visibility:public"],
+    actual = "InterpolationTest.glb",
+)
+
+alias(
+    name = "alicia_solid_mmd",
+    visibility = ["//visibility:public"],
+    actual = "Alicia"
+)
+
+alias(
+    name = "alicia_solid_pmx",
+    visibility = ["//visibility:public"],
+    actual = "Alicia/Alicia_solid.pmx",
+)
+
+alias(
+    name = "alicia_blade_pmx",
+    visibility = ["//visibility:public"],
+    actual = "Alicia/Alicia_blade.pmx",
+)
+
+java_library(
+    name = "default_models",
+    resource_strip_prefix = "blazerod/model/example-models",
+    resources = ["armorstand.vrm"],
+    visibility = ["//visibility:public"],
+)

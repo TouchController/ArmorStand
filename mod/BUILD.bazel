@@ -1,7 +1,8 @@
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
-load("//:properties.bzl", "game_version", "mod_version")
+load("//:properties.bzl", "game_version", "mod_version", "fabric_api_version_modrinth", "fabric_language_kotlin_version_modrinth")
+load("@//rule:upload_modrinth.bzl", "modrinth_dependency", "upload_modrinth")
 load("//rule:apply_access_widener.bzl", "apply_access_widener")
 load("//rule:decompile_jar.bzl", "decompile_jar")
 load("//rule:extract_access_widener.bzl", "extract_access_widener")
@@ -119,7 +120,7 @@ kt_jvm_library(
         allow_empty = True,
     ),
     module_name = "top_fifthlight_armorstand",
-    resource_jars = ["//blazerod/model/model-gltf:default_models"],
+    resource_jars = ["//blazerod/model/example-models:default_models"],
     resource_strip_prefix = "mod/src/client/resources",
     resources = glob(
         include = ["src/client/resources/**"],
@@ -208,8 +209,9 @@ java_binary(
     data = [
         ":remap_classpath",
         "@minecraft_assets//:assets_%s" % game_version,
-        ":makeup_ultra_fast",
-        "//blazerod/model/model-gltf:test_models",
+        "@minecraft_assets//:assets",
+        "@makeup_ultra_fast//file",
+        "//blazerod/model/example-models:example-models",
     ],
     env = {
         "LANG": "en_US.UTF8",
@@ -217,17 +219,16 @@ java_binary(
     jvm_flags = [
         "-Dkotlinx.coroutines.debug=on",
         "-Dfabric.development=true",
-        "-Dfabric.log.disableAnsi=false",
-        "-Dfabric.remapClasspathFile=../../remap_classpath.txt",
+        "-Dfabric.remapClasspathFile=$(rlocationpath :remap_classpath)",
         "-Ddev.launch.version=%s" % game_version,
         "-Ddev.launch.type=client",
-        "-Ddev.launch.assetsPath=../+minecraft+minecraft_assets",
+        "-Ddev.launch.assetsPath=$(rlocationpath @minecraft_assets//:assets)",
         "-Ddev.launch.mainClass=net.fabricmc.loader.impl.launch.knot.KnotClient",
-        "-Ddev.launch.copyFiles=../../MakeUp-UltraFast-9.2.zip:shaderpacks/MakeUp-UltraFast-9.2.zip",
+        "-Ddev.launch.copyFiles=$(rlocationpath @makeup_ultra_fast//file):shaderpacks/MakeUp-UltraFast-9.2.zip,$(rlocationpath //blazerod/model/example-models:example-models):models",
+        "-Ddev.launch.expandRunfileProperties=fabric.remapClasspathFile",
         "-Dblazerod.debug=true",
         "-Dblazerod.debug.gui=true",
         "-Dblazerod.no_physics=false",
-        "-Darmorstand.modelDir=blazerod/model/model-gltf/src/test/resources",
         "-Darmorstand.debug=true",
         "-Darmorstand.debug.bone=true",
         "-Darmorstand.debug.gui=false",
@@ -263,11 +264,11 @@ java_binary(
     data = [":remap_classpath"],
     jvm_flags = [
         "-Dfabric.development=true",
-        "-Dfabric.log.disableAnsi=false",
-        "-Dfabric.remapClasspathFile=remap_classpath.txt",
+        "-Dfabric.remapClasspathFile=$(rlocationpath :remap_classpath)",
         "-Ddev.launch.version=%s" % game_version,
         "-Ddev.launch.type=server",
         "-Ddev.launch.mainClass=net.fabricmc.loader.impl.launch.knot.KnotServer",
+        "-Ddev.launch.expandRunfileProperties=fabric.remapClasspathFile",
         "-Xmx4G",
     ],
     main_class = "top.fifthlight.fabazel.devlaunchwrapper.DevLaunchWrapper",
@@ -283,4 +284,44 @@ java_binary(
         "@maven//:net_fabricmc_sponge_mixin",
         "@maven//:net_fabricmc_yarn_v2",
     ],
+)
+
+
+modrinth_dependency(
+    name = "fabric_api",
+    project_id = "P7dR8mSH",
+    version_id = fabric_api_version_modrinth,
+    dependency_type = "required",
+)
+
+modrinth_dependency(
+    name = "fabric_language_kotlin",
+    project_id = "Ha28R6CL",
+    version_id = fabric_language_kotlin_version_modrinth,
+    dependency_type = "required",
+)
+
+modrinth_dependency(
+    name = "modmenu",
+    project_id = "mOgUt4GM",
+    dependency_type = "optional",
+)
+
+upload_modrinth(
+    name = "upload_modrinth",
+    token_secret_id = "modrinth_token",
+    project_id = "tLPuDSOw",
+    version_name = mod_version,
+    version_id = mod_version,
+    version_type = "alpha",
+    changelog = "//:update_log",
+    game_versions = [game_version],
+    loaders = ["fabric"],
+    deps = [
+        ":fabric_api",
+        ":fabric_language_kotlin",
+        ":modmenu",
+    ],
+    file = ":mod",
+    file_name = "ArmorStand-%s.jar" % mod_version,
 )

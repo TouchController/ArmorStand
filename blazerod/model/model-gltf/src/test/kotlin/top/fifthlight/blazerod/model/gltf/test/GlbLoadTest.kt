@@ -2,23 +2,21 @@ package top.fifthlight.blazerod.model.gltf.test
 
 import top.fifthlight.blazerod.model.ModelFileLoader
 import top.fifthlight.blazerod.model.gltf.GltfBinaryLoader
-import java.nio.file.FileSystems
-import kotlin.io.path.toPath
+import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.measureTime
 
 class GlbLoadTest {
+    private fun loadFilePath(attr: String): Path {
+        val property = System.getProperty(attr + "_path")
+        return Path.of(RunfileDummy.getRunfiles().rlocation(property))
+    }
+
     @Test
     fun testAlicia() {
-        val uri = this.javaClass.classLoader.getResource("AliciaSolid.vrm")!!.toURI()
-        if (uri.scheme == "jar") {
-            runCatching {
-                FileSystems.newFileSystem(uri, mapOf("create" to "true"))
-            }
-        }
-        val file = uri.toPath()
+        val file = loadFilePath("alicia_solid")
         measureTime {
             GltfBinaryLoader().load(file)
         }.let { duration ->
@@ -28,13 +26,7 @@ class GlbLoadTest {
 
     @Test
     fun testArmorStand() {
-        val uri = this.javaClass.classLoader.getResource("armorstand.vrm")!!.toURI()
-        if (uri.scheme == "jar") {
-            runCatching {
-                FileSystems.newFileSystem(uri, mapOf("create" to "true"))
-            }
-        }
-        val file = uri.toPath()
+        val file = loadFilePath("armorstand")
         measureTime {
             GltfBinaryLoader().load(file)
         }.let { duration ->
@@ -44,13 +36,7 @@ class GlbLoadTest {
 
     @Test
     fun testVrmThumbnail() {
-        val uri = this.javaClass.classLoader.getResource("AliciaSolid.vrm")!!.toURI()
-        if (uri.scheme == "jar") {
-            runCatching {
-                FileSystems.newFileSystem(uri, mapOf("create" to "true"))
-            }
-        }
-        val file = uri.toPath()
+        val file = loadFilePath("alicia_solid")
         measureTime {
             val result = GltfBinaryLoader().getThumbnail(file)
             assertIs<ModelFileLoader.ThumbnailResult.Embed>(result)
@@ -63,13 +49,7 @@ class GlbLoadTest {
 
     @Test
     fun testInterpolation() {
-        val uri = this.javaClass.classLoader.getResource("InterpolationTest.glb")!!.toURI()
-        if (uri.scheme == "jar") {
-            runCatching {
-                FileSystems.newFileSystem(uri, mapOf("create" to "true"))
-            }
-        }
-        val file = uri.toPath()
+        val file = loadFilePath("interpolation_test")
         measureTime {
             GltfBinaryLoader().load(file)
         }.let { duration ->

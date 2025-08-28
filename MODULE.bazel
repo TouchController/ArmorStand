@@ -1,18 +1,19 @@
 "ArmorStand module file"
 
+# Remember to keep sync with properties.bzl
+game_version = "1.21.8"
+fabric_api_version = "0.129.0+1.21.8"
+fabric_language_kotlin_version = "1.11.0+kotlin.2.0.0"
+
 module(
     name = "armorstand",
     version = "0.0.1+dev",
 )
 
-game_version = "1.21.8"
-
 bazel_dep(name = "rules_java", version = "8.12.0")
 bazel_dep(name = "rules_kotlin", version = "2.1.4")
 bazel_dep(name = "rules_jvm_external", version = "6.7")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
-bazel_dep(name = "aspect_rules_js", version = "2.3.7")
-bazel_dep(name = "rules_nodejs", version = "6.4.0")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_android_ndk", version = "0.1.3")
 bazel_dep(name = "rules_jni", version = "0.11.0")
@@ -55,12 +56,16 @@ maven.install(
         "org.ow2.asm:asm:9.8",
         "org.ow2.asm:asm-commons:9.8",
         "org.vineflower:vineflower:1.11.1",
+        "com.fasterxml.jackson.core:jackson-databind:2.9.6",
+        "de.swiesend:secret-service:2.0.1-alpha",
+        "ch.qos.logback:logback-classic:1.5.18",
+        "com.github.mizosoft.methanol:methanol:1.8.3",
 
         # mod dependencies
         "net.fabricmc:fabric-loader:0.16.14",
         "com.terraformersmc:modmenu:15.0.0-beta.3",
-        "net.fabricmc.fabric-api:fabric-api:0.129.0+1.21.8",
-        "net.fabricmc:fabric-language-kotlin:1.11.0+kotlin.2.0.0",
+        "net.fabricmc.fabric-api:fabric-api:%s" % fabric_api_version,
+        "net.fabricmc:fabric-language-kotlin:%s" % fabric_language_kotlin_version,
         "net.fabricmc:sponge-mixin:0.15.4+mixin.0.8.7",
         "io.github.llamalad7:mixinextras-fabric:0.4.1",
         "eu.pb4:placeholder-api:2.6.3+1.21.5",

@@ -1,5 +1,8 @@
 load("@rules_kotlin//kotlin:core.bzl", "define_kt_toolchain", "kt_compiler_plugin")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("@//rule:extract_update_log.bzl", "extract_update_log")
+load("//:properties.bzl", "mod_version")
+load("@rules_java//java:defs.bzl", "java_plugin")
 
 kt_compiler_plugin(
     name = "serialization_plugin",
@@ -26,6 +29,16 @@ define_kt_toolchain(
     jvm_target = "21",
     api_version = "2.0",
     language_version = "2.0",
+)
+
+extract_update_log(
+    name = "update_log",
+    visibility = ["//visibility:public"],
+    version = mod_version,
+    inputs = [
+        "NEWS-zh.md",
+        "NEWS-en.md",
+    ],
 )
 
 platform(

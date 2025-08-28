@@ -87,6 +87,7 @@ java_binary(
     data = [
         ":remap_classpath",
         "@minecraft_assets//:assets_%s" % game_version,
+        "@minecraft_assets//:assets",
     ],
     runtime_deps = [
         "//rule/dev_launch_wrapper",
@@ -104,12 +105,12 @@ java_binary(
     main_class = "top.fifthlight.fabazel.devlaunchwrapper.DevLaunchWrapper",
     jvm_flags = [
         "-Dfabric.development=true",
-        "-Dfabric.log.disableAnsi=false",
-        "-Dfabric.remapClasspathFile=../../remap_classpath.txt",
+        "-Dfabric.remapClasspathFile=$(rlocationpath :remap_classpath)",
         "-Ddev.launch.version=%s" % game_version,
         "-Ddev.launch.type=client",
-        "-Ddev.launch.assetsPath=../+minecraft+minecraft_assets",
+        "-Ddev.launch.assetsPath=$(rlocationpath @minecraft_assets//:assets)",
         "-Ddev.launch.mainClass=net.fabricmc.loader.impl.launch.knot.KnotClient",
+        "-Ddev.launch.expandRunfileProperties=fabric.remapClasspathFile",
         "-Dblazerod.debug=true",
         "-Dblazerod.debug.gui=true",
         "-Xmx4G",

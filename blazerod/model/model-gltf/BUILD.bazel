@@ -3,13 +3,6 @@ load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
 load("//:properties.bzl", "blazerod_version")
 load("//rule:fabric_mod_json_jar.bzl", "fabric_mod_json_jar")
 
-java_library(
-    name = "default_models",
-    resource_strip_prefix = "blazerod/model/model-gltf/src/test/resources",
-    resources = ["src/test/resources/armorstand.vrm"],
-    visibility = ["//visibility:public"],
-)
-
 fabric_mod_json_jar(
     name = "fabric_mod_json",
     src = "src/main/resources/fabric.mod.json",
@@ -38,19 +31,27 @@ kt_jvm_library(
     ],
 )
 
-filegroup(
-    name = "test_models",
-    data = [
-        "src/test/resources/AliciaSolid.vrm",
-        "src/test/resources/InterpolationTest.glb",
-        "src/test/resources/armorstand.vrm",
+java_library(
+    name = "runfile_dummy_lib",
+    srcs = [
+        "src/test/java/top/fifthlight/blazerod/model/gltf/test/RunfileDummy.java"
     ],
-    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_tools//tools/java/runfiles",
+    ],
 )
 
 kt_jvm_test(
     name = "glb_load_test",
-    srcs = ["src/test/kotlin/top/fifthlight/blazerod/model/gltf/test/GlbLoadTest.kt"],
+    srcs = glob(
+        include = [
+            "src/test/kotlin/**/*.kt",
+            "src/test/java/**/*.java",
+        ],
+        exclude = [
+            "src/test/java/top/fifthlight/blazerod/model/gltf/test/RunfileDummy.java"
+        ],
+    ),
     args = [
         "execute",
         "--select-class",
@@ -58,11 +59,15 @@ kt_jvm_test(
     ],
     associates = [":model-gltf"],
     main_class = "org.junit.platform.console.ConsoleLauncher",
-    resource_strip_prefix = "blazerod/model/model-gltf/src/test/resources",
-    resources = [
-        "src/test/resources/AliciaSolid.vrm",
-        "src/test/resources/InterpolationTest.glb",
-        "src/test/resources/armorstand.vrm",
+    jvm_flags = [
+        "-Dalicia_solid_path=$(rlocationpath //blazerod/model/example-models:alicia_solid_vrm)",
+        "-Darmorstand_path=$(rlocationpath //blazerod/model/example-models:armorstand_vrm)",
+        "-Dinterpolation_test_path=$(rlocationpath //blazerod/model/example-models:interpolation_test_glb)",
+    ],
+    data = [
+        "//blazerod/model/example-models:alicia_solid_vrm",
+        "//blazerod/model/example-models:armorstand_vrm",
+        "//blazerod/model/example-models:interpolation_test_glb",
     ],
     runtime_deps = [
         "@maven//:org_junit_jupiter_junit_jupiter_engine",
@@ -71,5 +76,6 @@ kt_jvm_test(
     deps = [
         "@maven//:org_jetbrains_kotlin_kotlin_test_junit5",
         "@maven//:org_junit_jupiter_junit_jupiter_api",
+        ":runfile_dummy_lib",
     ],
 )

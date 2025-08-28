@@ -3,5 +3,6 @@ load("@rules_java//java:defs.bzl", "java_library")
 java_library(
     name = "dev_launch_wrapper",
     srcs = ["DevLaunchWrapper.java"],
+    deps = ["@bazel_tools//tools/java/runfiles"],
     visibility = ["//visibility:public"],
 )

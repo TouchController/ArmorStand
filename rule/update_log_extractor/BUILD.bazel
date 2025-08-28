@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+
+java_binary(
+    name = "update_log_extractor",
+    srcs = ["UpdateLogExtractor.java"],
+    main_class = "top.fifthlight.armorstand.updatelogextractor.UpdateLogExtractor",
+    visibility = ["//visibility:public"],
+)
