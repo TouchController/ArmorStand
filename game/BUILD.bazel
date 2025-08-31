@@ -63,6 +63,43 @@ remap_jar(
     to_namespace = "named",
 )
 
+merge_mapping_input(
+    name = "mojang_input",
+    file = "@minecraft//:%s_client_mapping" % game_version,
+    format = "proguard",
+    source_namespace = "official",
+    namespace_mappings = {
+        "source": "mojang",
+        "target": "official",
+    }
+)
+
+merge_mapping_input(
+    name = "neoforge_yarn_fix",
+    file = ":neoforge_yarn_fix.tiny",
+    format = "tinyv2",
+    source_namespace = "official",
+)
+
+merge_mapping(
+    name = "merged_mojang_mapping",
+    inputs = [
+        ":mojang_input",
+        ":merged_mapping",
+        ":neoforge_yarn_fix",
+    ],
+    output = "merged_mojang.tiny",
+    output_source_namespace = "official",
+)
+
+remap_jar(
+    name = "remapped_neoforge_named",
+    from_namespace = "mojang",
+    inputs = ["@neoforge//:compiled_with_neoforge_with_deps"],
+    mapping = ":merged_mojang_mapping",
+    to_namespace = "named",
+)
+
 extract_jar(
     name = "server_jar_file",
     entry_path = "META-INF/versions/%s/server-%s.jar" % (game_version, game_version),

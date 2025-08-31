@@ -137,6 +137,10 @@ def _neoforge_repo_impl(rctx):
         '    name = "compiled_with_neoforge_with_deps",',
         '    jars = [":compiled_with_neoforge"],',
         '    srcjar = ":sources_with_neoforge",',
+        '    deps = [',
+        '        ":decompile_libraries",',
+        '        %s' % neoforge_libraries,
+        '    ],',
         ')',
     ]
 
