@@ -44,7 +44,8 @@ java_library(
     deps = [
         ":remapped_client_access_widened_named",
         ":remapped_deps",
-        "//blazerod/model/model-formats:model-formats",
+        "//blazerod/model/model-base",
+        "//blazerod/model/model-formats",
         "//blazerod/render:render_unmapped",
         "@maven//:net_fabricmc_fabric_loader",
         "@minecraft//:%s_client_libraries" % game_version,
