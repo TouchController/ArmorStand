@@ -7,7 +7,7 @@ fabric_language_kotlin_version = "1.11.0+kotlin.2.0.0"
 
 module(
     name = "armorstand",
-    version = "0.0.1+dev",
+    version = "0.0.3",
 )
 
 bazel_dep(name = "rules_java", version = "8.12.0")
