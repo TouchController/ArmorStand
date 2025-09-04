@@ -3,6 +3,7 @@
 ## 0.0.4
 
 - Fixed the bug that causes compute shader mode not working on Nvidia GPUs with Iris
+- Added russian translation (azkich)
 
 ## 0.0.3
 

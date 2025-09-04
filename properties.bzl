@@ -1,6 +1,6 @@
 # Remember to keep sync with MODULE.bazel
-blazerod_version = "0.0.3"
-mod_version = "0.0.3"
+blazerod_version = "0.0.4"
+mod_version = "0.0.4"
 game_version = "1.21.8"
 fabric_api_version = "0.129.0+1.21.8"
 fabric_api_version_modrinth = "X2hTodix"
