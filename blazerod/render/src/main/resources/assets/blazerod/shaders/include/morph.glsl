@@ -73,7 +73,7 @@ uniform isamplerBuffer MorphTargetIndices;
 #endif// INSTANCED
 
 #ifdef COMPUTE_SHADER
-#define MORPH_VERTEX_ID gl_GlobalInvocationID.x
+#define MORPH_VERTEX_ID int(gl_GlobalInvocationID.x)
 #else
 #define MORPH_VERTEX_ID gl_VertexID
 #endif
@@ -86,10 +86,7 @@ RETURN_TYPE FUNCTION_NAME(BASE_VAR_TYPE baseVar) {                              
     int modelIndex = MORPH_INSTANCE_ID;                                                                                                                          \
     int targetSize = MorphTargetIndices[modelIndex].COUNT_NAME;                                                                                                  \
                                                                                                                                                                  \
-    for (int i = 0; i < MAX_ENABLED_MORPH_TARGETS; i++) {                                                                                                        \
-        if (i >= targetSize) {                                                                                                                                   \
-            break;                                                                                                                                               \
-        }                                                                                                                                                        \
+    for (int i = 0; i < targetSize; i++) {                                                                                                                       \
         int targetIndex = MorphTargetIndices[modelIndex].indices[i].INDEX_NAME;                                                                                  \
         float weight = MorphWeights[modelIndex * TotalTargets + WEIGHT_OFFSET + targetIndex];                                                                    \
         delta += MORPH_DATA_BUFFER_VAR[MORPH_VERTEX_ID + targetIndex * TotalVertices] * weight;                                                                  \

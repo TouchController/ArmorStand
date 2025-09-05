@@ -11,7 +11,7 @@ import org.joml.Matrix4f
 import top.fifthlight.armorstand.config.ConfigHolder
 import top.fifthlight.armorstand.state.ModelInstanceManager
 import top.fifthlight.armorstand.util.RendererManager
-import top.fifthlight.blazerod.model.renderer.InstancedRenderer
+import top.fifthlight.blazerod.model.renderer.ScheduledRenderer
 import top.fifthlight.blazerod.model.resource.CameraTransform
 import top.fifthlight.blazerod.model.resource.RenderCamera
 import top.fifthlight.blazerod.util.TimeUtil
@@ -93,7 +93,7 @@ object PlayerRenderer {
             matrix.mulLocal(RenderSystem.getModelViewStack())
             val currentRenderer = RendererManager.currentRenderer
             val task = instance.createRenderTask(matrix, light)
-            if (currentRenderer is InstancedRenderer<*, *> && renderingWorld) {
+            if (currentRenderer is ScheduledRenderer<*, *> && renderingWorld) {
                 currentRenderer.schedule(task)
             } else {
                 val mainTarget = MinecraftClient.getInstance().framebuffer
@@ -121,7 +121,7 @@ object PlayerRenderer {
     fun executeDraw() {
         renderingWorld = false
         val mainTarget = MinecraftClient.getInstance().framebuffer
-        RendererManager.currentRendererInstanced?.let { renderer ->
+        RendererManager.currentRendererScheduled?.let { renderer ->
             val colorFrameBuffer = RenderSystem.outputColorTextureOverride ?: mainTarget.colorAttachmentView!!
             val depthFrameBuffer = RenderSystem.outputDepthTextureOverride ?: mainTarget.depthAttachmentView
             renderer.executeTasks(colorFrameBuffer, depthFrameBuffer)

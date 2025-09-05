@@ -166,14 +166,14 @@ class VmdLoader : ModelFileLoader {
 
             val frameNumber = buffer.getInt()
             channel.frameList.add(frameNumber)
-            // translation, invert Z axis
-            channel.translationData.add(buffer.getFloat())
-            channel.translationData.add(buffer.getFloat())
-            channel.translationData.add(-buffer.getFloat())
-            // rotation, invert X and Y
-            channel.rotationData.add(-buffer.getFloat())
-            channel.rotationData.add(-buffer.getFloat())
+            // translation, invert X axis
+            channel.translationData.add(buffer.getFloat() * -MMD_SCALE)
+            channel.translationData.add(buffer.getFloat() * MMD_SCALE)
+            channel.translationData.add(buffer.getFloat() * MMD_SCALE)
+            // rotation, invert Y and Z
             channel.rotationData.add(buffer.getFloat())
+            channel.rotationData.add(-buffer.getFloat())
+            channel.rotationData.add(-buffer.getFloat())
             channel.rotationData.add(buffer.getFloat())
 
             // translation curve data
@@ -296,10 +296,10 @@ class VmdLoader : ModelFileLoader {
             frameList.add(buffer.getInt())
             distanceList.add(buffer.getFloat() * MMD_SCALE)
 
-            // XYZ, invert X and Z
+            // XYZ, invert X
             positionList.add(-buffer.getFloat() * MMD_SCALE)
             positionList.add(buffer.getFloat() * MMD_SCALE)
-            positionList.add(-buffer.getFloat() * MMD_SCALE)
+            positionList.add(buffer.getFloat() * MMD_SCALE)
 
             // Invert Y
             rotationList.add(buffer.getFloat())

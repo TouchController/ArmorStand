@@ -42,7 +42,7 @@ class CpuTransformRenderer private constructor() :
     companion object Type : Renderer.Type<CpuTransformRenderer, Type>() {
         override val isAvailable: Boolean
             get() = true
-        override val supportInstancing: Boolean
+        override val supportScheduling: Boolean
             get() = false
 
         @JvmStatic

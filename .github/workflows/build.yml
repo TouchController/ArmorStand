@@ -20,12 +20,6 @@ jobs:
       - name: build
         run: |
           bazel build \
-            --remote_cache=${{ vars.NATIVELINK_COM_REMOTE_CACHE_URL }} \
-            --remote_header=${{ secrets.NATIVELINK_COM_API_HEADER }} \
-            --bes_backend=${{ vars.NATIVELINK_COM_BES_URL }} \
-            --bes_header=${{ secrets.NATIVELINK_COM_API_HEADER }} \
-            --bes_results_url=${{ vars.NATIVELINK_COM_BES_RESULTS_URL }} \
-            --remote_header=x-nativelink-project=nativelink-ci \
             --verbose_failures \
             @//mod \
             @//blazerod \
@@ -39,12 +33,6 @@ jobs:
       - name: test
         run: |
           bazel test \
-            --remote_cache=${{ vars.NATIVELINK_COM_REMOTE_CACHE_URL }} \
-            --remote_header=${{ secrets.NATIVELINK_COM_API_HEADER }} \
-            --bes_backend=${{ vars.NATIVELINK_COM_BES_URL }} \
-            --bes_header=${{ secrets.NATIVELINK_COM_API_HEADER }} \
-            --bes_results_url=${{ vars.NATIVELINK_COM_BES_RESULTS_URL }} \
-            --remote_header=x-nativelink-project=nativelink-ci \
             --verbose_failures \
             @//blazerod/model/model-gltf:glb_load_test \
             @//blazerod/model/model-pmx:pmx_load_test \

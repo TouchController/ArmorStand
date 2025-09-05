@@ -31,6 +31,9 @@ val GpuDevice.supportComputeShader: Boolean
 val GpuDevice.supportMemoryBarrier: Boolean
     get() = (this as GpuDeviceExt).`blazerod$supportMemoryBarrier`()
 
+val GpuDevice.supportShaderPacking: Boolean
+    get() = (this as GpuDeviceExt).`blazerod$supportShaderPacking`()
+
 val GpuDevice.maxSsboBindings: Int
     get() = (this as GpuDeviceExt).`blazerod$getMaxSsboBindings`()
 

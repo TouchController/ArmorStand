@@ -3,16 +3,16 @@ package top.fifthlight.blazerod.model.pmx.format
 import top.fifthlight.blazerod.model.Expression
 import top.fifthlight.blazerod.model.Primitive
 
-data class PmxMorph(
+internal data class PmxMorph(
     val pmxIndex: Int,
     val targetIndex: Int,
     val nameLocal: String? = null,
     val nameUniversal: String? = null,
     val tag: Expression.Tag? = null,
-    val data: Primitive.Attributes.MorphTarget,
+    val data: Map<Int, Primitive.Attributes.MorphTarget>,
 )
 
-enum class PmxMorphPanelType(val value: Int) {
+internal enum class PmxMorphPanelType(val value: Int) {
     HIDDEN(0),
     EYEBROWS(1),
     EYES(2),
@@ -20,7 +20,7 @@ enum class PmxMorphPanelType(val value: Int) {
     OTHER(4),
 }
 
-enum class PmxMorphType(val value: Int) {
+internal enum class PmxMorphType(val value: Int) {
     GROUP(0),
     VERTEX(1),
     BONE(2),
@@ -34,7 +34,7 @@ enum class PmxMorphType(val value: Int) {
     IMPULSE(10),
 }
 
-data class PmxMorphGroup(
+internal data class PmxMorphGroup(
     val nameLocal: String? = null,
     val nameUniversal: String? = null,
     val tag: Expression.Tag? = null,

@@ -33,7 +33,7 @@ import top.fifthlight.blazerod.util.*
 import java.util.*
 
 class VertexShaderTransformRenderer private constructor() :
-    TaskMapInstancedRenderer<VertexShaderTransformRenderer, VertexShaderTransformRenderer.Type>() {
+    TaskMapScheduledRenderer<VertexShaderTransformRenderer, VertexShaderTransformRenderer.Type>() {
 
     @Suppress("NOTHING_TO_INLINE")
     @JvmInline
@@ -117,7 +117,7 @@ class VertexShaderTransformRenderer private constructor() :
     companion object Type : Renderer.Type<VertexShaderTransformRenderer, Type>() {
         override val isAvailable: Boolean
             get() = true
-        override val supportInstancing: Boolean
+        override val supportScheduling: Boolean
             get() = true
 
         @JvmStatic

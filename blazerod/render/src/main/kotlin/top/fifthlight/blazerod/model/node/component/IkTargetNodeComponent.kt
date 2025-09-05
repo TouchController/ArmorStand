@@ -363,16 +363,16 @@ class IkTargetNodeComponent(
                         instance.getWorldTransform(joint.nodeIndex),
                         phase.cacheMatrix
                     )
-                    boxBuffer.drawBox(jointMatrix, 0.05f, Colors.BLUE)
+                    boxBuffer.drawBox(jointMatrix, 0.005f, Colors.BLUE)
                 }
 
                 val effectorMatrix =
                     phase.viewProjectionMatrix.mul(instance.getWorldTransform(effectorNodeIndex), phase.cacheMatrix)
-                boxBuffer.drawBox(effectorMatrix, 0.1f, Colors.RED)
+                boxBuffer.drawBox(effectorMatrix, 0.01f, Colors.RED)
 
                 val targetMatrix =
                     phase.viewProjectionMatrix.mul(instance.getWorldTransform(node), phase.cacheMatrix)
-                boxBuffer.drawBox(targetMatrix, 0.1f, Colors.GREEN)
+                boxBuffer.drawBox(targetMatrix, 0.01f, Colors.GREEN)
 
                 val lineBuffer = consumers.getBuffer(DEBUG_RENDER_LAYER)
                 for (joint in chains) {
@@ -380,13 +380,14 @@ class IkTargetNodeComponent(
                         instance.getWorldTransform(joint.nodeIndex),
                         phase.cacheMatrix
                     )
-                    val lineSize = .5f
-                    lineBuffer.vertex(jointMatrix, 0f, 0f, 0f).color(Colors.RED).normal(0f, 1f, 0f)
-                    lineBuffer.vertex(jointMatrix, lineSize, 0f, 0f).color(Colors.RED).normal(0f, 1f, 0f)
-                    lineBuffer.vertex(jointMatrix, 0f, 0f, 0f).color(Colors.GREEN).normal(0f, 1f, 0f)
-                    lineBuffer.vertex(jointMatrix, 0f, lineSize, 0f).color(Colors.GREEN).normal(0f, 1f, 0f)
-                    lineBuffer.vertex(jointMatrix, 0f, 0f, 0f).color(Colors.BLUE).normal(0f, 1f, 0f)
-                    lineBuffer.vertex(jointMatrix, 0f, 0f, lineSize).color(Colors.BLUE).normal(0f, 1f, 0f)
+                    val lineSize = .05f
+                    lineBuffer.vertex(jointMatrix, 0.0f, 0.0f, 0.0f).color(Colors.RED).normal(0.0f, 1.0f, 0.0f)
+                    lineBuffer.vertex(jointMatrix, lineSize, 0.0f, 0.0f).color(Colors.RED).normal(0.0f, 1.0f, 0.0f)
+                    lineBuffer.vertex(jointMatrix, 0.0f, lineSize, 0.0f).color(Colors.GREEN).normal(0.0f, 1.0f, 0.0f)
+                    lineBuffer.vertex(jointMatrix, 0.0f, lineSize, lineSize).color(Colors.GREEN)
+                        .normal(0.0f, 1.0f, 0.0f)
+                    lineBuffer.vertex(jointMatrix, lineSize, 0.0f, 0.0f).color(Colors.BLUE).normal(0.0f, 1.0f, 0.0f)
+                    lineBuffer.vertex(jointMatrix, lineSize, 0.0f, lineSize).color(Colors.BLUE).normal(0.0f, 1.0f, 0.0f)
                 }
             }
 

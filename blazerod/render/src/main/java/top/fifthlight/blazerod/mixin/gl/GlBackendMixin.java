@@ -51,6 +51,8 @@ public abstract class GlBackendMixin implements GpuDeviceExtInternal {
     private static final boolean allowGlComputeShader = true;
     @Unique
     private static final boolean allowGlShaderImageLoadStore = true;
+    @Unique
+    private static final boolean allowGlShaderPacking = true;
 
     @Shadow
     @Final
@@ -80,6 +82,8 @@ public abstract class GlBackendMixin implements GpuDeviceExtInternal {
     private boolean supportComputeShader;
     @Unique
     private boolean supportShaderImageLoadStore;
+    @Unique
+    private boolean supportShaderPacking;
     @Unique
     private int maxSsboBindings;
     @Unique
@@ -134,6 +138,13 @@ public abstract class GlBackendMixin implements GpuDeviceExtInternal {
             supportShaderImageLoadStore = true;
         } else {
             supportShaderImageLoadStore = false;
+        }
+
+        if (allowGlShaderPacking && glCapabilities.GL_ARB_shading_language_packing) {
+            usedGlCapabilities.add("GL_ARB_shading_language_packing");
+            supportShaderPacking = true;
+        } else {
+            supportShaderPacking = false;
         }
 
         if (supportSsbo && allowSsboInVertexShader) {
@@ -216,6 +227,11 @@ public abstract class GlBackendMixin implements GpuDeviceExtInternal {
     public boolean blazerod$supportMemoryBarrier() {
         // glMemoryBarrier is defined in ARB_shader_image_load_store
         return supportShaderImageLoadStore;
+    }
+
+    @Override
+    public boolean blazerod$supportShaderPacking() {
+        return supportShaderPacking;
     }
 
     @Override

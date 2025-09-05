@@ -29,7 +29,7 @@ public class ShaderTypeMixin {
         var nextOrdinal = $VALUES.length;
         System.arraycopy($VALUES, 0, newValues, 0, $VALUES.length);
 
-        var COMPUTE = blazerod$invokeInit("COMPUTE", nextOrdinal, "compute", ".comp");
+        var COMPUTE = blazerod$invokeInit("COMPUTE", nextOrdinal, "compute", ".csh");
         ShaderTypeExt.COMPUTE = COMPUTE;
         newValues[nextOrdinal] = COMPUTE;
 

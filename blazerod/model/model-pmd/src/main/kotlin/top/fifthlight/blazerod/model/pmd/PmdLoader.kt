@@ -21,7 +21,6 @@ import java.nio.charset.CodingErrorAction
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.*
-import kotlin.math.PI
 
 class PmdLoadException(message: String) : Exception(message)
 
@@ -57,7 +56,7 @@ class PmdLoader : ModelFileLoader {
     }
 
     private class Context(
-        val basePath: Path
+        val basePath: Path,
     ) {
         private lateinit var vertexBuffer: ByteBuffer
         private var vertices: Int = -1
@@ -141,16 +140,29 @@ class PmdLoader : ModelFileLoader {
                 inputPosition += 4
             }
 
-            val copyBaseVertexSize = BASE_VERTEX_ATTRIBUTE_SIZE - 12
+            val copyBaseVertexSize = BASE_VERTEX_ATTRIBUTE_SIZE - 24
             // FORMAT: POSITION_NORMAL_UV_JOINT_WEIGHT
             for (i in 0 until vertexCount) {
-                // Read vertex data
-                // invert z axis
-                outputBuffer.put(outputPosition, buffer, inputPosition, 8)
-                outputPosition += 8
-                inputPosition += 8
-                outputBuffer.putFloat(outputPosition, -readFloat())
-                outputPosition += 4
+                // Read vertex data, transform xyz
+                val x = buffer.getFloat(inputPosition)
+                val y = buffer.getFloat(inputPosition + 4)
+                val z = buffer.getFloat(inputPosition + 8)
+                outputBuffer.putFloat(outputPosition, x * -MMD_SCALE)
+                outputBuffer.putFloat(outputPosition + 4, y * MMD_SCALE)
+                outputBuffer.putFloat(outputPosition + 8, z * MMD_SCALE)
+                outputPosition += 12
+                inputPosition += 12
+
+                // Read normal data, transform x
+                val nx = buffer.getFloat(inputPosition)
+                val ny = buffer.getFloat(inputPosition + 4)
+                val nz = buffer.getFloat(inputPosition + 8)
+                outputBuffer.putFloat(outputPosition, -nx)
+                outputBuffer.putFloat(outputPosition + 4, ny)
+                outputBuffer.putFloat(outputPosition + 8, nz)
+                outputPosition += 12
+                inputPosition += 12
+
                 // POSITION_NORMAL_UV_JOINT_WEIGHT
                 outputBuffer.put(outputPosition, buffer, inputPosition, copyBaseVertexSize)
                 outputPosition += copyBaseVertexSize
@@ -268,7 +280,10 @@ class PmdLoader : ModelFileLoader {
             }
         }
 
-        private fun Vector3f.invertZ() = also { z = -z }
+        private fun Vector3f.transformPosition() = also {
+            mul(MMD_SCALE)
+            x = -x
+        }
 
         private fun loadBones(buffer: ByteBuffer) {
             val boneCount = buffer.getShort()
@@ -282,7 +297,7 @@ class PmdLoader : ModelFileLoader {
                 tailBoneIndex = buffer.getShort().toInt().takeIf { it != -1 },
                 type = buffer.get().toUByte().toInt(),
                 targetBoneIndex = buffer.getShort().toInt().takeIf { it != -1 },
-                position = loadVector3f(buffer).invertZ(),
+                position = loadVector3f(buffer).transformPosition(),
             )
 
             bones = (0 until boneCount).map { index ->
@@ -379,73 +394,77 @@ class PmdLoader : ModelFileLoader {
                 Node(
                     id = nodeId,
                     components = buildList {
-                        add(NodeComponent.MeshComponent(Mesh(
-                            id = meshId,
-                            primitives = listOf(
-                                Primitive(
-                                    mode = Primitive.Mode.TRIANGLES,
-                                    material = material,
-                                    attributes = Primitive.Attributes.Primitive(
-                                        position = Accessor(
-                                            bufferView = vertexBufferView,
-                                            byteOffset = 0,
-                                            componentType = Accessor.ComponentType.FLOAT,
-                                            normalized = false,
-                                            count = vertices,
-                                            type = Accessor.AccessorType.VEC3,
-                                        ),
-                                        normal = Accessor(
-                                            bufferView = vertexBufferView,
-                                            byteOffset = 3 * 4,
-                                            componentType = Accessor.ComponentType.FLOAT,
-                                            normalized = false,
-                                            count = vertices,
-                                            type = Accessor.AccessorType.VEC3,
-                                        ),
-                                        texcoords = listOf(
-                                            Accessor(
-                                                bufferView = vertexBufferView,
-                                                byteOffset = (3 + 3) * 4,
-                                                componentType = Accessor.ComponentType.FLOAT,
+                        add(
+                            NodeComponent.MeshComponent(
+                                Mesh(
+                                    id = meshId,
+                                    primitives = listOf(
+                                        Primitive(
+                                            mode = Primitive.Mode.TRIANGLES,
+                                            material = material,
+                                            attributes = Primitive.Attributes.Primitive(
+                                                position = Accessor(
+                                                    bufferView = vertexBufferView,
+                                                    byteOffset = 0,
+                                                    componentType = Accessor.ComponentType.FLOAT,
+                                                    normalized = false,
+                                                    count = vertices,
+                                                    type = Accessor.AccessorType.VEC3,
+                                                ),
+                                                normal = Accessor(
+                                                    bufferView = vertexBufferView,
+                                                    byteOffset = 3 * 4,
+                                                    componentType = Accessor.ComponentType.FLOAT,
+                                                    normalized = false,
+                                                    count = vertices,
+                                                    type = Accessor.AccessorType.VEC3,
+                                                ),
+                                                texcoords = listOf(
+                                                    Accessor(
+                                                        bufferView = vertexBufferView,
+                                                        byteOffset = (3 + 3) * 4,
+                                                        componentType = Accessor.ComponentType.FLOAT,
+                                                        normalized = false,
+                                                        count = vertices,
+                                                        type = Accessor.AccessorType.VEC2,
+                                                    )
+                                                ),
+                                                joints = listOf(
+                                                    Accessor(
+                                                        bufferView = vertexBufferView,
+                                                        byteOffset = (3 + 3 + 2) * 4,
+                                                        componentType = Accessor.ComponentType.UNSIGNED_INT,
+                                                        normalized = false,
+                                                        count = vertices,
+                                                        type = Accessor.AccessorType.VEC4,
+                                                    )
+                                                ),
+                                                weights = listOf(
+                                                    Accessor(
+                                                        bufferView = vertexBufferView,
+                                                        byteOffset = (3 + 3 + 2 + 4) * 4,
+                                                        componentType = Accessor.ComponentType.FLOAT,
+                                                        normalized = false,
+                                                        count = vertices,
+                                                        type = Accessor.AccessorType.VEC4,
+                                                    )
+                                                )
+                                            ),
+                                            indices = Accessor(
+                                                bufferView = indexBufferView,
+                                                byteOffset = indexOffset * 2,
+                                                componentType = Accessor.ComponentType.UNSIGNED_SHORT,
                                                 normalized = false,
-                                                count = vertices,
-                                                type = Accessor.AccessorType.VEC2,
-                                            )
-                                        ),
-                                        joints = listOf(
-                                            Accessor(
-                                                bufferView = vertexBufferView,
-                                                byteOffset = (3 + 3 + 2) * 4,
-                                                componentType = Accessor.ComponentType.UNSIGNED_INT,
-                                                normalized = false,
-                                                count = vertices,
-                                                type = Accessor.AccessorType.VEC4,
-                                            )
-                                        ),
-                                        weights = listOf(
-                                            Accessor(
-                                                bufferView = vertexBufferView,
-                                                byteOffset = (3 + 3 + 2 + 4) * 4,
-                                                componentType = Accessor.ComponentType.FLOAT,
-                                                normalized = false,
-                                                count = vertices,
-                                                type = Accessor.AccessorType.VEC4,
-                                            )
+                                                count = pmdMaterial.verticesCount,
+                                                type = Accessor.AccessorType.SCALAR,
+                                            ),
+                                            targets = listOf(),
                                         )
                                     ),
-                                    indices = Accessor(
-                                        bufferView = indexBufferView,
-                                        byteOffset = indexOffset * 2,
-                                        componentType = Accessor.ComponentType.UNSIGNED_SHORT,
-                                        normalized = false,
-                                        count = pmdMaterial.verticesCount,
-                                        type = Accessor.AccessorType.SCALAR,
-                                    ),
-                                    targets = listOf(),
+                                    weights = null,
                                 )
-                            ),
-                            weights = null,
-                        )))
+                            )
+                        )
                         add(NodeComponent.SkinComponent(skin))
                     }
                 ).also {
@@ -454,13 +473,7 @@ class PmdLoader : ModelFileLoader {
                 }
             }
 
-            val scene = Scene(
-                nodes = rootNodes,
-                initialTransform = NodeTransform.Decomposed(
-                    scale = Vector3f(MMD_SCALE),
-                    rotation = Quaternionf().rotateY(PI.toFloat()),
-                ),
-            )
+            val scene = Scene(nodes = rootNodes)
 
             return ModelFileLoader.LoadResult(
                 metadata = Metadata(

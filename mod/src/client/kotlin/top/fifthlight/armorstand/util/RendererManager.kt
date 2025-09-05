@@ -32,17 +32,17 @@ object RendererManager : AutoCloseable {
     }
 
     private var _currentRenderer: Renderer<*, *>? = null
-    private var currentRendererSupportInstancing = false
+    private var currentRendererSupportScheduling = false
     val currentRenderer: Renderer<*, *>
         get() {
             requireNotClosed()
             return _currentRenderer ?: changeRenderer(getConfigRendererType())
         }
-    val currentRendererInstanced: InstancedRenderer<*, *>?
+    val currentRendererScheduled: ScheduledRenderer<*, *>?
         get() {
             requireNotClosed()
-            return if (currentRendererSupportInstancing) {
-                currentRenderer as InstancedRenderer<*, *>
+            return if (currentRendererSupportScheduling) {
+                currentRenderer as ScheduledRenderer<*, *>
             } else {
                 null
             }
@@ -55,7 +55,7 @@ object RendererManager : AutoCloseable {
             ModelInstanceManager.cleanAll()
         }
         _currentRenderer = renderer
-        currentRendererSupportInstancing = renderer.type.supportInstancing
+        currentRendererSupportScheduling = renderer.type.supportScheduling
         return renderer
     }
 

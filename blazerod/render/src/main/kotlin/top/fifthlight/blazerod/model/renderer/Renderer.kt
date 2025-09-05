@@ -12,7 +12,7 @@ import top.fifthlight.blazerod.model.resource.RenderPrimitive
 sealed class Renderer<R : Renderer<R, T>, T : Renderer.Type<R, T>> : AutoCloseable {
     sealed class Type<R : Renderer<R, T>, T : Type<R, T>> {
         abstract val isAvailable: Boolean
-        abstract val supportInstancing: Boolean
+        abstract val supportScheduling: Boolean
         abstract fun create(): R
     }
 
@@ -59,7 +59,7 @@ sealed class Renderer<R : Renderer<R, T>, T : Renderer.Type<R, T>> : AutoCloseab
     abstract fun rotate()
 }
 
-sealed class InstancedRenderer<R : InstancedRenderer<R, T>, T : Renderer.Type<R, T>> : Renderer<R, T>() {
+sealed class ScheduledRenderer<R : ScheduledRenderer<R, T>, T : Renderer.Type<R, T>> : Renderer<R, T>() {
     abstract fun schedule(task: RenderTask)
 
     abstract fun executeTasks(
@@ -68,7 +68,8 @@ sealed class InstancedRenderer<R : InstancedRenderer<R, T>, T : Renderer.Type<R,
     )
 }
 
-abstract class TaskMapInstancedRenderer<R : InstancedRenderer<R, T>, T : Renderer.Type<R, T>> : InstancedRenderer<R, T>() {
+abstract class TaskMapScheduledRenderer<R : ScheduledRenderer<R, T>, T : Renderer.Type<R, T>> :
+    ScheduledRenderer<R, T>() {
     private val taskMap = TaskMap()
 
     override fun schedule(task: RenderTask) = taskMap.addTask(task)

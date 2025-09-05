@@ -65,17 +65,13 @@ class RigidBodyNodeComponent(
                     else -> rigidBodyData.mass
                 }
             )
-            val rootNodeTransform = instance.scene.rootNode.absoluteTransform
-                ?.matrix?.get(nodeTransformMatrix)
-                ?: nodeTransformMatrix.identity()
             instance.getWorldTransform(node)
                 .invert(offsetMatrix)
-                .mul(rootNodeTransform)
                 .translate(rigidBodyData.shapePosition)
                 .rotateYXZ(rigidBodyData.shapeRotation)
                 .invert(inverseOffsetMatrix)
-            val jmeNodeTransformMatrix = rootNodeTransform
-                .translate(rigidBodyData.shapePosition)
+            val jmeNodeTransformMatrix = nodeTransformMatrix
+                .translation(rigidBodyData.shapePosition)
                 .rotateYXZ(rigidBodyData.shapeRotation)
                 .get(jmeNodeTransformMatrix)
             jmeNodeTransform.apply {

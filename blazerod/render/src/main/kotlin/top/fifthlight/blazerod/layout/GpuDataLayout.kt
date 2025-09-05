@@ -52,6 +52,18 @@ abstract class GpuDataLayout<L : GpuDataLayout<L>> {
             override fun getValue(buffer: ByteBuffer) = buffer.getInt(offset)
         }
 
+        class UIntField(layout: GpuDataLayout<*>) : Field<UInt>(
+            layout = layout,
+            align = layout.strategy.scalarAlign,
+            size = layout.strategy.scalarSize,
+        ) {
+            override fun setValue(buffer: ByteBuffer, value: UInt) {
+                buffer.putInt(offset, value.toInt())
+            }
+
+            override fun getValue(buffer: ByteBuffer) = buffer.getInt(offset).toUInt()
+        }
+
         class FloatField(layout: GpuDataLayout<*>) : Field<Float>(
             layout = layout,
             align = layout.strategy.scalarAlign,
@@ -625,6 +637,7 @@ abstract class GpuDataLayout<L : GpuDataLayout<L>> {
     }
 
     fun int() = Field.IntField(this)
+    fun uint() = Field.UIntField(this)
     fun float() = Field.FloatField(this)
 
     fun vec2() = Field.Vec2Field(this)

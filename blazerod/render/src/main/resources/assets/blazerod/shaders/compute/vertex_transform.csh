@@ -1,6 +1,7 @@
 #blazerod_version version(<4.3) ? 150 : 430
 #blazerod_extension version(<4.3); GL_ARB_shader_storage_buffer_object : require
 #blazerod_extension version(<4.3); GL_ARB_compute_shader: require
+#blazerod_extension version(<4.3); GL_ARB_shading_language_packing: require
 
 #moj_import <blazerod:joint.glsl>
 #moj_import <blazerod:morph.glsl>
@@ -63,9 +64,9 @@ layout(std430) buffer TargetVertexData {
 };
 
 layout(std140) uniform ComputeData {
-    int TotalVerticesCount;
-    int UV1;
-    int UV2;
+    uint TotalVerticesCount;
+    uint UV1;
+    uint UV2;
 };
 
 layout(local_size_x = COMPUTE_LOCAL_SIZE, local_size_y = 1, local_size_z = 1) in;
@@ -104,7 +105,7 @@ void main() {
     targetVertex.normal = packSnorm4x8(vec4(0, 1, 0, 0));
 
     #ifdef IRIS_VERTEX_FORMAT
-    targetVertex.iris_Entity = ivec2(0);
+    targetVertex.iris_Entity = uvec2(0);
     targetVertex.mc_midTexCoord = vec2(0.0);
     targetVertex.at_tangent = 0;
     #endif// IRIS_VERTEX_FORMAT

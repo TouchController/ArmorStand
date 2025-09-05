@@ -10,7 +10,6 @@ import net.minecraft.util.Identifier
 import org.joml.Matrix4f
 import org.joml.Matrix4fc
 import org.joml.Quaternionf
-import org.joml.Vector3f
 import top.fifthlight.blazerod.model.data.ModelMatricesBuffer
 import top.fifthlight.blazerod.model.data.MorphTargetBuffer
 import top.fifthlight.blazerod.model.data.RenderSkinBuffer
@@ -46,8 +45,6 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
     }
 
     internal class PhysicsData(scene: RenderScene) : AutoCloseable {
-        private val rootNode = scene.rootNode
-        private val rigidBodyComponents = scene.rigidBodyComponents
         private val physicsJoints = scene.physicsJoints
 
         val world = PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT).apply {
@@ -65,14 +62,8 @@ class ModelInstance(val scene: RenderScene) : AbstractRefCount() {
         fun getRigidBody(index: Int) = rigidBodies[index] ?: error("Rigid body not initialized")
 
         fun initJoints() = physicsJoints.forEach { jointData ->
-            val rootNodeTransform = Matrix4f().apply {
-                rootNode.absoluteTransform?.matrix?.get(this)
-            }
-            val jointPositionWorld = Vector3f().let {
-                rootNodeTransform.transformPosition(jointData.position, it)
-            }.toJme()
+            val jointPositionWorld = jointData.position.toJme()
             val jointRotationWorld = Quaternionf()
-                .let { rootNodeTransform.getUnnormalizedRotation(it) }
                 .rotationZYX(jointData.rotation)
                 .toJme()
 
