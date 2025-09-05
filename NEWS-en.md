@@ -1,5 +1,9 @@
 # ArmorStand NEWS - User visible changes.
 
+## 0.0.5
+
+- Optimized PMX model loading, improving rendering speed
+
 ## 0.0.4
 
 - Fixed the bug that causes compute shader mode not working on Nvidia GPUs with Iris
