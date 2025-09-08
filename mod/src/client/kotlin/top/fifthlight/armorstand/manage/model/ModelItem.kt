@@ -37,6 +37,14 @@ data class ModelItem(
             icon = Identifier.of("armorstand", "thumbnail_pmd"),
             extensions = setOf("pmd"),
         ),
+        FBX(
+            icon = Identifier.of("armorstand", "thumbnail_fbx"),
+            extensions = setOf("fbx"),
+        ),
+        OBJ(
+            icon = Identifier.of("armorstand", "thumbnail_obj"),
+            extensions = setOf("obj"),
+        ),
         UNKNOWN(
             icon = Identifier.of("armorstand", "thumbnail_unknown"),
             extensions = setOf(),
