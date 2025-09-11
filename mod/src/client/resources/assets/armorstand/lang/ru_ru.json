@@ -50,10 +50,14 @@
   "armorstand.metadata.title.unknown": "Название: Неизвестно",
   "armorstand.metadata.version": "Версия: %s", 
   "armorstand.metadata.authors": "Авторы: %s",
+
   "armorstand.metadata.copyright_information": "Авторские права: %s",
   "armorstand.metadata.references": "Ссылки: %s",
+
+
   "armorstand.metadata.comments": "Комментарии: %s",
   "armorstand.metadata.license_type": "Тип лицензии: %s",
+
   "armorstand.metadata.license_url": "URL лицензии: %s",
   "armorstand.metadata.third_party_licenses": "Лицензии третьих лиц: %s",
   "armorstand.metadata.spec_license_url": "URL лицензии спецификации: %s",

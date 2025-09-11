@@ -322,12 +322,16 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
                     client = currentClient,
                     textClickHandler = ::handleTextClick,
                 ).also {
-                scope.launch {
-                    viewModel.uiState.collect { state ->
-                        it.metadata = state.currentMetadata
+                    scope.launch {
+                        viewModel.uiState
+                            .map { state -> state.currentMetadata }
+                            .distinctUntilChanged()
+                            .collect { metadata ->
+                                it.metadata = metadata
+                            }
                     }
-                }
-            }, Positioner.create().margin(8))
+                }, Positioner.create().margin(8)
+            )
         }
     }
 

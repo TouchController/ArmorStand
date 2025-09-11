@@ -14,13 +14,13 @@ data class Metadata(
     val references: List<String>? = null,
     val thirdPartyLicenses: String? = null,
     val thumbnail: Texture? = null,
-    
+
     // License information
     val licenseType: String? = null,
     val licenseUrl: String? = null,
     val licenseDescription: String? = null,
     val specLicenseUrl: String? = null,
-    
+
     // Usage permissions
     val allowedUser: AllowedUser? = null,
     val allowViolentUsage: Boolean? = null,
@@ -38,7 +38,7 @@ data class Metadata(
     val linkDonate: String? = null,
 ) {
     data class Author(
-        val name: String? = null,
+        val name: String,
         val role: String? = null,
         val contact: List<Pair<String, String>>? = null,
         val comment: String? = null,
@@ -100,6 +100,7 @@ data class Metadata(
 
         // License information
         appendLine(licenseType, "License Type: ")
+        appendLine(licenseDescription, "License Description: ")
         appendLine(licenseUrl, "License URL: ")
         appendLine(specLicenseUrl, "Spec License URL: ")
 
@@ -115,5 +116,9 @@ data class Metadata(
         appendLine(allowRedistribution, "• Allow Redistribution: ", Boolean::toString)
         appendLine(modificationPermission, "• Modification Permission: ", ModificationPermission::name)
         appendLine(permissionUrl, "• Permission URL: ")
+
+        appendLine("Links:")
+        appendLine(linkHome, "• Home: ")
+        appendLine(linkDonate, "• Donate: ")
     }
 }
