@@ -50,7 +50,6 @@ maven.install(
         "net.neoforged:srgutils:1.0.10",
         "io.codechicken:DiffPatch:2.0.0.36:all",
         "net.neoforged.jst:jst-cli-bundle:1.0.74",
-        "net.fabricmc:mercury:0.6.0",
 
         # mod dependencies
         "net.fabricmc:fabric-loader:0.16.14",
