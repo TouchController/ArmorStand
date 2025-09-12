@@ -4,10 +4,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.text.Text
-import top.fifthlight.armorstand.ArmorStandClient.scope
-import top.fifthlight.armorstand.ui.screen.BaseArmorStandScreen
+import top.fifthlight.armorstand.ui.model.ViewModel
+import top.fifthlight.armorstand.ui.screen.ArmorStandScreen
 
-fun <T : BaseArmorStandScreen<T>> BaseArmorStandScreen<T>.textField(
+fun <T : ArmorStandScreen<T, M>, M : ViewModel> ArmorStandScreen<T, M>.textField(
     placeHolder: Text? = null,
     width: Int = this.width,
     height: Int = 20,

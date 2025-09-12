@@ -7,7 +7,6 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
-import org.joml.Matrix4f;
 
 import java.util.Objects;
 
@@ -16,16 +15,12 @@ public class BallBlockEntityRenderer implements BlockEntityRenderer<BallBlockEnt
     public BallBlockEntityRenderer(BlockEntityRendererFactory.Context context) {
     }
 
-    private final Matrix4f matrix = new Matrix4f();
-
     @Override
     public void render(BallBlockEntity entity, float tickProgress, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, Vec3d cameraPos) {
         var instance = BallBlockMod.getBallInstance();
         if (instance == null) {
             return;
         }
-        matrix.set(matrices.peek().getPositionMatrix());
-        matrix.mulLocal(RenderSystem.getModelViewStack());
         var client = MinecraftClient.getInstance();
         var frameBuffer = client.getFramebuffer();
         var colorFrameBuffer = RenderSystem.outputColorTextureOverride != null
@@ -35,6 +30,6 @@ public class BallBlockEntityRenderer implements BlockEntityRenderer<BallBlockEnt
                 ? (RenderSystem.outputDepthTextureOverride != null ? RenderSystem.outputDepthTextureOverride : frameBuffer.getDepthAttachmentView())
                 : null;
         var renderer = BallBlockMod.getRenderer();
-        renderer.render(Objects.requireNonNull(colorFrameBuffer), depthFrameBuffer, instance.createRenderTask(matrix, light), instance.getScene());
+        renderer.render(Objects.requireNonNull(colorFrameBuffer), depthFrameBuffer, instance.createRenderTask(matrices.peek().getPositionMatrix(), light), instance.getScene());
     }
 }

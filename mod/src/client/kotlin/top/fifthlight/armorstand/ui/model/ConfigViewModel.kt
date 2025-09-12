@@ -7,6 +7,7 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.util.Util
 import top.fifthlight.armorstand.config.ConfigHolder
 import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.ModelManagerHolder
 import top.fifthlight.armorstand.state.ModelInstanceManager
 import top.fifthlight.armorstand.ui.state.ConfigScreenState
 import java.nio.file.Path
@@ -36,19 +37,14 @@ class ConfigViewModel(scope: CoroutineScope) : ViewModel(scope) {
     init {
         with(scope) {
             launch {
-                ModelManager.scheduleScan()
-                fun clearItems() {
-                    _uiState.getAndUpdate { state ->
-                        state.copy(
-                            currentPageItems = null
-                        )
-                    }
-                }
+                val prevScanTime = ModelManagerHolder.instance.lastUpdateTime.value
+                ModelManagerHolder.instance.scheduleScan(true)
+                ModelManagerHolder.instance.lastUpdateTime.first { it?.equals(prevScanTime) ?: false }
+
                 uiState.map(::SearchParam).distinctUntilChanged().collectLatest { param ->
-                    clearItems()
                     val searchStr = param.searchString.takeIf { it.isNotBlank() }
-                    ModelManager.lastScanTime.collectLatest {
-                        val totalItems = ModelManager.getTotalModels(searchStr)
+                    ModelManagerHolder.instance.lastUpdateTime.collectLatest {
+                        val totalItems = ModelManagerHolder.instance.getTotalModels(searchStr)
                         _uiState.getAndUpdate { state ->
                             state.copy(
                                 totalItems = totalItems,
@@ -66,12 +62,11 @@ class ConfigViewModel(scope: CoroutineScope) : ViewModel(scope) {
                             )
                         }
                         param.pageSize?.let { pageSize ->
-                            clearItems()
                             uiState.map { it.currentOffset }.distinctUntilChanged().collectLatest { offset ->
-                                val items = ModelManager.getModel(
+                                val items = ModelManagerHolder.instance.getModels(
                                     offset = offset,
                                     length = pageSize,
-                                    searchString = searchStr,
+                                    search = searchStr,
                                     order = param.order,
                                     ascend = param.ascend,
                                 )
@@ -91,7 +86,6 @@ class ConfigViewModel(scope: CoroutineScope) : ViewModel(scope) {
                             showOtherPlayerModel = config.showOtherPlayerModel,
                             sendModelData = config.sendModelData,
                             hidePlayerShadow = config.hidePlayerShadow,
-                            invertHeadDirection = config.invertHeadDirection,
                             modelScale = config.modelScale,
                             thirdPersonDistanceScale = config.thirdPersonDistanceScale,
                         )
@@ -122,7 +116,7 @@ class ConfigViewModel(scope: CoroutineScope) : ViewModel(scope) {
 
     fun setFavoriteModel(path: Path, favorite: Boolean) {
         scope.launch {
-            ModelManager.setFavoriteModel(path, favorite)
+            ModelManagerHolder.instance.setFavorite(path, favorite)
         }
     }
 
@@ -184,12 +178,6 @@ class ConfigViewModel(scope: CoroutineScope) : ViewModel(scope) {
         }
     }
 
-    fun updateInvertHeadDirection(invertHeadDirection: Boolean) {
-        ConfigHolder.update {
-            copy(invertHeadDirection = invertHeadDirection)
-        }
-    }
-
     fun updateSearchString(searchString: String) {
         _uiState.getAndUpdate { state ->
             state.copy(searchString = searchString)
@@ -206,12 +194,17 @@ class ConfigViewModel(scope: CoroutineScope) : ViewModel(scope) {
     }
 
     fun refreshModels() {
+        _uiState.getAndUpdate { state ->
+            state.copy(
+                currentPageItems = null
+            )
+        }
         scope.launch {
-            ModelManager.scheduleScan()
+            ModelManagerHolder.instance.scheduleScan()
         }
     }
 
     fun openModelDir() {
-        Util.getOperatingSystem().open(ModelManager.modelDir.toUri())
+        Util.getOperatingSystem().open(ModelManagerHolder.modelDir.toUri())
     }
 }

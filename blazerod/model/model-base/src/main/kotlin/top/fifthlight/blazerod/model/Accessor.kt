@@ -93,7 +93,7 @@ inline fun Accessor.read(crossinline func: (ByteBuffer) -> Unit) {
 }
 
 inline fun Accessor.readNormalized(crossinline func: (Float) -> Unit) {
-    require(this.normalized) { "Read normalized data from a not normalized accessor" }
+    require(this.normalized || componentType == Accessor.ComponentType.FLOAT) { "Read normalized data from a not normalized accessor" }
     val bufferView = bufferView
     if (bufferView == null) {
         repeat(count * type.components) { func(0f) }

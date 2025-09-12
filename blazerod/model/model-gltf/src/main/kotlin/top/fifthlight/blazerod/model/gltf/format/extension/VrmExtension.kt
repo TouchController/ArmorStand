@@ -32,7 +32,7 @@ internal data class VrmV0Extension(
     ) {
         fun toMetadata(thumbnailGetter: (Int) -> Texture?) = Metadata(
             title = title,
-            authors = author?.let { listOf(it) },
+            authors = author?.let { listOf(Metadata.Author(it)) },
             allowedUser = when (allowedUserName) {
                 AllowedUserName.ONLY_AUTHOR -> Metadata.AllowedUser.ONLY_AUTHOR
                 AllowedUserName.EXPLICITLY_LICENSED_PERSON -> Metadata.AllowedUser.EXPLICITLY_LICENSED_PERSON
@@ -151,6 +151,7 @@ data class VrmV1Extension(
 ) {
     @Serializable
     data class Meta(
+        // 保留顺序的键值对
         val name: String? = null,
         val authors: List<String>? = null,
         val licenseUrl: String? = null,
@@ -169,11 +170,11 @@ data class VrmV1Extension(
         val creditNotation: CreditNotation? = null,
         val allowRedistribution: Boolean? = null,
         val modification: Modification? = null,
-        val otherLicenseUrl: String? = null
+        val otherLicenseUrl: String? = null,
     ) {
         fun toMetadata(thumbnailGetter: (Int) -> Texture?) = Metadata(
             title = name,
-            authors = authors,
+            authors = authors?.map { Metadata.Author(it) },
             licenseUrl = licenseUrl,
             version = version,
             copyrightInformation = copyrightInformation,

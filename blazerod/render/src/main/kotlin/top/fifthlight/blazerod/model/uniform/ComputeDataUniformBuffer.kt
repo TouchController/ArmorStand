@@ -12,6 +12,7 @@ object ComputeDataUniformBuffer : UniformBuffer<ComputeDataUniformBuffer, Comput
     object ComputeDataLayout : GpuDataLayout<ComputeDataLayout>() {
         override val strategy: LayoutStrategy
             get() = LayoutStrategy.Std140LayoutStrategy
+        var modelNormalMatrix by mat4()
         var totalVertices by uint()
         var uv1 by uint()
         var uv2 by uint()

@@ -42,7 +42,11 @@ fun ReadableByteChannel.readRemaining(buffer: ByteBuffer): Int {
     return length
 }
 
-fun FileChannel.readToBuffer(offset: Long, length: Long, readSizeLimit: Int): ByteBuffer {
+fun FileChannel.readToBuffer(
+    offset: Long = 0,
+    length: Long = size(),
+    readSizeLimit: Int,
+): ByteBuffer {
     // First, let's try mapping into memory
     try {
         return map(FileChannel.MapMode.READ_ONLY, offset, length)
@@ -82,21 +86,27 @@ inline fun ByteBuffer.withRelativeLimit(relativeLimit: Int, crossinline func: ()
     }
 }
 
-fun ByteBuffer.getUByteNormalized() = get().toFloat() / 255f
+fun ByteBuffer.getUByteNormalized() = get().toUByte().toFloat() / 255f
 fun ByteBuffer.getSByteNormalized() = (get().toFloat() / 127f).coerceAtLeast(-1f)
-fun ByteBuffer.getUShortNormalized() = getShort().toFloat() / 65535f
+fun ByteBuffer.getUShortNormalized() = getShort().toUShort().toFloat() / 65535f
 fun ByteBuffer.getSShortNormalized() = (getShort().toFloat() / 32767f).coerceAtLeast(-1f)
 
-fun ByteBuffer.getUByteNormalized(index: Int) = get(index).toFloat() / 255f
+fun ByteBuffer.getUByteNormalized(index: Int) = get(index).toUByte().toFloat() / 255f
 fun ByteBuffer.getSByteNormalized(index: Int) = (get(index).toFloat() / 127f).coerceAtLeast(-1f)
-fun ByteBuffer.getUShortNormalized(index: Int) = getShort(index).toFloat() / 65535f
+fun ByteBuffer.getUShortNormalized(index: Int) = getShort(index).toUShort().toFloat() / 65535f
 fun ByteBuffer.getSShortNormalized(index: Int) = (getShort(index).toFloat() / 32767f).coerceAtLeast(-1f)
 
 @Suppress("FloatingPointLiteralPrecision")
 fun ByteBuffer.getUIntNormalized() = (getInt().toFloat() / 4294967295f).coerceAtLeast(-1f)
 
-fun Float.toNormalizedUByte(): Byte = (this * 255.0f).roundToInt().toByte()
-fun Float.toNormalizedSByte(): Byte = (this * 127.0f).roundToInt().toByte()
-fun Float.toNormalizedUShort(): Short = (this * 65535.0f).roundToInt().toShort()
-fun Float.toNormalizedSShort(): Short = (this * 32767.0f).roundToInt().toShort()
-fun Float.toNormalizedUInt(): Int = (this * 4294967295.0).roundToLong().toInt()
+fun Float.normalize() = if (!isFinite()) {
+    0f
+} else {
+    this
+}
+
+fun Float.toNormalizedUByte(): Byte = (normalize() * 255.0f).roundToInt().toByte()
+fun Float.toNormalizedSByte(): Byte = (normalize() * 127.0f).roundToInt().toByte()
+fun Float.toNormalizedUShort(): Short = (normalize() * 65535.0f).roundToInt().toShort()
+fun Float.toNormalizedSShort(): Short = (normalize() * 32767.0f).roundToInt().toShort()
+fun Float.toNormalizedUInt(): Int = (normalize() * 4294967295.0).roundToLong().toInt()

@@ -29,6 +29,7 @@ jobs:
             @//blazerod/model/model-pmd \
             @//blazerod/model/model-pmx \
             @//blazerod/model/model-vmd \
+            @//blazerod/model/model-assimp:model-assimp-merged \
             @//blazerod/example/ball_block
       - name: test
         run: |
@@ -50,4 +51,5 @@ jobs:
             bazel-bin/blazerod/model/model-pmd/model-pmd.jar
             bazel-bin/blazerod/model/model-pmx/model-pmx.jar
             bazel-bin/blazerod/model/model-vmd/model-vmd.jar
+            bazel-bin/blazerod/model/model-assimp/model-assimp-merged.jar
             bazel-bin/blazerod/example/ball_block/ball_block.jar

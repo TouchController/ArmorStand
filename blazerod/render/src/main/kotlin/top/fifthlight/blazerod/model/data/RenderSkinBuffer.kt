@@ -24,21 +24,29 @@ class RenderSkinBuffer private constructor(
 
     constructor(skin: RenderSkin) : this(skin.jointSize)
 
-    val buffer: ByteBuffer = ByteBuffer.allocateDirect(jointSize * MAT4X4_SIZE).order(ByteOrder.nativeOrder())
+    val buffer: ByteBuffer = ByteBuffer.allocateDirect(jointSize * 2 * MAT4X4_SIZE).order(ByteOrder.nativeOrder())
 
     fun clear() {
-        repeat(jointSize) {
+        repeat(jointSize * 2) {
             IDENTITY.get(it * MAT4X4_SIZE, buffer)
         }
         buffer.rewind()
     }
 
+    private val normalMatrix = Matrix4f()
     fun setMatrix(index: Int, src: Matrix4fc) {
-        src.get(index * MAT4X4_SIZE, buffer)
+        val basePos = index * 2 * MAT4X4_SIZE
+        src.get(basePos, buffer)
+        src.normal(normalMatrix)
+        normalMatrix.get(basePos + MAT4X4_SIZE, buffer)
     }
 
-    fun getMatrix(index: Int, dest: Matrix4f) {
-        dest.set(index * MAT4X4_SIZE, buffer)
+    fun getPositionMatrix(index: Int, dest: Matrix4f) {
+        dest.set(index * 2 * MAT4X4_SIZE, buffer)
+    }
+
+    fun getNormalMatrix(index: Int, dest: Matrix4f) {
+        dest.set(index * 2 * MAT4X4_SIZE + MAT4X4_SIZE, buffer)
     }
 
     override fun copy(): RenderSkinBuffer = RenderSkinBuffer(jointSize).also {

@@ -7,11 +7,11 @@ sealed class NodeComponent {
     ) {
         MESH(
             requireMesh = false,
-            singleInstanceOnly = true,
+            singleInstanceOnly = false,
         ),
         SKIN(
             requireMesh = true,
-            singleInstanceOnly = true,
+            singleInstanceOnly = false,
         ),
         CAMERA(
             requireMesh = false,
@@ -43,7 +43,10 @@ sealed class NodeComponent {
             get() = Type.MESH
     }
 
-    data class SkinComponent(val skin: Skin): NodeComponent() {
+    data class SkinComponent(
+        val skin: Skin,
+        val meshIds: List<MeshId>,
+    ) : NodeComponent() {
         override val type: Type
             get() = Type.SKIN
     }

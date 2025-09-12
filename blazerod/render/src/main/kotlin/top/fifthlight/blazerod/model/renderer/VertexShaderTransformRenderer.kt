@@ -13,6 +13,7 @@ import net.minecraft.client.gl.RenderPassImpl
 import net.minecraft.client.gl.UniformType
 import net.minecraft.client.render.LightmapTextureManager
 import net.minecraft.util.Identifier
+import org.joml.Matrix4f
 import org.joml.Vector2i
 import top.fifthlight.blazerod.BlazeRod
 import top.fifthlight.blazerod.extension.*
@@ -23,11 +24,7 @@ import top.fifthlight.blazerod.model.data.RenderSkinBuffer
 import top.fifthlight.blazerod.model.node.component.PrimitiveNodeComponent
 import top.fifthlight.blazerod.model.resource.RenderMaterial
 import top.fifthlight.blazerod.model.resource.RenderPrimitive
-import top.fifthlight.blazerod.model.uniform.InstanceDataUniformBuffer
-import top.fifthlight.blazerod.model.uniform.MorphDataUniformBuffer
-import top.fifthlight.blazerod.model.uniform.SkinModelIndicesUniformBuffer
-import top.fifthlight.blazerod.model.uniform.UnlitDataUniformBuffer
-import top.fifthlight.blazerod.render.BlazerodVertexFormats
+import top.fifthlight.blazerod.model.uniform.*
 import top.fifthlight.blazerod.render.setIndexBuffer
 import top.fifthlight.blazerod.util.*
 import java.util.*
@@ -181,9 +178,11 @@ class VertexShaderTransformRenderer private constructor() :
                     if (instanced) {
                         withShaderDefine("INSTANCED")
                     }
+                    withVertexFormat(material.vertexFormat)
 
                     when (material) {
                         is RenderMaterial.Pbr -> TODO("PBR is not support for now")
+
                         is RenderMaterial.Unlit -> {
                             withLocation(Identifier.of("blazerod", "unlit" + pipelineInfo.nameSuffix()))
 
@@ -192,13 +191,20 @@ class VertexShaderTransformRenderer private constructor() :
                             withBlend(BlendFunction.TRANSLUCENT)
                             withSampler("SamplerBaseColor")
                             withSampler("SamplerLightMap")
-                            if (pipelineInfo.skinned) {
-                                withVertexFormat(BlazerodVertexFormats.POSITION_COLOR_TEXTURE_JOINT_WEIGHT)
-                            } else {
-                                withVertexFormat(BlazerodVertexFormats.POSITION_COLOR_TEXTURE)
-                            }
-
                             withUniform("UnlitData", UniformType.UNIFORM_BUFFER)
+                        }
+
+                        is RenderMaterial.Vanilla -> {
+                            withLocation(Identifier.of("blazerod", "vanilla" + pipelineInfo.nameSuffix()))
+
+                            withVertexShader(Identifier.of("blazerod", "core/vanilla"))
+                            withFragmentShader(Identifier.of("blazerod", "core/vanilla"))
+                            withBlend(BlendFunction.TRANSLUCENT)
+                            withSampler("SamplerBaseColor")
+                            withSampler("SamplerLightMap")
+                            withSampler("SamplerOverlay")
+                            withUniform("VanillaData", UniformType.UNIFORM_BUFFER)
+                            withUniform("Lighting", UniformType.UNIFORM_BUFFER)
                         }
                     }
                 }.build()
@@ -216,6 +222,8 @@ class VertexShaderTransformRenderer private constructor() :
     }
 
     private val lightVector = Vector2i()
+    private val overlayVector = Vector2i()
+    private val normalMatrix = Matrix4f()
 
     private fun RenderPass.bindMorphTargets(targets: RenderPrimitive.Targets) {
         if (RenderSystem.getDevice().supportSsbo) {
@@ -247,26 +255,34 @@ class VertexShaderTransformRenderer private constructor() :
         val material = primitive.material
         var renderPass: RenderPass? = null
         val instanceDataUniformBufferSlice: GpuBufferSlice
-        val modelMatricesBufferSlice: GpuBufferSlice
+        val localMatricesBufferSlice: GpuBufferSlice
         var skinModelIndicesBufferSlice: GpuBufferSlice? = null
         var skinJointBufferSlice: GpuBufferSlice? = null
         var morphDataUniformBufferSlice: GpuBufferSlice? = null
         var morphWeightsBufferSlice: GpuBufferSlice? = null
         var morphTargetIndicesBufferSlice: GpuBufferSlice? = null
         var unlitData: GpuBufferSlice? = null
+        var vanillaData: GpuBufferSlice? = null
 
         try {
             instanceDataUniformBufferSlice = InstanceDataUniformBuffer.write {
                 primitiveSize = scene.primitiveComponents.size
                 this.primitiveIndex = primitiveIndex
-                this.modelViewMatrices[0] = task.modelViewMatrix
+                this.viewMatrix = RenderSystem.getModelViewStack()
+                this.modelMatrices[0] = task.modelMatrix
+                this.modelNormalMatrices[0] = task.modelMatrix.normal(normalMatrix)
                 lightVector.set(
                     task.light and (LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE or 0xFF0F),
                     (task.light shr 16) and (LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE or 0xFF0F)
                 )
+                overlayVector.set(
+                    task.overlay and 0xFFFF,
+                    (task.overlay shr 16) and 0xFFFF,
+                )
                 this.lightMapUvs[0] = lightVector
+                this.overlayUvs[0] = overlayVector
             }
-            modelMatricesBufferSlice = dataPool.upload(task.modelMatricesBuffer.content.buffer)
+            localMatricesBufferSlice = dataPool.upload(task.localMatricesBuffer.content.buffer)
             skinBuffer?.let { skinBuffer ->
                 skinModelIndicesBufferSlice = SkinModelIndicesUniformBuffer.write {
                     skinJoints = skinBuffer.jointSize
@@ -287,9 +303,18 @@ class VertexShaderTransformRenderer private constructor() :
                 morphWeightsBufferSlice = dataPool.upload(targetBuffer.weightsBuffer)
                 morphTargetIndicesBufferSlice = dataPool.upload(targetBuffer.indicesBuffer)
             }
-            (material as? RenderMaterial.Unlit)?.let { material ->
-                unlitData = UnlitDataUniformBuffer.write {
-                    baseColor = material.baseColor
+            when (material) {
+                is RenderMaterial.Pbr -> {}
+                is RenderMaterial.Unlit -> {
+                    unlitData = UnlitDataUniformBuffer.write {
+                        baseColor = material.baseColor
+                    }
+                }
+
+                is RenderMaterial.Vanilla -> {
+                    vanillaData = VanillaDataUniformBuffer.write {
+                        baseColor = material.baseColor
+                    }
                 }
             }
 
@@ -309,11 +334,28 @@ class VertexShaderTransformRenderer private constructor() :
                 unlitData?.let {
                     setUniform("UnlitData", unlitData)
                 }
-                (material as? RenderMaterial.Unlit)?.let { material ->
-                    bindSampler("SamplerBaseColor", material.baseColorTexture.view)
-                    val lightMapTexture =
-                        MinecraftClient.getInstance().gameRenderer.lightmapTextureManager.glTextureView
-                    bindSampler("SamplerLightMap", lightMapTexture)
+                vanillaData?.let {
+                    setUniform("VanillaData", vanillaData)
+                }
+                when (material) {
+                    is RenderMaterial.Pbr -> {}
+                    is RenderMaterial.Unlit -> {
+                        bindSampler("SamplerBaseColor", material.baseColorTexture.view)
+                        val lightMapTexture =
+                            MinecraftClient.getInstance().gameRenderer.lightmapTextureManager.glTextureView
+                        bindSampler("SamplerLightMap", lightMapTexture)
+                    }
+
+                    is RenderMaterial.Vanilla -> {
+                        bindSampler("SamplerBaseColor", material.baseColorTexture.view)
+                        val gameRenderer = MinecraftClient.getInstance().gameRenderer
+                        val lightMapTexture = gameRenderer.lightmapTextureManager.glTextureView
+                        bindSampler("SamplerLightMap", lightMapTexture)
+                        val overlayTexture = gameRenderer.overlayTexture.texture.glTextureView
+                        bindSampler("SamplerOverlay", overlayTexture)
+                        val lightUniform = RenderSystem.getShaderLights()
+                        setUniform("Lighting", lightUniform)
+                    }
                 }
 
                 if (RenderPassImpl.IS_DEVELOPMENT) {
@@ -323,9 +365,9 @@ class VertexShaderTransformRenderer private constructor() :
                 }
                 setUniform("InstanceData", instanceDataUniformBufferSlice)
                 if (device.supportSsbo) {
-                    setStorageBuffer("LocalMatricesData", modelMatricesBufferSlice)
+                    setStorageBuffer("LocalMatricesData", localMatricesBufferSlice)
                 } else {
-                    setUniform("LocalMatrices", modelMatricesBufferSlice)
+                    setUniform("LocalMatrices", localMatricesBufferSlice)
                 }
                 skinJointBufferSlice?.let { skinJointBuffer ->
                     if (device.supportSsbo) {
@@ -388,30 +430,39 @@ class VertexShaderTransformRenderer private constructor() :
         val commandEncoder = device.createCommandEncoder()
         var renderPass: RenderPass? = null
         val instanceDataUniformBufferSlice: GpuBufferSlice
-        val modelMatricesBufferSlice: GpuBufferSlice
+        val localMatricesBufferSlice: GpuBufferSlice
         var skinModelIndicesBufferSlice: GpuBufferSlice? = null
         var skinJointBufferSlice: GpuBufferSlice? = null
         var morphDataUniformBufferSlice: GpuBufferSlice? = null
         var morphWeightsBufferSlice: GpuBufferSlice? = null
         var morphTargetIndicesBufferSlice: GpuBufferSlice? = null
         var unlitData: GpuBufferSlice? = null
+        var vanillaData: GpuBufferSlice? = null
 
         val firstTask = tasks.first()
         try {
             instanceDataUniformBufferSlice = InstanceDataUniformBuffer.write {
                 primitiveSize = scene.primitiveComponents.size
                 this.primitiveIndex = component.primitiveIndex
+                this.viewMatrix = RenderSystem.getModelViewStack()
                 for ((index, task) in tasks.withIndex()) {
                     val light = task.light
+                    val overlay = task.overlay
                     lightVector.set(
                         light and (LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE or 0xFF0F),
                         (light shr 16) and (LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE or 0xFF0F)
                     )
+                    overlayVector.set(
+                        overlay and 0xFFFF,
+                        (overlay shr 16) and 0xFFFF,
+                    )
                     this.lightMapUvs[index] = lightVector
-                    this.modelViewMatrices[index] = task.modelViewMatrix
+                    this.overlayUvs[index] = overlayVector
+                    this.modelMatrices[index] = task.modelMatrix
+                    this.modelNormalMatrices[index] = task.modelMatrix.normal(normalMatrix)
                 }
             }
-            modelMatricesBufferSlice = dataPool.upload(tasks.map { it.modelMatricesBuffer.content.buffer })
+            localMatricesBufferSlice = dataPool.upload(tasks.map { it.localMatricesBuffer.content.buffer })
             component.skinIndex?.let { skinIndex ->
                 val firstSkinBuffer = firstTask.skinBuffer[skinIndex].content
                 skinModelIndicesBufferSlice = SkinModelIndicesUniformBuffer.write {
@@ -435,9 +486,18 @@ class VertexShaderTransformRenderer private constructor() :
                 morphTargetIndicesBufferSlice =
                     dataPool.upload(tasks.map { it.morphTargetBuffer[morphedPrimitiveIndex].content.indicesBuffer })
             }
-            (material as? RenderMaterial.Unlit)?.let { material ->
-                unlitData = UnlitDataUniformBuffer.write {
-                    baseColor = material.baseColor
+            when (material) {
+                is RenderMaterial.Pbr -> {}
+                is RenderMaterial.Unlit -> {
+                    unlitData = UnlitDataUniformBuffer.write {
+                        baseColor = material.baseColor
+                    }
+                }
+
+                is RenderMaterial.Vanilla -> {
+                    vanillaData = VanillaDataUniformBuffer.write {
+                        baseColor = material.baseColor
+                    }
                 }
             }
 
@@ -457,11 +517,26 @@ class VertexShaderTransformRenderer private constructor() :
                 unlitData?.let {
                     setUniform("UnlitData", unlitData)
                 }
-                (material as? RenderMaterial.Unlit)?.let { material ->
-                    bindSampler("SamplerBaseColor", material.baseColorTexture.view)
-                    val lightMapTexture =
-                        MinecraftClient.getInstance().gameRenderer.lightmapTextureManager.glTextureView
-                    bindSampler("SamplerLightMap", lightMapTexture)
+                vanillaData?.let {
+                    setUniform("VanillaData", vanillaData)
+                }
+                when (material) {
+                    is RenderMaterial.Pbr -> {}
+                    is RenderMaterial.Unlit -> {
+                        bindSampler("SamplerBaseColor", material.baseColorTexture.view)
+                        val lightMapTexture =
+                            MinecraftClient.getInstance().gameRenderer.lightmapTextureManager.glTextureView
+                        bindSampler("SamplerLightMap", lightMapTexture)
+                    }
+
+                    is RenderMaterial.Vanilla -> {
+                        bindSampler("SamplerBaseColor", material.baseColorTexture.view)
+                        val gameRenderer = MinecraftClient.getInstance().gameRenderer
+                        val lightMapTexture = gameRenderer.lightmapTextureManager.glTextureView
+                        bindSampler("SamplerLightMap", lightMapTexture)
+                        val overlayTexture = gameRenderer.overlayTexture.texture.glTextureView
+                        bindSampler("SamplerOverlay", overlayTexture)
+                    }
                 }
 
                 if (RenderPassImpl.IS_DEVELOPMENT) {
@@ -471,9 +546,9 @@ class VertexShaderTransformRenderer private constructor() :
                 }
                 setUniform("InstanceData", instanceDataUniformBufferSlice)
                 if (device.supportSsbo) {
-                    setStorageBuffer("LocalMatricesData", modelMatricesBufferSlice)
+                    setStorageBuffer("LocalMatricesData", localMatricesBufferSlice)
                 } else {
-                    setUniform("LocalMatrices", modelMatricesBufferSlice)
+                    setUniform("LocalMatrices", localMatricesBufferSlice)
                 }
                 skinJointBufferSlice?.let { skinJointBuffer ->
                     if (device.supportSsbo) {

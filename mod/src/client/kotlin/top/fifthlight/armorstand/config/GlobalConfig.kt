@@ -29,7 +29,6 @@ data class GlobalConfig(
     val hidePlayerShadow: Boolean = false,
     val modelScale: Float = 1f,
     val thirdPersonDistanceScale: Float = 1f,
-    val invertHeadDirection: Boolean = false,
     val renderer: RendererKey = RendererKey.VERTEX_SHADER_TRANSFORM,
     val vmcUdpPort: Int = 9000,
 ) {

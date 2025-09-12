@@ -95,12 +95,12 @@ enum class HumanoidTag(
     RIGHT_LITTLE_DISTAL(vrmName = "rightLittleDistal", pmxEnglish = "RightPinky3", pmxJapanese = "右小指３");
 
     companion object {
-        private val vrmNameMap = entries.associateBy { it.vrmName }
-        private val pmxEnglishMap = entries.associateBy { it.pmxEnglish }
-        private val pmxJapaneseMap = entries.associateBy { it.pmxJapanese }
+        private val vrmNameMap = entries.associateBy { it.vrmName?.lowercase() }
+        private val pmxEnglishMap = entries.associateBy { it.pmxEnglish?.lowercase() }
+        private val pmxJapaneseMap = entries.associateBy { it.pmxJapanese?.lowercase() }
 
-        fun fromVrmName(name: String): HumanoidTag? = vrmNameMap[name]
-        fun fromPmxEnglish(name: String): HumanoidTag? = pmxEnglishMap[name]
-        fun fromPmxJapanese(name: String): HumanoidTag? = pmxJapaneseMap[name]
+        fun fromVrmName(name: String): HumanoidTag? = vrmNameMap[name.lowercase()]
+        fun fromPmxEnglish(name: String): HumanoidTag? = pmxEnglishMap[name.lowercase()]
+        fun fromPmxJapanese(name: String): HumanoidTag? = pmxJapaneseMap[name.lowercase()]
     }
 }

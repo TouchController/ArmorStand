@@ -1,5 +1,6 @@
 package top.fifthlight.fabazel.modrinthuploader;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -39,7 +40,8 @@ public record ModrinthUploadData(
         Objects.requireNonNull(primaryFile, "primaryFile cannot be null");
     }
 
-    public record Dependency(@JsonProperty("project_id") String projectId, @JsonProperty("version_id") String versionId,
+    public record Dependency(@JsonProperty("project_id") String projectId,
+                             @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("version_id") String versionId,
                              @JsonProperty("dependency_type") Type type) {
         public Dependency {
             Objects.requireNonNull(projectId, "projectId cannot be null");

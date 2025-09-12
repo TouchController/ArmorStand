@@ -17,6 +17,7 @@ import top.fifthlight.blazerod.model.Metadata
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.function.Consumer
+import kotlin.math.max
 
 class MetadataWidget(
     private val client: MinecraftClient,
@@ -34,7 +35,9 @@ class MetadataWidget(
     private val textRenderer = client.textRenderer
     private val entries = listOf<Entry>(
         Entry.TitleAndVersionEntry(textRenderer, textClickHandler),
-        Entry.AuthorCopyrightEntry(textRenderer, textClickHandler),
+        Entry.AuthorListEntry(textRenderer, textClickHandler),
+        Entry.CopyrightEntry(textRenderer, textClickHandler),
+        Entry.LinksEntry(textRenderer, textClickHandler),
         Entry.CommentsEntry(textRenderer, textClickHandler),
         Entry.LicenseEntry(textRenderer, textClickHandler),
         Entry.PermissionsEntry(textRenderer, textClickHandler),
@@ -52,6 +55,7 @@ class MetadataWidget(
         mouseY: Int,
         deltaTicks: Float,
     ) {
+        refreshScroll()
         context.enableScissor(x, y, right, bottom)
         val entryWidth = scrollbarX - 4 - x
         val visibleAreaTop = scrollY.toInt()
@@ -152,6 +156,223 @@ class MetadataWidget(
             deltaTicks: Float,
         )
 
+        class AuthorListEntry(
+            textRenderer: TextRenderer,
+            textClickHandler: (Style) -> Unit,
+            val padding: Int = 8,
+            val margin: Int = 8,
+            val gap: Int = 8,
+            val surface: Surface = Surface.color(0x88000000u) + Surface.border(0xAA000000u),
+        ) : Entry(textRenderer, textClickHandler) {
+            private class AuthorEntry(
+                val name: Text,
+                val role: Text? = null,
+                val contact: List<Text>,
+                val comment: Text? = null,
+                var nameHeight: Int = 0,
+                var nameWidth: Int = 0,
+                var roleWidth: Int = 0,
+                var titleLineHeight: Int = 0,
+                var contactsLineHeight: IntArray,
+                var commentsHeight: Int = 0,
+                var totalHeight: Int = 0,
+            )
+
+            private var authors: List<AuthorEntry> = listOf()
+
+            override val visible: Boolean
+                get() = authors.isNotEmpty()
+
+            override fun update(metadata: Metadata?) {
+                authors = metadata?.authors?.map { author ->
+                    AuthorEntry(
+                        name = Text.literal(author.name),
+                        role = author.role?.let { Text.literal(it) },
+                        contact = author.contact?.map { (type, value) ->
+                            val content = when {
+                                value.startsWith("https://", ignoreCase = true) ||
+                                        value.startsWith("http://", ignoreCase = true) -> value.urlText()
+
+                                type.equals("email", ignoreCase = true) ||
+                                        type.equals("e-mail", ignoreCase = true) -> value.emailText()
+
+                                else -> Text.literal(value)
+                            }
+                            Text.translatable(
+                                "armorstand.metadata.author.contact",
+                                type,
+                                content,
+                            )
+                        } ?: listOf(),
+                        comment = author.comment?.let { Text.literal(it) },
+                        contactsLineHeight = IntArray(author.contact?.size ?: 0),
+                    )
+                } ?: listOf()
+            }
+
+            override fun refreshPositions(x: Int, y: Int, width: Int) {
+                val realWidth = width - padding * 2
+                var totalHeight = 0
+                for ((index, author) in authors.withIndex()) {
+                    var authorHeight = 0
+
+                    val role = author.role
+                    if (role != null) {
+                        val roleWidth = textRenderer.getWidth(role)
+                        val nameWidth = realWidth - roleWidth - 8
+                        val nameHeight = textRenderer.getWrappedLinesHeight(author.name, nameWidth)
+                        val titleLineHeight = max(nameHeight, textRenderer.fontHeight)
+                        author.nameWidth = nameWidth
+                        author.nameHeight = nameHeight
+                        author.roleWidth = roleWidth
+                        author.titleLineHeight = titleLineHeight
+                        authorHeight += titleLineHeight
+                    } else {
+                        val nameHeight = textRenderer.getWrappedLinesHeight(author.name, realWidth)
+                        val titleLineHeight = max(nameHeight, textRenderer.fontHeight)
+                        author.nameWidth = realWidth
+                        author.nameHeight = nameHeight
+                        author.titleLineHeight = titleLineHeight
+                        authorHeight += titleLineHeight
+                    }
+
+                    for ((index, contact) in author.contact.withIndex()) {
+                        val contactHeight = textRenderer.getWrappedLinesHeight(contact, realWidth)
+                        author.contactsLineHeight[index] = contactHeight
+                        authorHeight += gap + contactHeight
+                    }
+
+                    val comment = author.comment
+                    if (comment != null) {
+                        val commentHeight = textRenderer.getWrappedLinesHeight(comment, realWidth)
+                        author.commentsHeight = commentHeight
+                        authorHeight += gap + commentHeight
+                    } else {
+                        author.commentsHeight = 0
+                    }
+
+                    author.totalHeight = authorHeight
+                    totalHeight += authorHeight + padding * 2
+                    if (index != 0) {
+                        totalHeight += margin
+                    }
+                }
+                _x = x
+                _y = y
+                _width = width
+                _height = totalHeight
+            }
+
+            override fun render(
+                context: DrawContext,
+                mouseX: Int,
+                mouseY: Int,
+                x: Int,
+                y: Int,
+                width: Int,
+                deltaTicks: Float,
+            ) {
+                val currentX = x + padding
+                val realWidth = width - padding * 2
+                var currentY = y
+
+                for (author in authors) {
+                    surface.draw(context, x, currentY, width, author.totalHeight + padding * 2)
+                    currentY += padding
+                    context.drawWrappedText(
+                        textRenderer,
+                        author.name,
+                        currentX,
+                        currentY,
+                        author.nameWidth,
+                        Colors.WHITE,
+                        false,
+                    )
+                    author.role?.let { role ->
+                        context.drawWrappedText(
+                            textRenderer,
+                            role,
+                            currentX + realWidth - author.roleWidth,
+                            currentY,
+                            author.roleWidth,
+                            Colors.WHITE,
+                            false,
+                        )
+                    }
+                    currentY += author.titleLineHeight
+
+                    for ((index, contact) in author.contact.withIndex()) {
+                        currentY += gap
+                        context.drawWrappedText(
+                            textRenderer,
+                            contact,
+                            currentX,
+                            currentY,
+                            realWidth,
+                            Colors.WHITE,
+                            false,
+                        )
+                        currentY += author.contactsLineHeight[index]
+                    }
+
+                    author.comment?.let { comment ->
+                        currentY += gap
+                        context.drawWrappedText(
+                            textRenderer,
+                            comment,
+                            currentX,
+                            currentY,
+                            realWidth,
+                            Colors.WHITE,
+                            false,
+                        )
+                        currentY += author.commentsHeight
+                    }
+
+                    currentY += padding + margin
+                }
+            }
+
+            override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+                val authors = authors.takeIf { it.isNotEmpty() } ?: return false
+                val realWidth = width - padding * 2
+                var currentY = 0
+                val offsetX = mouseX.toInt() - x
+                val offsetY = mouseY.toInt() - y
+                if (offsetX !in padding until realWidth) {
+                    return false
+                }
+                if (offsetY !in padding until (height - padding)) {
+                    return false
+                }
+
+                for (author in authors) {
+                    currentY += padding + author.titleLineHeight
+
+                    for ((index, contact) in author.contact.withIndex()) {
+                        currentY += gap
+                        val contactHeight = author.contactsLineHeight[index]
+                        if (offsetY in currentY until currentY + contactHeight) {
+                            val lineOffsetY = offsetY - currentY
+                            val lineIndex = lineOffsetY / textRenderer.fontHeight
+                            val textLines = textRenderer.wrapLines(contact, realWidth)
+                            val textLine = textLines.getOrNull(lineIndex) ?: return false
+                            val style = textRenderer.textHandler.getStyleAt(textLine, offsetX - padding) ?: return false
+                            textClickHandler(style)
+                        }
+                        currentY += contactHeight
+                    }
+
+                    author.comment?.let { comment ->
+                        currentY += gap + author.commentsHeight
+                    }
+
+                    currentY += padding + margin
+                }
+                return super.mouseClicked(mouseX, mouseY, button)
+            }
+        }
+
         abstract class TextListEntry(
             textRenderer: TextRenderer,
             textClickHandler: (Style) -> Unit,
@@ -174,8 +395,8 @@ class MetadataWidget(
 
             override fun refreshPositions(x: Int, y: Int, width: Int) {
                 var totalHeight = 0
+                val realWidth = width - padding * 2
                 texts?.let { texts ->
-                    val realWidth = width - padding * 2
                     for (i in 0 until texts.size) {
                         val textHeight = textRenderer.getWrappedLinesHeight(texts[i], realWidth)
                         textHeights[i] = textHeight
@@ -262,18 +483,12 @@ class MetadataWidget(
             }
         }
 
-        class AuthorCopyrightEntry(
+        class CopyrightEntry(
             textRenderer: TextRenderer,
             textClickHandler: (Style) -> Unit,
         ) : TextListEntry(textRenderer, textClickHandler) {
             override fun getTexts(metadata: Metadata?) = metadata?.let { metadata ->
                 listOfNotNull(
-                    metadata.authors
-                        ?.filter { it.isNotBlank() }
-                        ?.takeIf(List<String>::isNotEmpty)
-                        ?.let { authors ->
-                            Text.translatable("armorstand.metadata.authors", authors.joinToString(", "))
-                        },
                     metadata.copyrightInformation
                         ?.takeIf(String::isNotBlank)
                         ?.let { copyrightInformation ->
@@ -290,6 +505,20 @@ class MetadataWidget(
                         }
                 ).takeIf { list -> list.isNotEmpty() }
             }
+        }
+
+        class LinksEntry(
+            textRenderer: TextRenderer,
+            textClickHandler: (Style) -> Unit,
+        ) : TextListEntry(textRenderer, textClickHandler) {
+            override fun getTexts(metadata: Metadata?) = listOfNotNull(
+                metadata?.linkHome
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { Text.translatable("armorstand.metadata.link_home", it.urlText()) },
+                metadata?.linkDonate
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { Text.translatable("armorstand.metadata.link_donate", it.urlText()) },
+            )
         }
 
         class CommentsEntry(
@@ -312,6 +541,9 @@ class MetadataWidget(
                 metadata?.licenseType
                     ?.takeIf(String::isNotBlank)
                     ?.let { Text.translatable("armorstand.metadata.license_type", it) },
+                metadata?.licenseDescription
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { Text.translatable("armorstand.metadata.license_description", it) },
                 metadata?.licenseUrl
                     ?.takeIf(String::isNotBlank)
                     ?.let { Text.translatable("armorstand.metadata.license_url", it.urlText()) },
@@ -409,6 +641,20 @@ private fun String.urlText(uri: URI): Text = MutableText
             .withUnderline(true)
             .withClickEvent(ClickEvent.OpenUrl(uri))
     )
+
+private fun String.emailText(): Text {
+    val uri = try {
+        URI("mailto:$this")
+    } catch (e: URISyntaxException) {
+        return Text.of(this)
+    }
+    return MutableText.of(PlainTextContent.of(this)).setStyle(
+        Style.EMPTY
+            .withFormatting(Formatting.BLUE)
+            .withUnderline(true)
+            .withClickEvent(ClickEvent.OpenUrl(uri))
+    )
+}
 
 private fun String.urlText() = try {
     urlText(URI(this))

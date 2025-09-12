@@ -1,0 +1,6 @@
+package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "model_wine_fox",
+    actual = "assets/yes_steve_model/custom/wine_fox",
+)

@@ -5,7 +5,6 @@
   "armorstand.config.hide_player_shadow": "Скрывать тень игроков",
   "armorstand.config.model_scale": "Масштаб модели: %s",
   "armorstand.config.third_person_distance_scale": "Масштаб расстояния от третьего лица: %s",
-  "armorstand.config.invert_head_direction": "Инвертировать направление головы",
   "armorstand.config.open_model_directory": "Открыть папку моделей",
   "armorstand.config.renderer_select": "Выбрать рендер",
   "armorstand.config.vmc": "OSC/VMC",
@@ -50,10 +49,14 @@
   "armorstand.metadata.title.unknown": "Название: Неизвестно",
   "armorstand.metadata.version": "Версия: %s",
   "armorstand.metadata.authors": "Авторы: %s",
+
   "armorstand.metadata.copyright_information": "Авторские права: %s",
   "armorstand.metadata.references": "Ссылки: %s",
+
+
   "armorstand.metadata.comments": "Комментарии: %s",
   "armorstand.metadata.license_type": "Тип лицензии: %s",
+
   "armorstand.metadata.license_url": "URL лицензии: %s",
   "armorstand.metadata.third_party_licenses": "Лицензии третьих лиц: %s",
   "armorstand.metadata.spec_license_url": "URL лицензии спецификации: %s",

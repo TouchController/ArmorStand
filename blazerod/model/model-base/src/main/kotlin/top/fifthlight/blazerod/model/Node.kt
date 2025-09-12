@@ -14,10 +14,11 @@ data class Node(
     val children: List<Node> = listOf(),
     val components: List<NodeComponent> = listOf(),
 ) {
-    val meshComponent: NodeComponent.MeshComponent?
-    val skinComponent: NodeComponent.SkinComponent?
+    val meshIdToSkinMap: Map<MeshId, NodeComponent.SkinComponent>
 
     init {
+        val meshIdToSkinMap = mutableMapOf<MeshId, NodeComponent.SkinComponent>()
+
         var requireMesh = false
         var typeComponents = mutableMapOf<NodeComponent.Type, MutableList<NodeComponent>>()
         for (component in components) {
@@ -26,12 +27,25 @@ data class Node(
             }
             requireMesh = requireMesh || component.type.requireMesh
             typeComponents.getOrPut(component.type) { mutableListOf() }.add(component)
+
+            when (component) {
+                is NodeComponent.SkinComponent -> {
+                    for (meshId in component.meshIds) {
+                        if (meshIdToSkinMap.containsKey(meshId)) {
+                            throw IllegalArgumentException("Node ${id.index} has multiple skin components for mesh ${meshId.index}")
+                        }
+                        meshIdToSkinMap[meshId] = component
+                    }
+                }
+
+                else -> {}
+            }
         }
         if (requireMesh && !typeComponents.containsKey(NodeComponent.Type.MESH)) {
             throw IllegalArgumentException("This node must have a mesh component, as it has component requires a mesh")
         }
-        meshComponent = typeComponents[NodeComponent.Type.MESH]?.first() as? NodeComponent.MeshComponent
-        skinComponent = typeComponents[NodeComponent.Type.SKIN]?.first() as? NodeComponent.SkinComponent
+
+        this.meshIdToSkinMap = meshIdToSkinMap
     }
 }
 

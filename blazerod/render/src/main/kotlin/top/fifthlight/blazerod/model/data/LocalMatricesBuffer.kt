@@ -9,7 +9,7 @@ import top.fifthlight.blazerod.util.CowBuffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class ModelMatricesBuffer private constructor(val primitiveNodesSize: Int) : CowBuffer.Content<ModelMatricesBuffer>,
+class LocalMatricesBuffer private constructor(val primitiveNodesSize: Int) : CowBuffer.Content<LocalMatricesBuffer>,
     AbstractRefCount() {
     constructor(scene: RenderScene) : this(scene.primitiveComponents.size)
 
@@ -22,24 +22,33 @@ class ModelMatricesBuffer private constructor(val primitiveNodesSize: Int) : Cow
     override val typeId: Identifier
         get() = TYPE_ID
 
-    val buffer: ByteBuffer = ByteBuffer.allocateDirect(primitiveNodesSize * MAT4X4_SIZE).order(ByteOrder.nativeOrder())
+    val buffer: ByteBuffer =
+        ByteBuffer.allocateDirect(primitiveNodesSize * 2 * MAT4X4_SIZE).order(ByteOrder.nativeOrder())
 
     fun clear() {
-        repeat(primitiveNodesSize) {
+        repeat(primitiveNodesSize * 2) {
             IDENTITY.get(it * MAT4X4_SIZE, buffer)
         }
         buffer.clear()
     }
 
+    private val normalMatrix = Matrix4f()
     fun setMatrix(index: Int, src: Matrix4fc) {
-        src.get(index * MAT4X4_SIZE, buffer)
+        val basePos = index * 2 * MAT4X4_SIZE
+        src.get(basePos, buffer)
+        src.normal(normalMatrix)
+        normalMatrix.get(basePos + MAT4X4_SIZE, buffer)
     }
 
-    fun getMatrix(index: Int, dest: Matrix4f) {
-        dest.set(index * MAT4X4_SIZE, buffer)
+    fun getPositionMatrix(index: Int, dest: Matrix4f) {
+        dest.set(index * 2 * MAT4X4_SIZE, buffer)
     }
 
-    override fun copy(): ModelMatricesBuffer = ModelMatricesBuffer(primitiveNodesSize).also {
+    fun getNormalMatrix(index: Int, dest: Matrix4f) {
+        dest.set(index * 2 * MAT4X4_SIZE + MAT4X4_SIZE, buffer)
+    }
+
+    override fun copy(): LocalMatricesBuffer = LocalMatricesBuffer(primitiveNodesSize).also {
         it.buffer.clear()
         buffer.clear()
         it.buffer.put(buffer)

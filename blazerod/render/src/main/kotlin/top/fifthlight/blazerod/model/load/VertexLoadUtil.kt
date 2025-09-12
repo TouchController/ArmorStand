@@ -295,8 +295,7 @@ object VertexLoadUtil {
         dstBuffer: ByteBuffer,
         dstOffset: Int,
     ) {
-        val isFloat =
-            srcAttribute.componentType == Accessor.ComponentType.FLOAT && element.type == VertexFormatElement.Type.FLOAT
+        val isFloat = srcAttribute.componentType == Accessor.ComponentType.FLOAT
         require(normalized == srcAttribute.normalized || isFloat) { "Source attribute's normalized ${srcAttribute.normalized} don't match target element $normalized" }
         require(srcAttribute.count == vertices) { "Source attribute's vertex count ${srcAttribute.count} don't match target vertex count $vertices" }
         val dstLength = element.byteSize()

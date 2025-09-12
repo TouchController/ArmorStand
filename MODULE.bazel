@@ -25,7 +25,7 @@ git_override(
     commit = "22b643d23414379b760fced29f36e766dde5fd2a",
     patch_strip = 1,
     patches = [
-        "@//external/rules_jni/patches:armv7-cpu.patch",
+        "@//third_party/rules_jni/patches:armv7-cpu.patch",
     ],
 )
 
@@ -80,6 +80,18 @@ maven.install(
         "io.github.douira:glsl-transformer:2.0.1",
         "org.anarres:jcpp:1.4.14",
         "com.illposed.osc:javaosc-core:0.9",
+        "org.lwjgl:lwjgl:3.3.3",
+        "org.lwjgl:lwjgl-assimp:3.3.3",
+        "org.lwjgl:lwjgl-assimp:jar:natives-windows:3.3.3",
+        "org.lwjgl:lwjgl-assimp:jar:natives-windows-x86:3.3.3",
+        "org.lwjgl:lwjgl-assimp:jar:natives-windows-arm64:3.3.3",
+        "org.lwjgl:lwjgl-assimp:jar:natives-linux-arm32:3.3.3",
+        "org.lwjgl:lwjgl-assimp:jar:natives-linux-arm64:3.3.3",
+        "org.lwjgl:lwjgl-assimp:jar:natives-linux:3.3.3",
+        "org.lwjgl:lwjgl-assimp:jar:natives-macos:3.3.3",
+        "org.lwjgl:lwjgl-assimp:jar:natives-macos-arm64:3.3.3",
+        "team.unnamed:mocha:3.0.0",
+        "org.javassist:javassist:3.30.2-GA",
 
         # test dependencies
         "org.jetbrains.kotlin:kotlin-test-junit5:2.1.10",
@@ -106,14 +118,14 @@ git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "g
 git_repository(
     name = "libbulletjme",
     commit = "ea117c17501001bd96db05e0fc479420efb3d79e",
-    build_file = "@//external/libbulletjme:BUILD.libbulletjme.bazel",
+    build_file = "@//third_party/libbulletjme:BUILD.libbulletjme.bazel",
     remote = "https://github.com/stephengold/Libbulletjme.git",
     patch_strip = 1,
     patches = [
-        "@//external/libbulletjme/patches:vhacd-mutex.patch",
-        "@//external/libbulletjme/patches:winsock2-case.patch",
-        "@//external/libbulletjme/patches:remove-collision-group-one-bit-assert.patch",
-        "@//external/libbulletjme/patches:add-ground-object.patch",
+        "@//third_party/libbulletjme/patches:vhacd-mutex.patch",
+        "@//third_party/libbulletjme/patches:winsock2-case.patch",
+        "@//third_party/libbulletjme/patches:remove-collision-group-one-bit-assert.patch",
+        "@//third_party/libbulletjme/patches:add-ground-object.patch",
     ],
 )
 
@@ -130,7 +142,14 @@ http_jar(
     sha256 = "0e6bd470311cc938b992e9065e0f94a3f603b68b5dfcde25102c64b8733b69bd",
     downloaded_file_name = "iris.jar",
 )
-
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+# Download YSM for its bundled model
+http_archive(
+    name = "yes_steve_model",
+    url = "https://cdn.modrinth.com/data/86xjpqqS/versions/1cHRrrpZ/yesstevemodel-fabric-1.21.1-2.4.1-release.jar",
+    sha256 = "ec51cfae84d219a45fac5098a31bfe980bcb7c2d8b413e8fffbd05a411a85680",
+    build_file = "@//third_party/ysm:BUILD.ysm.bazel",
+)
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 http_file(
     name = "makeup_ultra_fast",

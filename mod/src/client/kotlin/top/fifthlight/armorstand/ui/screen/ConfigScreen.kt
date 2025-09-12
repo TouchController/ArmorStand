@@ -208,14 +208,6 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
         )
     }
 
-    private val invertHeadDirectionButton by lazy {
-        checkbox(
-            text = Text.translatable("armorstand.config.invert_head_direction"),
-            value = viewModel.uiState.map { it.invertHeadDirection },
-            onValueChanged = viewModel::updateInvertHeadDirection,
-        )
-    }
-
     private val modelScaleSlider by lazy {
         slider(
             textFactory = { slider, text -> Text.translatable("armorstand.config.model_scale", text) },
@@ -267,7 +259,6 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
                     gap = gap,
                 ).apply {
                     listOf(
-                        invertHeadDirectionButton,
                         modelScaleSlider,
                     ).forEach {
                         add(
@@ -322,12 +313,16 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
                     client = currentClient,
                     textClickHandler = ::handleTextClick,
                 ).also {
-                scope.launch {
-                    viewModel.uiState.collect { state ->
-                        it.metadata = state.currentMetadata
+                    scope.launch {
+                        viewModel.uiState
+                            .map { state -> state.currentMetadata }
+                            .distinctUntilChanged()
+                            .collect { metadata ->
+                                it.metadata = metadata
+                            }
                     }
-                }
-            }, Positioner.create().margin(8))
+                }, Positioner.create().margin(8)
+            )
         }
     }
 

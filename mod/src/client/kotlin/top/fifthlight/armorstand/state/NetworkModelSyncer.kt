@@ -9,7 +9,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.networking.v1.PacketSender
 import top.fifthlight.armorstand.ArmorStand
 import top.fifthlight.armorstand.config.ConfigHolder
-import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.ModelManagerHolder
 import top.fifthlight.armorstand.network.ModelUpdateC2SPayload
 
 object NetworkModelSyncer {
@@ -30,7 +30,7 @@ object NetworkModelSyncer {
                     .distinctUntilChanged()
                     .collect { (modelPath, sendModelData) ->
                         if (sendModelData) {
-                            val hash = modelPath?.let { ModelManager.getModel(it)?.hash }
+                            val hash = modelPath?.let { ModelManagerHolder.instance.getModelByPath(it)?.hash }
                             sender?.sendPacket(ModelUpdateC2SPayload(hash))
                             hasSetModel = true
                         } else if (hasSetModel) {

@@ -14,7 +14,7 @@ import org.lwjgl.glfw.GLFW
 import top.fifthlight.armorstand.config.ConfigHolder
 import top.fifthlight.armorstand.debug.ModelManagerDebugFrame
 import top.fifthlight.armorstand.event.ScreenEvents
-import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.ModelManagerHolder
 import top.fifthlight.armorstand.network.PlayerModelUpdateS2CPayload
 import top.fifthlight.armorstand.state.ClientModelPathManager
 import top.fifthlight.armorstand.state.ModelHashManager
@@ -26,6 +26,7 @@ import top.fifthlight.armorstand.ui.screen.ModelSwitchScreen
 import top.fifthlight.armorstand.util.RendererManager
 import top.fifthlight.armorstand.util.ThreadExecutorDispatcher
 import top.fifthlight.blazerod.event.RenderEvents
+import top.fifthlight.blazerod.model.ModelFileLoaders
 import javax.swing.SwingUtilities
 
 object ArmorStandClient : ArmorStand(), ClientModInitializer {
@@ -50,6 +51,8 @@ object ArmorStandClient : ArmorStand(), ClientModInitializer {
     var debugBone: Boolean = false
         private set
 
+    override lateinit var mainDispatcher: CoroutineDispatcher
+        private set
     override lateinit var scope: CoroutineScope
         private set
 
@@ -71,6 +74,8 @@ object ArmorStandClient : ArmorStand(), ClientModInitializer {
                 }
             }
         }
+
+        ModelFileLoaders.initialize()
 
         ConfigHolder.read()
 
@@ -101,15 +106,19 @@ object ArmorStandClient : ArmorStand(), ClientModInitializer {
         }
 
         ClientLifecycleEvents.CLIENT_STARTED.register { client ->
-            scope = CoroutineScope(SupervisorJob() + ThreadExecutorDispatcher(client))
+            mainDispatcher = ThreadExecutorDispatcher(client)
+            scope = CoroutineScope(SupervisorJob() + mainDispatcher)
             runBlocking {
-                ModelManager.initialize()
+                ModelManagerHolder.initialize()
                 NetworkModelSyncer.initialize()
                 ClientModelPathManager.initialize()
                 ModelInstanceManager.initialize()
             }
         }
         ClientLifecycleEvents.CLIENT_STOPPING.register { client ->
+            runBlocking {
+                ModelManagerHolder.close()
+            }
             scope.cancel()
         }
         ClientPlayConnectionEvents.DISCONNECT.register { handler, client ->

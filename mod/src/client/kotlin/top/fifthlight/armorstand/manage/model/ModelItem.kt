@@ -1,4 +1,4 @@
-package top.fifthlight.armorstand.manage
+package top.fifthlight.armorstand.manage.model
 
 import net.minecraft.util.Identifier
 import top.fifthlight.armorstand.util.ModelHash
@@ -12,14 +12,12 @@ data class ModelItem(
     val hash: ModelHash,
     var favorite: Boolean = false,
 ) {
-    val type by lazy {
-        val extension = path.extension.lowercase()
-        Type.of(extension)
-    }
+    val type by lazy { Type.of(path) }
 
     enum class Type(
         val icon: Identifier,
-        val extensions: Set<String>,
+        val extensions: Set<String> = setOf(),
+        val markerFiles: Set<String> = setOf(),
     ) {
         GLTF(
             icon = Identifier.of("armorstand", "thumbnail_gltf"),
@@ -37,6 +35,18 @@ data class ModelItem(
             icon = Identifier.of("armorstand", "thumbnail_pmd"),
             extensions = setOf("pmd"),
         ),
+        FBX(
+            icon = Identifier.of("armorstand", "thumbnail_fbx"),
+            extensions = setOf("fbx"),
+        ),
+        OBJ(
+            icon = Identifier.of("armorstand", "thumbnail_obj"),
+            extensions = setOf("obj"),
+        ),
+        JSON(
+            icon = Identifier.of("armorstand", "thumbnail_json"),
+            markerFiles = setOf("ysm.json", "model.json"),
+        ),
         UNKNOWN(
             icon = Identifier.of("armorstand", "thumbnail_unknown"),
             extensions = setOf(),
@@ -51,7 +61,21 @@ data class ModelItem(
                 }
             }
 
-            fun of(extension: String): Type = extensionToTypeMap[extension] ?: UNKNOWN
+            private val markerFileToTypeMap = buildMap {
+                for (type in Type.entries) {
+                    for (markerFile in type.markerFiles) {
+                        put(markerFile, type)
+                    }
+                }
+            }
+
+            fun of(path: Path): Type {
+                val fileName = path.fileName.toString().lowercase()
+                markerFileToTypeMap[fileName]?.let { return it }
+                val extension = path.extension
+                extensionToTypeMap[extension]?.let { return it }
+                return UNKNOWN
+            }
         }
     }
 }

@@ -13,7 +13,7 @@ import net.minecraft.util.Colors
 import net.minecraft.util.Identifier
 import top.fifthlight.armorstand.ArmorStandClient
 import top.fifthlight.armorstand.config.ConfigHolder
-import top.fifthlight.armorstand.manage.ModelItem
+import top.fifthlight.armorstand.manage.model.ModelItem
 import top.fifthlight.armorstand.state.ModelInstanceManager
 import top.fifthlight.armorstand.ui.component.ModelIcon
 import top.fifthlight.armorstand.ui.component.Surface

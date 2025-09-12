@@ -86,6 +86,7 @@ public class BallBlockMod implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ModBlocks.initialize();
+        ModelFileLoaders.initialize();
         BlockEntityRendererFactories.register(ModBlockEntities.BALL_BLOCK_ENTITY, BallBlockEntityRenderer::new);
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> loadModel());
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {

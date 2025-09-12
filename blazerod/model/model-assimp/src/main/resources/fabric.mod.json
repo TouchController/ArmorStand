@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "blazerod-model-assimp",
+  "version": "${version}",
+  "name": "BlazeRod model assimp",
+  "description": "Assimp model loading support.",
+  "authors": ["fifth_light"],
+  "license": "LGPL-3.0-or-later",
+  "icon": "assets/blazerod/icon.png",
+  "contact": {
+    "homepage": "https://github.com/fifth-light/ArmorStand",
+    "sources": "https://github.com/fifth-light/ArmorStand",
+    "issues": "https://github.com/fifth-light/ArmorStand/issues"
+  },
+  "environment": "client",
+  "custom": {
+    "modmenu": {
+      "parent": "blazerod",
+      "badges": ["library"]
+    }
+  }
+}

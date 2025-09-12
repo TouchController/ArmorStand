@@ -26,15 +26,11 @@ sealed class RenderMaterial<Desc : RenderMaterial.Descriptor> : AbstractRefCount
     abstract val skinned: Boolean
     abstract val morphed: Boolean
 
-    val supportMorphing: Boolean
-        get() = descriptor.supportMorphing
-
     abstract val descriptor: Desc
 
     abstract class Descriptor(
         val id: Int,
         val name: String,
-        val supportMorphing: Boolean = false,
     ) {
         val typeId: Identifier = Identifier.of("blazerod", "material_$name")
     }
@@ -122,7 +118,41 @@ sealed class RenderMaterial<Desc : RenderMaterial.Descriptor> : AbstractRefCount
         companion object Descriptor : RenderMaterial.Descriptor(
             id = 0,
             name = "unlit",
-            supportMorphing = true,
+        )
+    }
+
+
+    class Vanilla(
+        override val name: String?,
+        override val baseColor: RgbaColor = RgbaColor(1f, 1f, 1f, 1f),
+        override val baseColorTexture: RenderTexture = RenderTexture.WHITE_RGBA_TEXTURE,
+        override val alphaMode: AlphaMode = OPAQUE,
+        override val alphaCutoff: Float = .5f,
+        override val doubleSided: Boolean = false,
+        override val skinned: Boolean = false,
+        override val morphed: Boolean = false,
+    ) : RenderMaterial<Vanilla.Descriptor>() {
+        init {
+            baseColorTexture.increaseReferenceCount()
+        }
+
+        override val descriptor
+            get() = Descriptor
+
+        override val vertexFormat: VertexFormat
+            get() = if (skinned) {
+                BlazerodVertexFormats.POSITION_COLOR_TEXTURE_NORMAL_JOINT_WEIGHT
+            } else {
+                BlazerodVertexFormats.POSITION_COLOR_TEXTURE_NORMAL
+            }
+
+        override fun onClosed() {
+            baseColorTexture.decreaseReferenceCount()
+        }
+
+        companion object Descriptor : RenderMaterial.Descriptor(
+            id = 2,
+            name = "vanilla",
         )
     }
 }

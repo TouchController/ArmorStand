@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import net.minecraft.client.MinecraftClient
 import org.slf4j.LoggerFactory
 import top.fifthlight.armorstand.PlayerRenderer
-import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.ModelManagerHolder
 import top.fifthlight.armorstand.state.ModelController
 import top.fifthlight.armorstand.state.ModelInstanceManager
 import top.fifthlight.armorstand.ui.state.AnimationScreenState
@@ -30,10 +30,10 @@ class AnimationViewModel(scope: CoroutineScope) : ViewModel(scope) {
 
     init {
         scope.launch {
-            ModelManager.lastScanTime.collectLatest {
+            ModelManagerHolder.instance.lastUpdateTime.collectLatest {
                 _uiState.getAndUpdate {
                     it.copy(
-                        externalAnimations = ModelManager.getAnimations().map { item ->
+                        externalAnimations = ModelManagerHolder.instance.getAnimations().map { item ->
                             AnimationScreenState.AnimationItem(
                                 name = item.name,
                                 source = AnimationScreenState.AnimationItem.Source.External(item.path),
@@ -155,7 +155,7 @@ class AnimationViewModel(scope: CoroutineScope) : ViewModel(scope) {
                 instanceItem.controller = ModelController.LiveUpdated(instanceItem.instance.scene)
                 scope.launch {
                     try {
-                        val path = ModelManager.modelDir.resolve(source.path)
+                        val path = ModelManagerHolder.modelDir.resolve(source.path)
                         val result = ModelFileLoaders.probeAndLoad(path)
                         val animation = result?.animations?.firstOrNull() ?: error("No animation in file")
                         val animationItem = AnimationLoader.load(instanceItem.instance.scene, animation)
@@ -171,7 +171,7 @@ class AnimationViewModel(scope: CoroutineScope) : ViewModel(scope) {
 
     fun refreshAnimations() {
         scope.launch {
-            ModelManager.scheduleScan()
+            ModelManagerHolder.instance.scheduleScan()
         }
     }
 

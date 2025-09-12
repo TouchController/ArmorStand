@@ -67,6 +67,7 @@ object PlayerRenderer {
         matrixStack: MatrixStack,
         consumers: VertexConsumerProvider,
         light: Int,
+        overlay: Int,
     ): Boolean {
         val time = System.nanoTime().toFloat() / TimeUtil.NANOSECONDS_PER_SECOND.toFloat()
         val entry = ModelInstanceManager.get(uuid, System.nanoTime())
@@ -90,9 +91,8 @@ object PlayerRenderer {
         } else {
             matrix.set(matrixStack.peek().positionMatrix)
             matrix.scale(ConfigHolder.config.value.modelScale)
-            matrix.mulLocal(RenderSystem.getModelViewStack())
             val currentRenderer = RendererManager.currentRenderer
-            val task = instance.createRenderTask(matrix, light)
+            val task = instance.createRenderTask(matrix, light, overlay)
             if (currentRenderer is ScheduledRenderer<*, *> && renderingWorld) {
                 currentRenderer.schedule(task)
             } else {

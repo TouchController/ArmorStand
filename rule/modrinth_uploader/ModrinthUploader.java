@@ -78,7 +78,7 @@ public class ModrinthUploader {
             }
         }
 
-        if (inDependencyBlock && tempDependencyProjectId != null && tempDependencyVersionId != null && tempDependencyType != null) {
+        if (inDependencyBlock && tempDependencyProjectId != null && tempDependencyType != null) {
             dependencies.add(new ModrinthUploadData.Dependency(tempDependencyProjectId, tempDependencyVersionId, tempDependencyType));
         }
 

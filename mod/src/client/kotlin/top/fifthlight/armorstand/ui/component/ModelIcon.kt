@@ -7,16 +7,20 @@ import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.Drawable
 import net.minecraft.client.gui.widget.ClickableWidget
 import net.minecraft.client.gui.widget.Widget
+import net.minecraft.client.texture.NativeImage
 import net.minecraft.client.texture.NativeImageBackedTexture
 import net.minecraft.client.texture.TextureManager
 import net.minecraft.util.Identifier
 import org.slf4j.LoggerFactory
-import top.fifthlight.armorstand.manage.ModelItem
-import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.ModelManagerHolder
+import top.fifthlight.armorstand.manage.model.ModelItem
+import top.fifthlight.armorstand.manage.model.ModelThumbnail
 import top.fifthlight.armorstand.util.ThreadExecutorDispatcher
 import top.fifthlight.blazerod.extension.NativeImageExt
+import top.fifthlight.blazerod.model.Texture
 import top.fifthlight.blazerod.model.util.readToBuffer
 import java.nio.channels.FileChannel
+import java.nio.file.Path
 import java.util.function.Consumer
 
 class ModelIcon(
@@ -92,59 +96,89 @@ class ModelIcon(
     private val scope = CoroutineScope(ThreadExecutorDispatcher(MinecraftClient.getInstance()) + Job())
     private var iconState: ModelIconState = ModelIconState.Loading
 
+    private suspend fun loadIcon(
+        path: Path,
+        offsetAndLength: Pair<Long, Long>?,
+        readSizeLimit: Int = 32 * 1024 * 1024,
+        type: Texture.TextureType? = null,
+    ): ModelTexture {
+        val buffer = withContext(Dispatchers.IO) {
+            FileChannel.open(path).use {
+                offsetAndLength?.let { (offset, length) ->
+                    it.readToBuffer(
+                        offset = offset,
+                        length = length,
+                        readSizeLimit = readSizeLimit,
+                    )
+                } ?: it.readToBuffer(
+                    readSizeLimit = readSizeLimit,
+                )
+            }
+        }
+
+        val width: Int
+        val height: Int
+        val identifier = Identifier.of("armorstand", "models/${modelItem.hash}")
+        val texture = withContext(Dispatchers.Default) {
+            if (type != null) {
+                NativeImageExt.read(type, buffer)
+            } else {
+                NativeImage.read(buffer)
+            }
+        }.use { image ->
+            width = image.width
+            height = image.height
+            NativeImageBackedTexture({ "Model icon for ${modelItem.hash}" }, image)
+        }
+        texture.setClamp(true)
+        texture.setFilter(true, false)
+        return try {
+            val textureManager = MinecraftClient.getInstance().textureManager
+            textureManager.registerTexture(identifier, texture)
+            ModelTexture(
+                textureManager = textureManager,
+                identifier = identifier,
+                texture = texture,
+                width = width,
+                height = height,
+            )
+        } catch (ex: Throwable) {
+            texture.close()
+            throw ex
+        }
+    }
+
     init {
         scope.launch {
             val path = withContext(Dispatchers.IO) {
-                ModelManager.modelDir.resolve(modelItem.path).toAbsolutePath()
+                ModelManagerHolder.modelDir.resolve(modelItem.path).toAbsolutePath()
             }
-            val thumbnail = ModelManager.getModelThumbnail(modelItem)
+            val thumbnail = ModelManagerHolder.instance.getModelThumbnail(modelItem)
             try {
                 when (thumbnail) {
-                    is ModelManager.ModelThumbnail.Embed -> {
-                        val buffer = withContext(Dispatchers.IO) {
-                            FileChannel.open(path).use {
-                                it.readToBuffer(
-                                    offset = thumbnail.offset,
-                                    length = thumbnail.length,
-                                    readSizeLimit = 32 * 1024 * 1024,
-                                )
-                            }
-                        }
-
-                        val width: Int
-                        val height: Int
-                        val identifier = Identifier.of("armorstand", "models/${modelItem.hash}")
-                        val texture = withContext(Dispatchers.Default) {
-                            NativeImageExt.read(thumbnail.type, buffer)
-                        }.use { image ->
-                            width = image.width
-                            height = image.height
-                            NativeImageBackedTexture({ "Model icon for ${modelItem.hash}" }, image)
-                        }
-                        texture.setClamp(true)
-                        texture.setFilter(true, false)
-                        val icon = try {
-                            val textureManager = MinecraftClient.getInstance().textureManager
-                            textureManager.registerTexture(identifier, texture)
-                            ModelTexture(
-                                textureManager = textureManager,
-                                identifier = identifier,
-                                texture = texture,
-                                width = width,
-                                height = height,
-                            )
-                        } catch (ex: Throwable) {
-                            texture.close()
-                            throw ex
-                        }
-
+                    is ModelThumbnail.Embed -> {
+                        val icon = loadIcon(
+                            path = path,
+                            offsetAndLength = Pair(thumbnail.offset, thumbnail.length),
+                            type = thumbnail.type,
+                        )
                         iconState = ModelIconState.Loaded(icon)
                     }
 
-                    ModelManager.ModelThumbnail.None -> {
+                    is ModelThumbnail.External -> {
+                        val icon = loadIcon(
+                            path = thumbnail.path,
+                            offsetAndLength = null,
+                        )
+                        iconState = ModelIconState.Loaded(icon)
+                    }
+
+                    ModelThumbnail.None -> {
                         iconState = ModelIconState.None
                     }
                 }
+            } catch (ex: CancellationException) {
+                throw ex
             } catch (ex: Exception) {
                 LOGGER.warn("Failed to read model icon", ex)
                 iconState = ModelIconState.Failed

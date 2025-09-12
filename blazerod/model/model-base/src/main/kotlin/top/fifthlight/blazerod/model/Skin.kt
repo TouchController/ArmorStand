@@ -7,5 +7,5 @@ data class Skin(
     val joints: List<NodeId>,
     val inverseBindMatrices: List<Matrix4fc>? = null,
     val skeleton: NodeId? = null,
-    val jointHumanoidTags: List<HumanoidTag?> = listOf(),
+    val jointHumanoidTags: List<HumanoidTag?>? = null,
 )

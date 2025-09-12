@@ -31,6 +31,7 @@ kt_jvm_library(
     resource_strip_prefix = "blazerod/src/main/resources",
     resource_jars = [
         ":fabric_mod_json",
+        "//:license_jar"
     ],
     exports = [
         "//blazerod/model/model-formats",
@@ -49,6 +50,7 @@ merge_jij(
         "//blazerod/model/model-pmd": "blazerod-model-formats-pmd:=",
         "//blazerod/model/model-pmx": "blazerod-model-formats-pmx:=",
         "//blazerod/model/model-vmd": "blazerod-model-formats-vmd:=",
+        "//blazerod/model/model-bedrock": "blazerod-model-formats-bedrock:=",
         "//blazerod/render": "blazerod-render:=",
         "@libbulletjme//:libbulletjme": "libbulletjme_blazerod:22.0.1+patch1",
         "@libbulletjme//:libbulletjme_natives": "libbulletjme_natives_blazerod:22.0.1+patch1",

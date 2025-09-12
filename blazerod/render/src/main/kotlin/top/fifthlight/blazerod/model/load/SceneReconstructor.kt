@@ -55,6 +55,17 @@ class SceneReconstructor private constructor(private val info: GpuLoadModelLoadI
             skinned = materialLoadInfo.skinned,
             morphed = materialLoadInfo.morphed,
         )
+
+        is MaterialLoadInfo.Vanilla -> RenderMaterial.Vanilla(
+            name = materialLoadInfo.name,
+            baseColor = materialLoadInfo.baseColor,
+            baseColorTexture = loadTexture(materialLoadInfo.baseColorTexture),
+            alphaMode = materialLoadInfo.alphaMode,
+            alphaCutoff = materialLoadInfo.alphaCutoff,
+            doubleSided = materialLoadInfo.doubleSided,
+            skinned = materialLoadInfo.skinned,
+            morphed = materialLoadInfo.morphed,
+        )
     }
 
     private val cameras = mutableListOf<RenderCamera>()

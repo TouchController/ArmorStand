@@ -465,7 +465,12 @@ class PmdLoader : ModelFileLoader {
                                 )
                             )
                         )
-                        add(NodeComponent.SkinComponent(skin))
+                        add(
+                            NodeComponent.SkinComponent(
+                                skin = skin,
+                                meshIds = listOf(meshId),
+                            )
+                        )
                     }
                 ).also {
                     rootNodes.add(it)

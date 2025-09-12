@@ -41,7 +41,7 @@ class ModelPreprocessor private constructor(
                     SkinJointData(
                         skinIndex = index,
                         jointIndex = jointIndex,
-                        humanoidTag = skin.jointHumanoidTags[jointIndex],
+                        humanoidTag = skin.jointHumanoidTags?.getOrNull(jointIndex),
                     )
                 )
             }
@@ -100,6 +100,17 @@ class ModelPreprocessor private constructor(
         )
 
         is Material.Unlit -> MaterialLoadInfo.Unlit(
+            name = material.name,
+            baseColor = material.baseColor,
+            baseColorTexture = loadTextureInfo(material.baseColorTexture),
+            alphaMode = material.alphaMode,
+            alphaCutoff = material.alphaCutoff,
+            doubleSided = material.doubleSided,
+            skinned = skinned,
+            morphed = morphed,
+        )
+
+        is Material.Vanilla -> MaterialLoadInfo.Vanilla(
             name = material.name,
             baseColor = material.baseColor,
             baseColorTexture = loadTextureInfo(material.baseColorTexture),
@@ -210,6 +221,19 @@ class ModelPreprocessor private constructor(
                             stride = stride,
                             element = element,
                             normalized = false,
+                            srcAttribute = srcAttribute,
+                            dstBuffer = buffer,
+                            dstOffset = dstOffset,
+                        )
+                    }
+
+                    VertexFormatElement.NORMAL -> {
+                        val srcAttribute = attributes.normal ?: continue
+                        VertexLoadUtil.copyAttributeData(
+                            vertices = vertices,
+                            stride = stride,
+                            element = element,
+                            normalized = true,
                             srcAttribute = srcAttribute,
                             dstBuffer = buffer,
                             dstOffset = dstOffset,
@@ -409,6 +433,9 @@ class ModelPreprocessor private constructor(
         val skinned =
             skinIndex != null && primitive.attributes.joints.isNotEmpty() && primitive.attributes.weights.isNotEmpty()
         val morphed = primitive.targets.isNotEmpty()
+        if (primitive.material?.baseColor?.a == 0f) {
+            return null
+        }
         val material = primitive.material?.let {
             loadMaterial(
                 material = it,
@@ -480,7 +507,8 @@ class ModelPreprocessor private constructor(
                 node.components.forEach { component ->
                     when (component) {
                         is NodeComponent.MeshComponent -> {
-                            val skinIndex = model.skins.indexOf(node.skinComponent?.skin).takeIf { it >= 0 }
+                            val skin = node.meshIdToSkinMap[component.mesh.id]
+                            val skinIndex = skin?.skin?.let { skin -> model.skins.indexOf(skin) }?.takeIf { it >= 0 }
                             addAll(
                                 loadMesh(
                                     node = node,

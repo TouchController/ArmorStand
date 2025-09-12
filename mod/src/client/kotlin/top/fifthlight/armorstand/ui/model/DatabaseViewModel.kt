@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.ModelManagerHolder
 import top.fifthlight.armorstand.ui.state.DatabaseScreenState
 import java.sql.ResultSet
 import kotlin.time.measureTimedValue
@@ -34,9 +34,9 @@ class DatabaseViewModel(scope: CoroutineScope) : ViewModel(scope) {
         }
     }
 
-    private fun executeQuery(query: String): DatabaseScreenState.QueryState =
-        ModelManager.transaction {
-            createStatement().use { stmt ->
+    private suspend fun executeQuery(query: String): DatabaseScreenState.QueryState =
+        ModelManagerHolder.instance.databaseManager.transaction {
+            connection.createStatement().use { stmt ->
                 val (value, duration) = measureTimedValue {
                     stmt.execute(query)
                 }

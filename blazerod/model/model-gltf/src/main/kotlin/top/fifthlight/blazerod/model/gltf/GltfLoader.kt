@@ -397,26 +397,23 @@ internal class GltfLoader(
             },
             children = (node.children ?: listOf()).map(::loadNode),
             components = buildList {
-                node.mesh?.let {
-                    add(
-                        NodeComponent.MeshComponent(
-                            meshes.getOrNull(it) ?: throw GltfLoadException("Bad node: unknown mesh $it")
+                node.mesh?.let { mesh ->
+                    val mesh = meshes.getOrNull(mesh) ?: throw GltfLoadException("Bad node: unknown mesh $mesh")
+                    add(NodeComponent.MeshComponent(mesh))
+                    node.skin?.let { skin ->
+                        val skin = skins.getOrNull(skin) ?: throw GltfLoadException("Bad node: unknown skin $skin")
+                        add(
+                            NodeComponent.SkinComponent(
+                                skin = skin,
+                                meshIds = listOf(mesh.id),
+                            )
                         )
-                    )
+                    }
                 }
-                node.skin?.let {
-                    add(
-                        NodeComponent.SkinComponent(
-                            skins.getOrNull(it) ?: throw GltfLoadException("Bad node: unknown skin $it")
-                        )
-                    )
-                }
-                node.camera?.let {
-                    add(
-                        NodeComponent.CameraComponent(
-                            cameras.getOrNull(it) ?: throw GltfLoadException("Bad node: unknown camera $it")
-                        )
-                    )
+                node.camera?.let { camera ->
+                    val camera =
+                        cameras.getOrNull(camera) ?: throw GltfLoadException("Bad node: unknown camera $camera")
+                    add(NodeComponent.CameraComponent(camera))
                 }
             },
         )

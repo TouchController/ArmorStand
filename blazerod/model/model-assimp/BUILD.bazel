@@ -1,0 +1,61 @@
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("//:properties.bzl", "blazerod_version")
+load("//rule:fabric_mod_json_jar.bzl", "fabric_mod_json_jar")
+load("//rule:merge_jij.bzl", "merge_jij")
+
+fabric_mod_json_jar(
+    name = "fabric_mod_json",
+    src = "src/main/resources/fabric.mod.json",
+    resource_strip_prefix = "blazerod/model/model-assimp",
+    substitutions = {
+        "${version}": blazerod_version,
+    },
+)
+
+kt_jvm_library(
+    name = "model-assimp",
+    srcs = glob(["src/main/kotlin/**/*.kt"]),
+    resource_jars = [
+        ":fabric_mod_json",
+        "//blazerod:icon",
+    ],
+    resources = glob(
+        include = ["src/main/resources/**"],
+        exclude = ["src/main/resources/fabric.mod.json"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//blazerod/model/model-base",
+        "@maven//:org_lwjgl_lwjgl",
+        "@maven//:org_lwjgl_lwjgl_assimp",
+    ],
+    runtime_deps = [
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_windows",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_windows_x86",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_windows_arm64",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_linux_arm32",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_linux_arm64",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_linux",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_macos",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_macos_arm64",
+    ],
+)
+
+
+merge_jij(
+    name = "model-assimp-merged",
+    input = ":model-assimp",
+    visibility = ["//visibility:public"],
+    deps = {
+        "@maven//:org_lwjgl_lwjgl_assimp": "org_lwjgl_lwjgl_assimp:3.3.3",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_windows": "org_lwjgl_lwjgl_assimp_natives_windows:3.3.3",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_windows_x86": "org_lwjgl_lwjgl_assimp_natives_windows_x86:3.3.3",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_windows_arm64": "org_lwjgl_lwjgl_assimp_natives_windows_arm64:3.3.3",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_linux_arm32": "org_lwjgl_lwjgl_assimp_natives_linux_arm32:3.3.3",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_linux_arm64": "org_lwjgl_lwjgl_assimp_natives_linux_arm64:3.3.3",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_linux": "org_lwjgl_lwjgl_assimp_natives_linux:3.3.3",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_macos": "org_lwjgl_lwjgl_assimp_natives_macos:3.3.3",
+        "@maven//:org_lwjgl_lwjgl_assimp_natives_macos_arm64": "org_lwjgl_lwjgl_assimp_natives_macos_arm64:3.3.3",
+    },
+)

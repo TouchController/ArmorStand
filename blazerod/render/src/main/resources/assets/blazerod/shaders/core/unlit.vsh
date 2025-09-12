@@ -28,7 +28,7 @@ void main() {
     vec4 color = GET_MORPHED_VERTEX_COLOR(Color);
     vec2 texCoord = GET_MORPHED_VERTEX_TEX_COORD(UV0);
 
-    mat4 model_view_proj_mat = ProjMat * instance.model_view_mat;
+    mat4 model_view_proj_mat = ProjMat * ViewMatrix * instance.model_mat;
     vec4 vertex_position = model_view_proj_mat * GET_SKINNED_VERTEX_POSITION(vec4(position, 1.0));
 
     sphericalVertexDistance = fog_spherical_distance(Position);

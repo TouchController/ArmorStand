@@ -15,7 +15,10 @@ object InstanceDataUniformBuffer : UniformBuffer<InstanceDataUniformBuffer, Inst
             get() = LayoutStrategy.Std140LayoutStrategy
         var primitiveSize by int()
         var primitiveIndex by int()
-        var modelViewMatrices by mat4Array(BlazeRod.INSTANCE_SIZE)
+        var viewMatrix by mat4()
+        var modelMatrices by mat4Array(BlazeRod.INSTANCE_SIZE)
+        var modelNormalMatrices by mat4Array(BlazeRod.INSTANCE_SIZE)
         var lightMapUvs by ivec2Array(BlazeRod.INSTANCE_SIZE)
+        var overlayUvs by ivec2Array(BlazeRod.INSTANCE_SIZE)
     }
 }

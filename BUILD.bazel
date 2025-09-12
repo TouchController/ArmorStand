@@ -3,6 +3,7 @@ load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 load("@//rule:extract_update_log.bzl", "extract_update_log")
 load("//:properties.bzl", "mod_version")
 load("@rules_java//java:defs.bzl", "java_plugin")
+load("@rules_java//java:defs.bzl", "java_library")
 
 kt_compiler_plugin(
     name = "serialization_plugin",
@@ -141,4 +142,16 @@ platform(
         "@platforms//os:windows",
         "@platforms//cpu:aarch64",
     ]
+)
+
+alias(
+    name = "license",
+    visibility = ["//visibility:public"],
+    actual = "LICENSE",
+)
+
+java_library(
+    name = "license_jar",
+    visibility = ["//visibility:public"],
+    resources = [":license"],
 )

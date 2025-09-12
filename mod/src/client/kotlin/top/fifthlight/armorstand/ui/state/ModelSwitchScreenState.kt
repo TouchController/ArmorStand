@@ -1,6 +1,6 @@
 package top.fifthlight.armorstand.ui.state
 
-import top.fifthlight.armorstand.manage.ModelItem
+import top.fifthlight.armorstand.manage.model.ModelItem
 
 data class ModelSwitchScreenState(
     val currentTick: Int? = null,

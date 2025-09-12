@@ -22,30 +22,51 @@ uniform samplerBuffer LocalMatrices;// TBO declaration
 layout (std140) uniform InstanceData {
     int PrimitiveSize;
     int PrimitiveIndex;
-    mat4 ModelViewMatrices[INSTANCE_SIZE];
+    mat4 ViewMatrix;
+    mat4 ModelMatrices[INSTANCE_SIZE];
+    mat4 ModelNormalMatrices[INSTANCE_SIZE];
     ivec2 LightMapUvs[INSTANCE_SIZE];
+    ivec2 OverlayUvs[INSTANCE_SIZE];
 };
 
 struct instance_t {
-    mat4 model_view_mat;
+    mat4 model_mat;
+    mat3 model_normal_matrix;
     ivec2 light_map_uv;
+    ivec2 overlay_uv;
 };
 
 instance_t get_instance() {
     instance_t instance;
     int matricesOffset = INSTANCE_ID * PrimitiveSize + PrimitiveIndex;
+
     mat4 local_matrix =
     #ifdef SUPPORT_SSBO
-    LocalMatrices[matricesOffset];
+    LocalMatrices[matricesOffset * 2];
     #else// SUPPORT_SSBO
     mat4(
-    texelFetch(LocalMatrices, matricesOffset * 4 + 0),
-    texelFetch(LocalMatrices, matricesOffset * 4 + 1),
-    texelFetch(LocalMatrices, matricesOffset * 4 + 2),
-    texelFetch(LocalMatrices, matricesOffset * 4 + 3)
+    texelFetch(LocalMatrices, matricesOffset * 8 + 0),
+    texelFetch(LocalMatrices, matricesOffset * 8 + 1),
+    texelFetch(LocalMatrices, matricesOffset * 8 + 2),
+    texelFetch(LocalMatrices, matricesOffset * 8 + 3)
     );
     #endif// SUPPORT_SSBO
-    instance.model_view_mat = ModelViewMatrices[INSTANCE_ID] * local_matrix;
+
+    mat4 local_normal_matrix =
+    #ifdef SUPPORT_SSBO
+    LocalMatrices[matricesOffset * 2 + 1];
+    #else// SUPPORT_SSBO
+    mat4(
+    texelFetch(LocalMatrices, matricesOffset * 8 + 4),
+    texelFetch(LocalMatrices, matricesOffset * 8 + 5),
+    texelFetch(LocalMatrices, matricesOffset * 8 + 6),
+    texelFetch(LocalMatrices, matricesOffset * 8 + 7)
+    );
+    #endif// SUPPORT_SSBO
+
+    instance.model_mat = ModelMatrices[INSTANCE_ID] * local_matrix;
+    instance.model_normal_matrix = mat3(ModelNormalMatrices[INSTANCE_ID] * local_normal_matrix);
     instance.light_map_uv = LightMapUvs[INSTANCE_ID];
+    instance.overlay_uv = OverlayUvs[INSTANCE_ID];
     return instance;
 }

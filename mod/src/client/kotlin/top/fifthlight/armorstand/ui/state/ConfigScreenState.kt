@@ -1,7 +1,7 @@
 package top.fifthlight.armorstand.ui.state
 
-import top.fifthlight.armorstand.manage.ModelItem
 import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.model.ModelItem
 import top.fifthlight.blazerod.model.Metadata
 import java.nio.file.Path
 
@@ -9,7 +9,6 @@ data class ConfigScreenState(
     val currentModel: Path? = null,
     val currentMetadata: Metadata? = null,
     val showOtherPlayerModel: Boolean = true,
-    val invertHeadDirection: Boolean = false,
     val sendModelData: Boolean = true,
     val hidePlayerShadow: Boolean = false,
     val modelScale: Float = 1f,

@@ -19,9 +19,6 @@ out vec4 fragColor;
 
 void main() {
     vec4 color = texture(SamplerBaseColor, texCoord0);
-    if (color.a == 0.0) {
-        discard;
-    }
 #ifdef ALPHA_CUTOUT
     if (color.a < ALPHA_CUTOUT) {
         discard;
@@ -29,5 +26,8 @@ void main() {
 #endif
     color *= vertexColor * BaseColor;
     color *= lightMapColor;
+    if (color.a == 0.0) {
+        discard;
+    }
     fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
 }

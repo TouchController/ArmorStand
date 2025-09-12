@@ -10,11 +10,20 @@ interface ModelFileLoader {
         EMBED_ANIMATION,
         EXTERNAL_ANIMATION,
         EMBED_THUMBNAIL,
+        METADATA,
     }
 
+    fun initialize() = Unit
+    val available: Boolean
+        get() = true
+
     val extensions: Map<String, Set<Ability>>
+        get() = mapOf()
+    val markerFiles: Map<String, Set<Ability>>
+        get() = mapOf()
     val abilities: Set<Ability>
         get() = extensions.values.flatten().toSet()
+
     val probeLength: Int?
     fun probe(buffer: ByteBuffer): Boolean
 
@@ -43,5 +52,19 @@ interface ModelFileLoader {
                 require(length >= 0) { "Bad length: $length" }
             }
         }
+    }
+
+    fun getMarkerFileHashes(marker: Path, directory: Path): Set<Path> = setOf(marker)
+
+    fun getMetadata(path: Path, basePath: Path? = path.parent): MetadataResult = MetadataResult.Unsupported
+
+    sealed class MetadataResult {
+        object Unsupported : MetadataResult()
+
+        object None : MetadataResult()
+
+        data class Success(
+            val metadata: Metadata,
+        ) : MetadataResult()
     }
 }

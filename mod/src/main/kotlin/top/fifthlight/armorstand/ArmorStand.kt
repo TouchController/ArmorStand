@@ -1,5 +1,6 @@
 package top.fifthlight.armorstand
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
@@ -15,6 +16,7 @@ import top.fifthlight.armorstand.server.ServerModelPathManager
 
 abstract class ArmorStand : ModInitializer {
     abstract val scope: CoroutineScope
+    abstract val mainDispatcher: CoroutineDispatcher
 
     companion object {
         lateinit var instance: ArmorStand

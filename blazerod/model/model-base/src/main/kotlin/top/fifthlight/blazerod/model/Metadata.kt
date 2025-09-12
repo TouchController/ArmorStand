@@ -8,18 +8,19 @@ data class Metadata(
     val commentUniversal: String? = null,
 
     val version: String? = null,
-    val authors: List<String>? = null,
+    val authors: List<Author>? = null,
     val copyrightInformation: String? = null,
     val contactInformation: String? = null,
     val references: List<String>? = null,
     val thirdPartyLicenses: String? = null,
     val thumbnail: Texture? = null,
-    
+
     // License information
     val licenseType: String? = null,
     val licenseUrl: String? = null,
+    val licenseDescription: String? = null,
     val specLicenseUrl: String? = null,
-    
+
     // Usage permissions
     val allowedUser: AllowedUser? = null,
     val allowViolentUsage: Boolean? = null,
@@ -31,7 +32,18 @@ data class Metadata(
     val allowRedistribution: Boolean? = null,
     val modificationPermission: ModificationPermission? = null,
     val permissionUrl: String? = null,
+
+    // For bedrock model
+    val linkHome: String? = null,
+    val linkDonate: String? = null,
 ) {
+    data class Author(
+        val name: String,
+        val role: String? = null,
+        val contact: List<Pair<String, String>>? = null,
+        val comment: String? = null,
+    )
+
     enum class AllowedUser {
         ONLY_AUTHOR,
         EXPLICITLY_LICENSED_PERSON,
@@ -88,6 +100,7 @@ data class Metadata(
 
         // License information
         appendLine(licenseType, "License Type: ")
+        appendLine(licenseDescription, "License Description: ")
         appendLine(licenseUrl, "License URL: ")
         appendLine(specLicenseUrl, "Spec License URL: ")
 
@@ -103,5 +116,9 @@ data class Metadata(
         appendLine(allowRedistribution, "• Allow Redistribution: ", Boolean::toString)
         appendLine(modificationPermission, "• Modification Permission: ", ModificationPermission::name)
         appendLine(permissionUrl, "• Permission URL: ")
+
+        appendLine("Links:")
+        appendLine(linkHome, "• Home: ")
+        appendLine(linkDonate, "• Donate: ")
     }
 }

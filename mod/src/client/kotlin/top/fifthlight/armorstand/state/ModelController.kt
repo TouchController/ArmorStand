@@ -5,7 +5,6 @@ import net.minecraft.entity.EntityPose
 import net.minecraft.entity.EntityType
 import net.minecraft.util.math.Direction
 import net.minecraft.util.math.MathHelper
-import top.fifthlight.armorstand.config.ConfigHolder
 import top.fifthlight.armorstand.extension.internal.PlayerEntityRenderStateExtInternal
 import top.fifthlight.armorstand.ui.model.AnimationViewModel
 import top.fifthlight.armorstand.util.toRadian
@@ -72,9 +71,6 @@ sealed class ModelController {
 
         private const val NANOSECONDS_PER_SECOND = 1_000_000_000L
 
-        private val invertHeadDirection: Boolean
-            get() = ConfigHolder.config.value.invertHeadDirection
-
         fun calculateBlinkProgress(
             playerUuid: UUID,
             averageBlinkInterval: Long,
@@ -128,11 +124,7 @@ sealed class ModelController {
         override fun update(uuid: UUID, vanillaState: PlayerEntityRenderState) {
             bodyYaw = MathHelper.PI - vanillaState.bodyYaw.toRadian()
             headYaw = -vanillaState.relativeHeadYaw.toRadian()
-            headPitch = if (invertHeadDirection) {
-                vanillaState.pitch.toRadian()
-            } else {
-                -vanillaState.pitch.toRadian()
-            }
+            headPitch = -vanillaState.pitch.toRadian()
             blinkProgress = calculateBlinkProgress(
                 playerUuid = uuid,
                 averageBlinkInterval = 4.0,
@@ -290,11 +282,7 @@ sealed class ModelController {
                 MathHelper.PI - vanillaState.bodyYaw.toRadian()
             }
             headYaw = -vanillaState.relativeHeadYaw.toRadian()
-            headPitch = if (invertHeadDirection) {
-                vanillaState.pitch.toRadian()
-            } else {
-                -vanillaState.pitch.toRadian()
-            }
+            headPitch = -vanillaState.pitch.toRadian()
             blinkProgress = calculateBlinkProgress(
                 playerUuid = uuid,
                 averageBlinkInterval = 4.0,

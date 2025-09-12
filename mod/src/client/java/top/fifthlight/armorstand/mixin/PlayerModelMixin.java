@@ -12,12 +12,21 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import top.fifthlight.armorstand.PlayerRenderer;
 import top.fifthlight.armorstand.extension.internal.PlayerEntityRenderStateExtInternal;
 
 @Mixin(LivingEntityRenderer.class)
 public abstract class PlayerModelMixin {
+    @Shadow
+    public static int getOverlay(LivingEntityRenderState state, float whiteOverlayProgress) {
+        throw new AssertionError();
+    }
+
+    @Shadow
+    protected abstract float getAnimationCounter(LivingEntityRenderState state);
+
     @WrapOperation(method = "render(Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/LivingEntityRenderer;getRenderLayer(Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;ZZZ)Lnet/minecraft/client/render/RenderLayer;"))
     @Nullable
     public <T extends LivingEntity, S extends LivingEntityRenderState, M extends EntityModel<? super S>>
@@ -39,7 +48,8 @@ public abstract class PlayerModelMixin {
         if (uuid == null) {
             return original.call(instance, state, showBody, translucent, showOutline);
         }
-        if (!PlayerRenderer.appendPlayer(uuid, (PlayerEntityRenderState) state, matrixStack, vertexConsumerProvider, light)) {
+        var overlay = getOverlay(state, getAnimationCounter(livingEntityRenderState));
+        if (!PlayerRenderer.appendPlayer(uuid, (PlayerEntityRenderState) state, matrixStack, vertexConsumerProvider, light, overlay)) {
             return original.call(instance, state, showBody, translucent, showOutline);
         }
         return null;

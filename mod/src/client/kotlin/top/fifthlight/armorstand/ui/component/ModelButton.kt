@@ -15,7 +15,7 @@ import net.minecraft.text.Text
 import net.minecraft.util.Colors
 import net.minecraft.util.Identifier
 import top.fifthlight.armorstand.config.ConfigHolder
-import top.fifthlight.armorstand.manage.ModelItem
+import top.fifthlight.armorstand.manage.model.ModelItem
 import top.fifthlight.armorstand.util.ThreadExecutorDispatcher
 
 class ModelButton(

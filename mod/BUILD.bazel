@@ -158,6 +158,10 @@ merge_jar(
         ":mod_client_unmapped",
         ":mod_main_unmapped",
     ],
+    resources = {
+        "//third_party/licenses": "third_party",
+        "//:license": "",
+    },
 )
 
 merge_jar(
@@ -166,6 +170,10 @@ merge_jar(
         ":mod_client",
         ":mod_main",
     ],
+    resources = {
+        "//third_party/licenses": "third_party",
+        "//:license": "",
+    },
 )
 
 merge_jij(
@@ -174,7 +182,7 @@ merge_jij(
     visibility = ["//visibility:public"],
     deps = {
         "@maven//:com_h2database_h2": "com_h2database_h2:2.3.232",
-        "@maven//:com_illposed_osc_javaosc_core": "javaosc-core:0.9",
+        "@maven//:com_illposed_osc_javaosc_core": "com_illposed_osc_javaosc_core:0.9",
         "//blazerod:blazerod_without_jij": "blazerod:=",
         "//blazerod/model/model-base": "blazerod-model-base:=",
         "//blazerod/model/model-formats": "blazerod-model-formats:=",
@@ -182,6 +190,7 @@ merge_jij(
         "//blazerod/model/model-pmd": "blazerod-model-formats-pmd:=",
         "//blazerod/model/model-pmx": "blazerod-model-formats-pmx:=",
         "//blazerod/model/model-vmd": "blazerod-model-formats-vmd:=",
+        "//blazerod/model/model-bedrock": "blazerod-model-formats-bedrock:=",
         "//blazerod/render": "blazerod-render:=",
         "@libbulletjme//:libbulletjme": "libbulletjme_blazerod:22.0.1+patch1",
         "@libbulletjme//:libbulletjme_natives": "libbulletjme_natives_blazerod:22.0.1+patch1",
@@ -197,12 +206,6 @@ generate_remap_classpath(
     ],
 )
 
-copy_file(
-    name = "makeup_ultra_fast",
-    src = "@makeup_ultra_fast//file",
-    out = "MakeUp-UltraFast-9.2.zip",
-)
-
 java_binary(
     name = "client",
     srcs = [],
@@ -211,6 +214,7 @@ java_binary(
         "@minecraft_assets//:assets_%s" % game_version,
         "@minecraft_assets//:assets",
         "@makeup_ultra_fast//file",
+        "@yes_steve_model//:model_wine_fox",
         "//blazerod/model/example-models:example-models",
     ],
     env = {
@@ -224,7 +228,10 @@ java_binary(
         "-Ddev.launch.type=client",
         "-Ddev.launch.assetsPath=$(rlocationpath @minecraft_assets//:assets)",
         "-Ddev.launch.mainClass=net.fabricmc.loader.impl.launch.knot.KnotClient",
-        "-Ddev.launch.copyFiles=$(rlocationpath @makeup_ultra_fast//file):shaderpacks/MakeUp-UltraFast-9.2.zip,$(rlocationpath //blazerod/model/example-models:example-models):models",
+        "-Ddev.launch.copyFiles=" +
+            "$(rlocationpath @makeup_ultra_fast//file):shaderpacks/MakeUp-UltraFast-9.2.zip," +
+            "$(rlocationpath //blazerod/model/example-models:example-models):models," +
+            "$(rlocationpath @yes_steve_model//:model_wine_fox):models/wine_fox",
         "-Ddev.launch.expandRunfileProperties=fabric.remapClasspathFile",
         "-Dblazerod.debug=true",
         "-Dblazerod.debug.gui=true",

@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import top.fifthlight.armorstand.config.ConfigHolder
-import top.fifthlight.armorstand.manage.ModelItem
-import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.ModelManagerHolder
+import top.fifthlight.armorstand.manage.model.ModelItem
 import top.fifthlight.armorstand.ui.state.ModelSwitchScreenState
 
 class ModelSwitchViewModel(scope: CoroutineScope) : ViewModel(scope) {
@@ -21,7 +21,7 @@ class ModelSwitchViewModel(scope: CoroutineScope) : ViewModel(scope) {
 
     init {
         scope.launch {
-            val totalModelCount = ModelManager.getTotalFavoriteModels()
+            val totalModelCount = ModelManagerHolder.instance.getTotalFavoriteModels()
             if (totalModelCount == 0) {
                 _uiState.getAndUpdate {
                     it.copy(content = ModelSwitchScreenState.Content.Empty)
@@ -35,9 +35,9 @@ class ModelSwitchViewModel(scope: CoroutineScope) : ViewModel(scope) {
                 extraItem = null
                 currentSelectedIndex = 0
             } else {
-                val favoriteIndex = ModelManager.getFavoriteModelIndex(currentModelPath)
+                val favoriteIndex = ModelManagerHolder.instance.getFavoriteModelIndex(currentModelPath)
                 if (favoriteIndex == null) {
-                    extraItem = ModelManager.getModel(currentModelPath)
+                    extraItem = ModelManagerHolder.instance.getModelByPath(currentModelPath)
                     currentSelectedIndex = if (extraItem == null) {
                         0
                     } else {
@@ -50,7 +50,7 @@ class ModelSwitchViewModel(scope: CoroutineScope) : ViewModel(scope) {
             }
 
             val models = buildList {
-                addAll(ModelManager.getFavoriteModels())
+                addAll(ModelManagerHolder.instance.getFavoriteModels())
                 extraItem?.let { add(it) }
             }
             _uiState.getAndUpdate {

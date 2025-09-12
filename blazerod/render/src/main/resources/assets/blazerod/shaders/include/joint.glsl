@@ -9,11 +9,11 @@ layout(std430) buffer JointsData {
 uniform samplerBuffer Joints;
 #endif// SUPPORT_SSBO
 
-mat4 getJointMatrix(int index) {
+mat4 getJointPositionMatrix(int index) {
     #ifdef SUPPORT_SSBO
-    return Joints[index];
+    return Joints[index * 2];
     #else// SUPPORT_SSBO
-    int base = index * 4;
+    int base = index * 8;
     return mat4(
     texelFetch(Joints, base),
     texelFetch(Joints, base + 1),
@@ -23,13 +23,37 @@ mat4 getJointMatrix(int index) {
     #endif// SUPPORT_SSBO
 }
 
-vec4 skinTransform(vec4 position, vec4 weight, ivec4 joint_indices) {
+mat3 getJointNormalMatrix(int index) {
+    #ifdef SUPPORT_SSBO
+    return mat3(Joints[index * 2 + 1]);
+    #else// SUPPORT_SSBO
+    int base = index * 8 + 4;
+    return mat3(
+    texelFetch(Joints, base).xyz,
+    texelFetch(Joints, base + 1).xyz,
+    texelFetch(Joints, base + 2).xyz
+    );
+    #endif// SUPPORT_SSBO
+}
+
+vec4 skinPositionTransform(vec4 position, vec4 weight, ivec4 joint_indices) {
     if (weight == vec4(0.0)) {
         return position;
     }
-    vec4 posX = getJointMatrix(joint_indices.x) * position;
-    vec4 posY = getJointMatrix(joint_indices.y) * position;
-    vec4 posZ = getJointMatrix(joint_indices.z) * position;
-    vec4 posW = getJointMatrix(joint_indices.w) * position;
+    vec4 posX = getJointPositionMatrix(joint_indices.x) * position;
+    vec4 posY = getJointPositionMatrix(joint_indices.y) * position;
+    vec4 posZ = getJointPositionMatrix(joint_indices.z) * position;
+    vec4 posW = getJointPositionMatrix(joint_indices.w) * position;
+    return posX * weight.x + posY * weight.y + posZ * weight.z + posW * weight.w;
+}
+
+vec3 skinNormalTransform(vec3 normal, vec4 weight, ivec4 joint_indices) {
+    if (weight == vec4(0.0)) {
+        return normal;
+    }
+    vec3 posX = getJointNormalMatrix(joint_indices.x) * normal;
+    vec3 posY = getJointNormalMatrix(joint_indices.y) * normal;
+    vec3 posZ = getJointNormalMatrix(joint_indices.z) * normal;
+    vec3 posW = getJointNormalMatrix(joint_indices.w) * normal;
     return posX * weight.x + posY * weight.y + posZ * weight.z + posW * weight.w;
 }

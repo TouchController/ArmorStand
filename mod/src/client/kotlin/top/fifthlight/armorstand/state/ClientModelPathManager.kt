@@ -9,7 +9,7 @@ import net.minecraft.client.MinecraftClient
 import top.fifthlight.armorstand.ArmorStand
 import top.fifthlight.armorstand.ArmorStandClient
 import top.fifthlight.armorstand.config.ConfigHolder
-import top.fifthlight.armorstand.manage.ModelManager
+import top.fifthlight.armorstand.manage.ModelManagerHolder
 import top.fifthlight.armorstand.util.ModelHash
 import java.nio.file.Path
 import java.util.*
@@ -30,7 +30,7 @@ object ClientModelPathManager {
                 .collect { selfPath = it }
         }
         ArmorStand.instance.scope.launch {
-            ModelManager.lastScanTime.filterNotNull().collectLatest {
+            ModelManagerHolder.instance.lastUpdateTime.filterNotNull().collectLatest {
                 modelPaths.clear()
                 ModelHashManager.getModelHashes().forEach { (uuid, hash) ->
                     update(uuid, hash)
@@ -44,7 +44,7 @@ object ClientModelPathManager {
             modelPaths.remove(uuid)
             return
         }
-        val path = ModelManager.getModel(hash)?.path
+        val path = ModelManagerHolder.instance.getModelByHash(hash)?.path
         if (path != null) {
             modelPaths[uuid] = path
         } else {
