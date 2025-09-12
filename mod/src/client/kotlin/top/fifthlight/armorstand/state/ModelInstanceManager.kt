@@ -137,7 +137,7 @@ object ModelInstanceManager {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun get(uuid: UUID, time: Long?, load: Boolean = true): ModelInstanceItem? {
         val isSelf = uuid == selfUuid
-        if (isSelf && !ConfigHolder.config.value.showOtherPlayerModel) {
+        if (!isSelf && !ConfigHolder.config.value.showOtherPlayerModel) {
             return null
         }
 
