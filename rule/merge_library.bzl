@@ -22,9 +22,11 @@ MergeLibraryInfo, _ = provider(
     init = _merge_library_info_init,
 )
 
-def _modify_deps(deps, merge_deps, plugins, expect, actual):
-    real_merge_deps = [dep for dep in merge_deps]
-    real_deps = [dep for dep in deps] + real_merge_deps
+def _modify_deps(deps, associates, merge_deps, plugins, expect, actual):
+    real_deps = [dep for dep in deps]
+    for merge_dep in merge_deps:
+        if not merge_dep in associates:
+            real_deps.append(merge_dep)
     real_plugins = [plugin for plugin in plugins]
     if expect or actual:
         real_deps += ["//rule/expect_actual_tools/api:api"]
@@ -32,15 +34,16 @@ def _modify_deps(deps, merge_deps, plugins, expect, actual):
         real_plugins += ["//rule/expect_actual_tools/processor/java:expect_processor"]
     if actual:
         real_plugins += ["//rule/expect_actual_tools/processor/java:actual_processor"]
-    return {"deps": real_deps, "merge_deps": real_merge_deps, "plugins": real_plugins}
+    return {"deps": real_deps, "associates": associates, "plugins": real_plugins}
 
 def _merge_library_macro(**kwargs):
     deps = kwargs["deps"] if "deps" in kwargs else []
+    associates = kwargs["associates"] if "associates" in kwargs else []
     merge_deps = kwargs["merge_deps"] if "merge_deps" in kwargs else []
     plugins = kwargs["plugins"] if "plugins" in kwargs else []
     expect = kwargs["expect"] if "expect" in kwargs else False
     actual = kwargs["actual"] if "actual" in kwargs else False
-    return _modify_deps(deps, merge_deps, plugins, expect, actual) | kwargs
+    return kwargs | _modify_deps(deps, associates, merge_deps, plugins, expect, actual)
 
 def _java_merge_library_import_impl(ctx):
     return [

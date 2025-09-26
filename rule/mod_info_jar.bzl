@@ -14,6 +14,10 @@ def _mod_info_jar_impl(name, visibility, fabric, neoforge, resource_strip_prefix
         resources.append(fabric_name)
     if neoforge:
         neoforge_name = name + "_neoforge_expanded"
+        mod_id = substitutions["${mod_id}"]
+        if mod_id:
+            substitutions = substitutions | { "${mod_id}": mod_id.replace("-", "_") }
+        print(substitutions)
         expand_template(
             name = neoforge_name,
             template = neoforge,
@@ -46,6 +50,7 @@ mod_info_jar = macro(
         ),
         "substitutions": attr.string_dict(
             mandatory = True,
+            configurable = False,
             doc = "A dictionary mapping strings to their substitutions.",
         ),
     },

@@ -7,7 +7,7 @@ def _model_info_jar_impl(name, visibility, substitutions):
         "${license}": license,
         "${home_page}": home_page,
         "${sources_page}": sources_page,
-        "${issue_racker}": issue_tracker,
+        "${issue_tracker}": issue_tracker,
     }
     predefined_substitutions.update(substitutions)
     mod_info_jar(

@@ -1,5 +1,5 @@
 license="${license}"
-issueTrackerURL="${issueTracker}"
+issueTrackerURL="${issue_tracker}"
 
 [[mods]]
 modId="${mod_id}"

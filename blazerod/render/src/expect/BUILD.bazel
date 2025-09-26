@@ -13,6 +13,5 @@ kt_merge_library(
     expect = True,
     deps = [
         "//blazerod/render/src/game:remapped_client_access_widened_named",
-        "//rule/expect_actual_tools/api:api",
     ],
 )

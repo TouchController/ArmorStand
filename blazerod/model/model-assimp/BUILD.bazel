@@ -1,15 +1,15 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 load("//:properties.bzl", "blazerod_version", "game_version", "fabric_language_kotlin_version_modrinth")
-load("//rule:fabric_mod_json_jar.bzl", "fabric_mod_json_jar")
+load("//blazerod/model:model_info_jar.bzl", "model_info_jar")
 load("//rule/fabric:merge_jij.bzl", "fabric_merge_jij")
 load("@//rule:upload_modrinth.bzl", "modrinth_dependency", "upload_modrinth")
 
-fabric_mod_json_jar(
+model_info_jar(
     name = "mod_info_json",
-    src = "src/main/resources/fabric.mod.json",
-    resource_strip_prefix = "blazerod/model/model-assimp",
     substitutions = {
-        "${version}": blazerod_version,
+        "${mod_id}": "blazerod-model-assimp",
+        "${name}": "BlazeRod model assimp",
+        "${description}": "Assimp model loading support.",
     },
 )
 
