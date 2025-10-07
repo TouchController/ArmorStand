@@ -1105,6 +1105,9 @@ class PmxLoader : ModelFileLoader {
             loadMaterials(buffer)
             loadBones(buffer)
             loadMorphTargets(buffer)
+            loadDisplayFrames(buffer)
+            loadRigidBodies(buffer)
+            loadJoints(buffer)
 
             val modelId = UUID.randomUUID()
             val rootNodes = mutableListOf<Node>()
