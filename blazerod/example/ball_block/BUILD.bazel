@@ -4,7 +4,6 @@ load("//rule:apply_access_widener.bzl", "apply_access_widener")
 load("//rule/fabric:merge_jij.bzl", "fabric_merge_jij")
 load("//rule:remap_jar.bzl", "remap_jar")
 load("//rule:generate_remap_classpath.bzl", "generate_remap_classpath")
-load("//rule:decompile_jar.bzl", "decompile_jar")
 load("//:properties.bzl", "game_version")
 
 remap_jar(
@@ -30,11 +29,6 @@ apply_access_widener(
     name = "remapped_client_access_widened_named",
     input = "//game:remapped_client_named",
     srcs = [":access_widener_dep_named"],
-)
-
-decompile_jar(
-    name = "decompile_client_access_widened_named",
-    inputs = [":remapped_client_access_widened_named"],
 )
 
 java_library(

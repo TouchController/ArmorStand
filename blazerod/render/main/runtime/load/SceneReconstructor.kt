@@ -153,6 +153,13 @@ class SceneReconstructor private constructor(private val info: GpuLoadModelLoadI
                         }
                     )
                 }
+
+                is NodeLoadInfo.Component.RigidBody -> {
+                    RigidBodyComponent(
+                        rigidBodyIndex = component.rigidBodyIndex,
+                        rigidBodyData = component.rigidBody,
+                    )
+                }
             }
         },
     )
@@ -170,6 +177,7 @@ class SceneReconstructor private constructor(private val info: GpuLoadModelLoadI
             expressions = info.expressions,
             expressionGroups = info.expressionGroups,
             cameras = cameras,
+            physicsJoints = info.physicalJoints,
             renderTransform = info.renderTransform,
         )
     }

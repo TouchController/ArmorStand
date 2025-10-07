@@ -12,6 +12,7 @@ import top.fifthlight.blazerod.model.*
 import top.fifthlight.blazerod.render.BlazerodVertexFormatElements
 import top.fifthlight.blazerod.render.BlazerodVertexFormats
 import top.fifthlight.blazerod.runtime.resource.MorphTargetGroup
+import top.fifthlight.blazerod.runtime.resource.RenderPhysicsJoint
 import top.fifthlight.blazerod.runtime.resource.RenderSkin
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -488,6 +489,8 @@ class ModelPreprocessor private constructor(
     }
 
     private var ikCount = 0
+    private var rigidBodyCount = 0
+    private val rigidBodyIdToIndexMap = mutableMapOf<RigidBodyId, Int>()
     private val nodes = mutableListOf<NodeLoadInfo>()
     private fun loadNode(node: Node): Int {
         val skinJointData = skinJointsData[node.id]
@@ -542,6 +545,16 @@ class ModelPreprocessor private constructor(
                                 NodeLoadInfo.Component.InfluenceSource(
                                     influence = component.influence,
                                     transformId = component.transformId,
+                                )
+                            )
+                        }
+
+                        is NodeComponent.RigidBodyComponent -> {
+                            rigidBodyIdToIndexMap[component.rigidBodyId] = rigidBodyCount
+                            add(
+                                NodeLoadInfo.Component.RigidBody(
+                                    rigidBodyIndex = rigidBodyCount++,
+                                    rigidBody = component.rigidBody,
                                 )
                             )
                         }
@@ -619,6 +632,23 @@ class ModelPreprocessor private constructor(
         return Pair(expressions, expressionGroups)
     }
 
+    private fun loadPhysicalJoints(modelPhysicalJoints: List<PhysicalJoint>) = modelPhysicalJoints.mapNotNull {
+        RenderPhysicsJoint(
+            name = it.name,
+            type = it.type,
+            rigidBodyAIndex = rigidBodyIdToIndexMap[it.rigidBodyA] ?: return@mapNotNull null,
+            rigidBodyBIndex = rigidBodyIdToIndexMap[it.rigidBodyB] ?: return@mapNotNull null,
+            position = it.position,
+            rotation = it.rotation,
+            positionMin = it.positionMin,
+            positionMax = it.positionMax,
+            rotationMin = it.rotationMin,
+            rotationMax = it.rotationMax,
+            positionSpring = it.positionSpring,
+            rotationSpring = it.rotationSpring,
+        )
+    }
+
     private fun loadScene(scene: Scene, expressions: List<Expression>): PreProcessModelLoadInfo {
         val rootNode = NodeLoadInfo(
             nodeId = null,
@@ -631,6 +661,7 @@ class ModelPreprocessor private constructor(
         val rootNodeIndex = nodes.size
         nodes.add(rootNode)
         val (expressions, expressionGroups) = loadExpressions(expressions)
+        val physicalJoints = loadPhysicalJoints(model.physicalJoints)
         return PreProcessModelLoadInfo(
             textures = textures,
             indexBuffers = indexBuffers,
@@ -642,6 +673,7 @@ class ModelPreprocessor private constructor(
             morphTargetInfos = morphTargetInfos,
             expressions = expressions,
             expressionGroups = expressionGroups,
+            physicalJoints = physicalJoints,
             renderTransform = scene.transform,
         )
     }

@@ -213,6 +213,7 @@ modrinth_dependency(
 
 upload_modrinth(
     name = "upload_modrinth_fabric",
+    tags = ["only_build_when_release"],
     token_secret_id = "modrinth_token",
     project_id = "tLPuDSOw",
     version_name = mod_version,
@@ -239,6 +240,7 @@ modrinth_dependency(
 
 upload_modrinth(
     name = "upload_modrinth_neoforge",
+    tags = ["only_build_when_release"],
     token_secret_id = "modrinth_token",
     project_id = "tLPuDSOw",
     version_name = mod_version,

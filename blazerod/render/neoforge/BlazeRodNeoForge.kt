@@ -13,6 +13,7 @@ import net.neoforged.neoforge.common.NeoForge
 import org.slf4j.LoggerFactory
 import top.fifthlight.blazerod.api.event.RenderEvents
 import top.fifthlight.blazerod.debug.*
+import top.fifthlight.blazerod.physics.PhysicsInterface
 import top.fifthlight.blazerod.runtime.resource.RenderTexture
 import top.fifthlight.blazerod.runtime.uniform.UniformBuffer
 import top.fifthlight.blazerod.util.dispatchers.ThreadExecutorDispatcher
@@ -29,6 +30,8 @@ class BlazeRodNeoForge(private val container: ModContainer) {
         @JvmStatic
         fun onClientSetup(event: FMLClientSetupEvent) {
             BlazeRod.mainDispatcher = ThreadExecutorDispatcher(MinecraftClient.getInstance())
+
+            PhysicsInterface.load()
 
             // NeoForge initialize device before us, so no RenderEvents.INITIALIZE_DEVICE here
             event.enqueueWork {

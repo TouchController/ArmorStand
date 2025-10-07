@@ -28,6 +28,10 @@ import java.util.function.Consumer
 class ModelInstanceImpl(
     override val scene: RenderSceneImpl,
 ) : AbstractRefCount(), ModelInstance {
+    companion object {
+        private const val PHYSICS_FPS = 120f
+    }
+
     @ActualConstructor("of")
     constructor(scene: RenderScene) : this(scene as RenderSceneImpl)
 
@@ -38,6 +42,7 @@ class ModelInstanceImpl(
 
     init {
         scene.increaseReferenceCount()
+        scene.attachToInstance(this)
     }
 
     class ModelData(scene: RenderSceneImpl) : AutoCloseable {

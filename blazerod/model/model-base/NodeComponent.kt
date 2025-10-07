@@ -24,6 +24,10 @@ sealed class NodeComponent {
         INFLUENCE_SOURCE(
             requireMesh = false,
             singleInstanceOnly = false,
+        ),
+        RIGID_BODY(
+            requireMesh = false,
+            singleInstanceOnly = false,
         );
 
         companion object {
@@ -66,5 +70,13 @@ sealed class NodeComponent {
     ): NodeComponent() {
         override val type: Type
             get() = Type.INFLUENCE_SOURCE
+    }
+
+    data class RigidBodyComponent(
+        val rigidBodyId: RigidBodyId,
+        val rigidBody: RigidBody,
+    ) : NodeComponent() {
+        override val type: Type
+            get() = Type.RIGID_BODY
     }
 }

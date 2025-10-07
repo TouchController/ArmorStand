@@ -16,6 +16,8 @@ local.properties
 *.iml
 *.ipr
 *.iws
+.clwb
+.ijwb
 
 # vscode
 
@@ -44,6 +46,11 @@ replay_*.log
 
 .kotlin
 
+# clangd
+compile_commands.json
+.cache
+
 # bazel
 .bazelbsp
 bazel-*
+external

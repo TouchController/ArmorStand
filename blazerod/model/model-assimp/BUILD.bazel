@@ -74,6 +74,7 @@ modrinth_dependency(
 
 upload_modrinth(
     name = "upload_modrinth",
+    tags = ["only_build_when_release"],
     token_secret_id = "modrinth_token",
     project_id = "xeMk2Ovz",
     version_name = blazerod_version,

@@ -1,20 +1,15 @@
 load("//rule:merge_library.bzl", "kt_merge_library")
 
 kt_merge_library(
-    name = "load",
+    name = "resource",
     srcs = glob(["*.kt"]),
     actual = True,
     merge_deps = [
         "//blazerod/render/main:main_base",
         "//blazerod/render/api/resource",
         "//blazerod/render/api/refcount",
-        "//blazerod/render/api/loader",
-        "//blazerod/render/main/runtime",
-        "//blazerod/render/main/runtime/resource",
-        "//blazerod/render/main/render",
         "//blazerod/render/main/extension",
-        "//blazerod/render/main/util/dispatchers",
-        "//blazerod/render/main/util/blaze3d",
+        "//blazerod/render/main/render",
     ],
     visibility = ["//blazerod/render:__subpackages__"],
     deps = [

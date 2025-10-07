@@ -1,3 +1,7 @@
-tiny	2	0	official	named
-c	fxa	net/minecraft/client/gui/hud/InGameHud
-	m	(Lfxb;Lftu;)V	p	renderItemHotbar
+tiny	2	0	official	mojang	named
+c	fxa	net/minecraft/client/gui/hud/InGameHud	net/minecraft/client/gui/Gui
+	m	(Lfxb;Lftu;)V	p	renderItemHotbar	renderItemHotbar
+c	gkn$d	net/minecraft/client/gui/screens/worldselection/EditGameRulesScreen$GameRuleEntry	net/minecraft/client/gui/screen/world/EditGameRulesScreen$NamedRuleWidget
+	f	Lgkn;	b	this$EditGameRulesScreen	this$EditGameRulesScreen
+c	fol$e	com/mojang/realmsclient/RealmsMainScreen$Entry	net/minecraft/client/realms/gui/screen/RealmsMainScreen$Entry
+	f	Lfol;	e	this$RealmsMainScreen	this$RealmsMainScreen

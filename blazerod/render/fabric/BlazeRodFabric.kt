@@ -7,6 +7,7 @@ import net.minecraft.client.gl.RenderPassImpl
 import org.slf4j.LoggerFactory
 import top.fifthlight.blazerod.api.event.RenderEvents
 import top.fifthlight.blazerod.debug.*
+import top.fifthlight.blazerod.physics.PhysicsInterface
 import top.fifthlight.blazerod.runtime.resource.RenderTexture
 import top.fifthlight.blazerod.runtime.uniform.UniformBuffer
 import top.fifthlight.blazerod.util.dispatchers.ThreadExecutorDispatcher
@@ -18,6 +19,8 @@ object BlazeRodFabric : ClientModInitializer {
 
     override fun onInitializeClient() {
         BlazeRod.mainDispatcher = ThreadExecutorDispatcher(MinecraftClient.getInstance())
+
+        PhysicsInterface.load()
 
         if (System.getProperty("blazerod.debug") == "true") {
             BlazeRod.debug = true

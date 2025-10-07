@@ -1,0 +1,62 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_jni//jni:defs.bzl", "jni_headers")
+load("//rule:cc_jni_library.bzl", "cc_jni_library")
+load("//rule:merge_library.bzl", "java_merge_library", "kt_merge_library")
+
+java_merge_library(
+    name = "physics_declaration",
+    srcs = ["PhysicsLibrary.java"],
+    deps = ["@maven//:org_slf4j_slf4j_api"],
+)
+
+jni_headers(
+    name = "physics_headers",
+    lib = ":physics_declaration",
+)
+
+cc_library(
+    name = "bullet_binding",
+    srcs = glob([
+        "*.cpp",
+        "*.h",
+    ]),
+    deps = [
+        ":physics_headers",
+        "@bullet//:BulletCollision",
+        "@bullet//:BulletDynamics",
+        "@bullet//:LinearMath",
+        "@rules_jni//jni",
+    ],
+)
+
+cc_jni_library(
+    name = "bullet",
+    platforms = select({
+        "//:config_release": [
+            "@//platforms:android_arm64",
+            "@//platforms:android_x86_64",
+            "@//platforms:linux_arm64_glibc",
+            "@//platforms:linux_x86_64_glibc",
+            "@//platforms:windows_arm64",
+            "@//platforms:windows_x86_64",
+        ],
+        "//conditions:default": [],
+    }),
+    deps = [":bullet_binding"],
+)
+
+kt_merge_library(
+    name = "physics",
+    srcs = glob(["*.kt"]),
+    merge_deps = [
+        ":physics_declaration",
+        "//blazerod/render/main/runtime/resource",
+    ],
+    resource_jars = [":bullet"],
+    visibility = ["//blazerod/render:__subpackages__"],
+    deps = [
+        "//blazerod/model/model-base",
+        "@maven//:it_unimi_dsi_fastutil",
+        "@maven//:org_joml_joml",
+    ],
+)

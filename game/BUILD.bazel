@@ -1,5 +1,4 @@
 load("//:properties.bzl", "game_version", "mod_version")
-load("//rule:decompile_jar.bzl", "decompile_jar")
 load("//rule:extract_jar.bzl", "extract_jar")
 load("//rule:merge_mapping.bzl", "merge_mapping", "merge_mapping_input")
 load("//rule:remap_jar.bzl", "remap_jar")
