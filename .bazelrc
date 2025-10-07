@@ -4,3 +4,32 @@ common --tool_java_language_version=21
 common --java_language_version=21
 
 build --worker_max_multiplex_instances=KotlinKsp=1
+common --build_tag_filters=-only_build_when_release
+
+# Release builds
+build:opt --copt -flto --copt -Os
+build:opt --linkopt -flto
+build:opt --strip=always
+build:opt --compilation_mode=opt
+build:opt --build_tag_filters=
+
+# Debug
+build:dbg --strip=never
+build:dbg --compilation_mode=dbg
+
+# Zig CC
+build:linux --sandbox_add_mount_pair=/tmp
+build:macos --sandbox_add_mount_pair=/var/tmp
+
+# Android Rules
+common --android_platforms=@//:android_arm32,@//:android_arm64,@//:android_x86,@//:android_x86_64
+
+# C++17
+common:linux --cxxopt=-std=c++17
+common:linux --host_cxxopt=-std=c++17
+common:macos --cxxopt=-std=c++17
+common:macos --host_cxxopt=-std=c++17
+common:windows --cxxopt=/std:c++17
+common:windows --host_cxxopt=/std:c++17
+
+common --enable_platform_specific_config

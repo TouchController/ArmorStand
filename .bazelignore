@@ -1,0 +1,6 @@
+compile_commands.json
+.cache
+.idea
+.kotlin
+.vscode
+external

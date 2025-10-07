@@ -34,6 +34,44 @@ sealed interface LayoutStrategy {
 
     fun arrayStrideOf(baseAlign: Int, baseSize: Int) = baseSize roundUpToMultiple arrayAlignmentOf(baseAlign, baseSize)
 
+    object PackedLayoutStrategy : LayoutStrategy {
+        override val scalarAlign: Int
+            get() = 4
+        override val scalarSize: Int
+            get() = 4
+        override val vec2Align: Int
+            get() = 4
+        override val vec2Size: Int
+            get() = 8
+        override val vec3Align: Int
+            get() = 4
+        override val vec3Size: Int
+            get() = 12
+        override val vec4Align: Int
+            get() = 4
+        override val vec4Size: Int
+            get() = 16
+        override val mat2Align: Int
+            get() = 4
+        override val mat2Size: Int
+            get() = 32
+        override val mat2Padding: Boolean
+            get() = true
+        override val mat3Align: Int
+            get() = 4
+        override val mat3Size: Int
+            get() = 48
+        override val mat3Padding: Boolean
+            get() = false
+        override val mat4Align: Int
+            get() = 4
+        override val mat4Size: Int
+            get() = 64
+
+        override val arrayAlignment: Int
+            get() = 1
+    }
+
     object Std140LayoutStrategy : LayoutStrategy {
         override val scalarAlign: Int
             get() = 4
@@ -68,7 +106,7 @@ sealed interface LayoutStrategy {
         override val mat4Size: Int
             get() = 64
 
-        override val arrayAlignment: Int?
+        override val arrayAlignment: Int
             get() = 16
     }
 

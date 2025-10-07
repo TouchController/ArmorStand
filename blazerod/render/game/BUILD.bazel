@@ -1,7 +1,6 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//rule:apply_access_widener.bzl", "apply_access_widener")
 load("//rule:extract_access_widener.bzl", "extract_access_widener")
-load("//rule:decompile_jar.bzl", "decompile_jar")
 load("//rule/neoforge:convert_access_widener.bzl", "convert_access_widener")
 load("//rule:remap_access_widener.bzl", "remap_access_widener")
 

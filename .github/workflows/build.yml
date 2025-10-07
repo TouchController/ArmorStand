@@ -19,7 +19,7 @@ jobs:
           repository-cache: true
       - name: build
         run: |
-          bazel build \
+          bazel build --config opt \
             --verbose_failures \
             //mod:mod_fabric \
             //mod:mod_neoforge \

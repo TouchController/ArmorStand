@@ -1,0 +1,55 @@
+platform(
+    name = "android_arm64",
+    visibility = ["//visibility:public"],
+    constraint_values = [
+        "@platforms//os:android",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+platform(
+    name = "android_x86_64",
+    visibility = ["//visibility:public"],
+    constraint_values = [
+        "@platforms//os:android",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "linux_x86_64_glibc",
+    visibility = ["//visibility:public"],
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@zig_sdk//libc:gnu.2.24",
+    ],
+)
+
+platform(
+    name = "linux_arm64_glibc",
+    visibility = ["//visibility:public"],
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+        "@zig_sdk//libc:gnu.2.24",
+    ],
+)
+
+platform(
+    name = "windows_x86_64",
+    visibility = ["//visibility:public"],
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "windows_arm64",
+    visibility = ["//visibility:public"],
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:aarch64",
+    ]
+)

@@ -60,6 +60,7 @@ class PmxLoader : ModelFileLoader {
     private class Context(
         private val basePath: Path,
     ) {
+        private var version: Float = 0f
         private lateinit var globals: PmxGlobals
         private val decoder by lazy {
             globals.textEncoding.charset.newDecoder()
@@ -84,6 +85,9 @@ class PmxLoader : ModelFileLoader {
         private lateinit var morphTargetGroups: List<PmxMorphGroup>
         private val childBoneMap = mutableMapOf<Int, MutableList<Int>>()
         private val rootBones = mutableListOf<Int>()
+        private lateinit var rigidBodies: List<PmxRigidBody>
+        private var boneToRigidBodyMap = mutableMapOf<Int, MutableList<Int>>()
+        private lateinit var joints: List<PmxJoint>
 
         private fun loadRgbColor(buffer: ByteBuffer): RgbColor {
             if (buffer.remaining() < 3 * 4) {
@@ -178,7 +182,7 @@ class PmxLoader : ModelFileLoader {
             1 -> buffer.get().toInt()
             2 -> buffer.getShort().toInt()
             4 -> buffer.getInt()
-            else -> throw PmxLoadException("Bad texture index size: ${globals.boneIndexSize}")
+            else -> throw PmxLoadException("Bad texture index size: ${globals.textureIndexSize}")
         }
 
         private fun loadMorphIndex(buffer: ByteBuffer) = when (globals.morphIndexSize) {
@@ -192,7 +196,14 @@ class PmxLoader : ModelFileLoader {
             1 -> buffer.get().toUByte().toInt()
             2 -> buffer.getShort().toUShort().toInt()
             4 -> buffer.getInt()
-            else -> throw PmxLoadException("Bad vertex index size: ${globals.boneIndexSize}")
+            else -> throw PmxLoadException("Bad vertex index size: ${globals.vertexIndexSize}")
+        }
+
+        private fun loadRigidBodyIndex(buffer: ByteBuffer): Int = when (globals.rigidBodyIndexSize) {
+            1 -> buffer.get().toUByte().toInt()
+            2 -> buffer.getShort().toUShort().toInt()
+            4 -> buffer.getInt()
+            else -> throw PmxLoadException("Bad rigid body index size: ${globals.rigidBodyIndexSize}")
         }
 
         private fun loadString(buffer: ByteBuffer): String {
@@ -221,6 +232,7 @@ class PmxLoader : ModelFileLoader {
             if (version < 2.0f) {
                 throw PmxLoadException("Bad PMX version: at least 2.0, but get $version")
             }
+            this.version = version
             val globalsCount = buffer.get().toUByte().toInt()
             if (globalsCount < 8) {
                 throw PmxLoadException("Bad global count: $globalsCount, at least 8")
@@ -945,6 +957,141 @@ class PmxLoader : ModelFileLoader {
             morphTargetGroups = morphGroups
         }
 
+        private fun loadDisplayFrames(buffer: ByteBuffer) {
+            val displayFrameCount = buffer.getInt()
+            if (displayFrameCount < 0) {
+                throw PmxLoadException("Bad PMX model: display frames count less than zero")
+            }
+            val displayFrames = mutableListOf<PmxDisplayFrame>()
+            repeat(displayFrameCount) {
+                val nameLocal = loadString(buffer)
+                val nameUniversal = loadString(buffer)
+                val isSpecial = buffer.get() != 0.toByte()
+                val frameCount = buffer.getInt()
+                val frames = (0 until frameCount).map {
+                    when (val type = buffer.get()) {
+                        0.toByte() -> PmxDisplayFrame.FrameData.Bone(
+                            boneIndex = loadBoneIndex(buffer),
+                        )
+
+                        1.toByte() -> PmxDisplayFrame.FrameData.Morph(
+                            morphIndex = loadMorphIndex(buffer),
+                        )
+
+                        else -> throw PmxLoadException("Unknown frame type: $type")
+                    }
+                }
+                displayFrames.add(
+                    PmxDisplayFrame(
+                        nameLocal = nameLocal,
+                        nameUniversal = nameUniversal,
+                        isSpecial = isSpecial,
+                        frames = frames,
+                    )
+                )
+            }
+        }
+
+        private fun loadRigidBodies(buffer: ByteBuffer) {
+            val rigidBodyCount = buffer.getInt()
+            if (rigidBodyCount < 0) {
+                throw PmxLoadException("Bad PMX model: rigid bodies count less than zero")
+            }
+
+            fun loadShapeType(byte: Byte): PmxRigidBody.ShapeType = when (byte.toInt()) {
+                0 -> PmxRigidBody.ShapeType.SPHERE
+                1 -> PmxRigidBody.ShapeType.BOX
+                2 -> PmxRigidBody.ShapeType.CAPSULE
+                else -> throw PmxLoadException("Unsupported rigid body shape type: $byte")
+            }
+
+            fun loadPhysicsMode(byte: Byte): PmxRigidBody.PhysicsMode = when (byte.toInt()) {
+                0 -> PmxRigidBody.PhysicsMode.FOLLOW_BONE
+                1 -> PmxRigidBody.PhysicsMode.PHYSICS
+                2 -> PmxRigidBody.PhysicsMode.PHYSICS_PLUS_BONE
+                else -> throw PmxLoadException("Unsupported rigid body physics mode: $byte")
+            }
+
+            rigidBodies = (0 until rigidBodyCount).map { index ->
+                PmxRigidBody(
+                    nameLocal = loadString(buffer),
+                    nameUniversal = loadString(buffer),
+                    relatedBoneIndex = loadBoneIndex(buffer),
+                    groupId = buffer.get().toUByte().toInt(),
+                    nonCollisionGroup = buffer.getShort().toUShort().toInt(),
+                    shape = loadShapeType(buffer.get()),
+                    shapeSize = loadVector3f(buffer).mul(MMD_SCALE),
+                    shapePosition = loadVector3f(buffer).transformPosition(),
+                    shapeRotation = loadVector3f(buffer).also { it.x *= -1 },
+                    mass = buffer.getFloat(),
+                    moveAttenuation = buffer.getFloat(),
+                    rotationDamping = buffer.getFloat(),
+                    repulsion = buffer.getFloat(),
+                    frictionForce = buffer.getFloat(),
+                    physicsMode = loadPhysicsMode(buffer.get())
+                ).also {
+                    if (it.relatedBoneIndex in bones.indices) {
+                        boneToRigidBodyMap.getOrPut(it.relatedBoneIndex, ::mutableListOf).add(index)
+                    } else if (bones.isNotEmpty()) {
+                        // Allocate to first bone
+                        // https://github.com/benikabocha/saba/blob/29b8efa8b31c8e746f9a88020fb0ad9dcdcf3332/src/Saba/Model/MMD/MMDPhysics.cpp#L434
+                        boneToRigidBodyMap.getOrPut(0, ::mutableListOf).add(index)
+                    } else {
+                        // No bone? Ignore
+                    }
+                }
+            }
+        }
+
+        private fun loadJoints(buffer: ByteBuffer) {
+            val jointCount = buffer.getInt()
+            if (jointCount < 0) {
+                throw PmxLoadException("Bad PMX model: joints count less than zero")
+            }
+
+            fun loadJointType(byte: Byte): PmxJoint.JointType = PmxJoint.JointType.entries.firstOrNull {
+                byte.toInt() == it.value
+            } ?: throw PmxLoadException("Unsupported joint type: $byte")
+
+            joints = (0 until jointCount).map {
+                val nameLocal = loadString(buffer)
+                val nameUniversal = loadString(buffer)
+                val type = loadJointType(buffer.get())
+                val rigidBodyIndexA = loadRigidBodyIndex(buffer)
+                val rigidBodyIndexB = loadRigidBodyIndex(buffer)
+                val position = loadVector3f(buffer).transformPosition()
+                val rotation = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 }
+
+                val positionMinimumOrig = loadVector3f(buffer).transformPosition()
+                val positionMaximumOrig = loadVector3f(buffer).transformPosition()
+                val positionMinimum = Vector3f(positionMaximumOrig.x, positionMinimumOrig.y, positionMinimumOrig.z)
+                val positionMaximum = Vector3f(positionMinimumOrig.x, positionMaximumOrig.y, positionMaximumOrig.z)
+
+                val rotationMinimumOrig = loadVector3f(buffer)
+                val rotationMaximumOrig = loadVector3f(buffer)
+                val rotationMinimum = Vector3f(-rotationMaximumOrig.x, rotationMinimumOrig.y, rotationMinimumOrig.z)
+                val rotationMaximum = Vector3f(-rotationMinimumOrig.x, rotationMaximumOrig.y, rotationMaximumOrig.z)
+                val positionSpring = loadVector3f(buffer).transformPosition()
+                val rotationSpring = loadVector3f(buffer).also { it.x *= -1 }
+
+                PmxJoint(
+                    nameLocal = nameLocal,
+                    nameUniversal = nameUniversal,
+                    type = type,
+                    rigidBodyIndexA = rigidBodyIndexA,
+                    rigidBodyIndexB = rigidBodyIndexB,
+                    position = position,
+                    rotation = rotation,
+                    positionMinimum = positionMinimum,
+                    positionMaximum = positionMaximum,
+                    rotationMinimum = rotationMinimum,
+                    rotationMaximum = rotationMaximum,
+                    positionSpring = positionSpring,
+                    rotationSpring = rotationSpring,
+                )
+            }
+        }
+
         private data class MaterialMorphData(
             val materialIndex: Int,
             val morphIndex: Int,
@@ -1165,6 +1312,30 @@ class PmxLoader : ModelFileLoader {
                 model = Model(
                     scenes = listOf(scene),
                     skins = listOf(skin),
+                    physicalJoints = this.joints.mapNotNull { joint ->
+                        if (joint.rigidBodyIndexA !in rigidBodies.indices) {
+                            return@mapNotNull null
+                        }
+                        if (joint.rigidBodyIndexB !in rigidBodies.indices) {
+                            return@mapNotNull null
+                        }
+                        PhysicalJoint(
+                            name = joint.nameLocal.takeIf(String::isNotBlank),
+                            type = when (joint.type) {
+                                PmxJoint.JointType.SPRING_6DOF -> PhysicalJoint.JointType.SPRING_6DOF
+                            },
+                            rigidBodyA = RigidBodyId(modelId, joint.rigidBodyIndexA),
+                            rigidBodyB = RigidBodyId(modelId, joint.rigidBodyIndexB),
+                            position = joint.position,
+                            rotation = joint.rotation,
+                            positionMin = joint.positionMinimum,
+                            positionMax = joint.positionMaximum,
+                            rotationMin = joint.rotationMinimum,
+                            rotationMax = joint.rotationMaximum,
+                            positionSpring = joint.positionSpring,
+                            rotationSpring = joint.rotationSpring,
+                        )
+                    },
                     expressions = buildList {
                         for ((index, target) in morphTargets.withIndex()) {
                             val expression = Expression.Target(

@@ -13,6 +13,7 @@ kt_merge_library(
         "//blazerod/render/main/extension",
         "//blazerod/render/main/runtime",
         "//blazerod/render/main/runtime/data",
+        "//blazerod/render/main/runtime/resource",
         "//blazerod/render/main/runtime/uniform",
         "//blazerod/render/main/util/gpushaderpool",
         "//blazerod/render/main/util/bitmap",

@@ -27,14 +27,17 @@ sealed class RenderNodeComponent<C : RenderNodeComponent<C>> : AbstractRefCount(
         get() = "node"
 
     sealed class Type<C : RenderNodeComponent<C>> {
-        object Primitive : Type<top.fifthlight.blazerod.runtime.node.component.PrimitiveComponent>()
-        object Joint : Type<top.fifthlight.blazerod.runtime.node.component.JointComponent>()
-        object InfluenceSource : Type<top.fifthlight.blazerod.runtime.node.component.InfluenceSourceComponent>()
-        object Camera : Type<top.fifthlight.blazerod.runtime.node.component.CameraComponent>()
-        object IkTarget : Type<top.fifthlight.blazerod.runtime.node.component.IkTargetComponent>()
+        object Primitive : Type<PrimitiveComponent>()
+        object Joint : Type<JointComponent>()
+        object InfluenceSource : Type<InfluenceSourceComponent>()
+        object Camera : Type<CameraComponent>()
+        object IkTarget : Type<IkTargetComponent>()
+        object RigidBody : Type<RigidBodyComponent>()
     }
 
     abstract val type: Type<C>
+
+    open fun onAttached(instance: ModelInstanceImpl, node: RenderNodeImpl) {}
 
     abstract val updatePhases: List<UpdatePhase.Type>
     abstract fun update(phase: UpdatePhase, node: RenderNodeImpl, instance: ModelInstanceImpl)

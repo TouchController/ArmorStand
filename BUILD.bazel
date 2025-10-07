@@ -5,6 +5,13 @@ load("//:properties.bzl", "mod_version")
 load("@rules_java//java:defs.bzl", "java_plugin")
 load("@rules_java//java:defs.bzl", "java_library")
 
+config_setting(
+    name = "config_release",
+    values = {
+        "compilation_mode": "opt",
+    },
+)
+
 kt_compiler_plugin(
     name = "serialization_plugin",
     compile_phase = True,

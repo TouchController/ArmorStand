@@ -59,7 +59,9 @@ kt_merge_library(
         "//blazerod/render/main/util/dispatchers",
         "//blazerod/render/main/util/objectpool",
         "//blazerod/render/main/layout",
+        "//blazerod/render/main/physics",
         "//blazerod/render/main/runtime",
+        "//blazerod/render/main/runtime/resource",
         "//blazerod/render/main/runtime/uniform",
     ],
 )

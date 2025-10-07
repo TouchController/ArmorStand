@@ -7,6 +7,7 @@ kt_merge_library(
     merge_deps = [
         "//blazerod/render/main/animation/context",
         "//blazerod/render/main/runtime",
+        "//blazerod/render/main/runtime/resource",
         "//blazerod/render/api/animation",
         "//blazerod/render/api/resource",
     ],
