@@ -22,7 +22,7 @@ import java.nio.charset.CodingErrorAction
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 
-class VmdLoadException(message: String) : Exception(message)
+class VmdLoadException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 private inline fun IntIterable.forEachInt(action: (Int) -> Unit) {
     val iterator = intIterator()
@@ -56,8 +56,8 @@ class VmdLoader : ModelFileLoader {
 
     private val SHIFT_JIS = Charset.forName("Shift-JIS")
     private val decoder = SHIFT_JIS.newDecoder()
-        .onMalformedInput(CodingErrorAction.REPORT)
-        .onUnmappableCharacter(CodingErrorAction.REPORT)
+        .onMalformedInput(CodingErrorAction.REPLACE)
+        .onUnmappableCharacter(CodingErrorAction.REPLACE)
 
     private fun loadString(buffer: ByteBuffer, maxLength: Int): String {
         val bytes = ByteBuffer.allocate(maxLength)
@@ -67,7 +67,14 @@ class VmdLoader : ModelFileLoader {
             .indexOfFirst { bytes.get(it) == 0.toByte() }
             .takeIf { it != -1 } ?: maxLength
         val stringBytes = bytes.slice(0, nullIndex).order(ByteOrder.LITTLE_ENDIAN)
-        return decoder.decode(stringBytes).toString()
+        return try {
+            decoder.decode(stringBytes).toString()
+        } catch (ex: Exception) {
+            val hexBytes = (0 until nullIndex).joinToString("") {
+                "%02X".format(bytes.get(it))
+            }
+            throw VmdLoadException("Failed to decode string for byte $hexBytes", ex)
+        }
     }
 
     private fun loadHeader(buffer: ByteBuffer) {
