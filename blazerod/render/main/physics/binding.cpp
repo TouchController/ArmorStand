@@ -100,16 +100,17 @@ JNIEXPORT jobject JNICALL Java_top_fifthlight_blazerod_physics_PhysicsLibrary_ge
                                                                                                  jlong physics_world) {
     auto physics_world_ptr = reinterpret_cast<PhysicsWorld*>(physics_world);
     auto transform_buffer = physics_world_ptr->GetTransformBuffer();
-    return env->NewDirectByteBuffer(transform_buffer.data(), transform_buffer.size() * sizeof(float));
+    auto transform_buffer_size = physics_world_ptr->GetTransformBufferSize();
+    return env->NewDirectByteBuffer(transform_buffer, transform_buffer_size);
 }
 
 /*
  * Class:     top_fifthlight_blazerod_physics_PhysicsLibrary
  * Method:    stepPhysicsWorld
- * Signature: (JFFF)V
+ * Signature: (JFIF)V
  */
 JNIEXPORT void JNICALL Java_top_fifthlight_blazerod_physics_PhysicsLibrary_stepPhysicsWorld(
-    JNIEnv* env, jclass clazz, jlong physics_world, jfloat delta_time, jfloat max_sub_steps, jfloat fixed_time_step) {
+    JNIEnv* env, jclass clazz, jlong physics_world, jfloat delta_time, jint max_sub_steps, jfloat fixed_time_step) {
     auto physics_world_ptr = reinterpret_cast<PhysicsWorld*>(physics_world);
     physics_world_ptr->Step(delta_time, max_sub_steps, fixed_time_step);
 }

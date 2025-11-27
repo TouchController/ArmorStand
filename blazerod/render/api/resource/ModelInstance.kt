@@ -15,6 +15,8 @@ interface ModelInstance : RefCount {
 
     fun clearTransform()
     fun setTransformMatrix(nodeIndex: Int, transformId: TransformId, matrix: Matrix4f)
+    fun setTransformMatrix(nodeIndex: Int, transformId: TransformId, updater: Consumer<NodeTransform.Matrix>)
+    fun setTransformMatrix(nodeIndex: Int, transformId: TransformId, updater: NodeTransform.Matrix.() -> Unit)
     fun setTransformDecomposed(nodeIndex: Int, transformId: TransformId, decomposed: NodeTransformView.Decomposed)
     fun setTransformDecomposed(nodeIndex: Int, transformId: TransformId, updater: Consumer<NodeTransform.Decomposed>)
     fun setTransformDecomposed(nodeIndex: Int, transformId: TransformId, updater: NodeTransform.Decomposed.() -> Unit)
@@ -26,8 +28,8 @@ interface ModelInstance : RefCount {
     fun getCameraTransform(index: Int): CameraTransform?
 
     fun updateCamera()
-    fun debugRender(viewProjectionMatrix: Matrix4fc, consumers: VertexConsumerProvider)
-    fun updateRenderData()
+    fun debugRender(viewProjectionMatrix: Matrix4fc, consumers: VertexConsumerProvider, time: Float)
+    fun updateRenderData(time: Float)
 
     fun createRenderTask(
         modelMatrix: Matrix4fc,

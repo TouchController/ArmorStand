@@ -1022,7 +1022,7 @@ class PmxLoader : ModelFileLoader {
                     shape = loadShapeType(buffer.get()),
                     shapeSize = loadVector3f(buffer).mul(MMD_SCALE),
                     shapePosition = loadVector3f(buffer).transformPosition(),
-                    shapeRotation = loadVector3f(buffer).also { it.x *= -1 },
+                    shapeRotation = loadVector3f(buffer).also { it.y *= -1 },
                     mass = buffer.getFloat(),
                     moveAttenuation = buffer.getFloat(),
                     rotationDamping = buffer.getFloat(),
@@ -1060,7 +1060,7 @@ class PmxLoader : ModelFileLoader {
                 val rigidBodyIndexA = loadRigidBodyIndex(buffer)
                 val rigidBodyIndexB = loadRigidBodyIndex(buffer)
                 val position = loadVector3f(buffer).transformPosition()
-                val rotation = loadVector3f(buffer).also { it.x *= -1; it.y *= -1 }
+                val rotation = loadVector3f(buffer).also { it.y *= -1 }
 
                 val positionMinimumOrig = loadVector3f(buffer).transformPosition()
                 val positionMaximumOrig = loadVector3f(buffer).transformPosition()
@@ -1071,7 +1071,7 @@ class PmxLoader : ModelFileLoader {
                 val rotationMaximumOrig = loadVector3f(buffer)
                 val rotationMinimum = Vector3f(-rotationMaximumOrig.x, rotationMinimumOrig.y, rotationMinimumOrig.z)
                 val rotationMaximum = Vector3f(-rotationMinimumOrig.x, rotationMaximumOrig.y, rotationMaximumOrig.z)
-                val positionSpring = loadVector3f(buffer).transformPosition()
+                val positionSpring = loadVector3f(buffer)
                 val rotationSpring = loadVector3f(buffer).also { it.x *= -1 }
 
                 PmxJoint(
@@ -1163,6 +1163,38 @@ class PmxLoader : ModelFileLoader {
                                     appendLocal = data.inheritLocal,
                                 ),
                                 transformId = TransformId.INFLUENCE,
+                            )
+                        )
+                    }
+                    boneToRigidBodyMap[index]?.forEach { index ->
+                        add(
+                            NodeComponent.RigidBodyComponent(
+                                rigidBodyId = RigidBodyId(modelId, index),
+                                rigidBody = rigidBodies[index].let { rigidBody ->
+                                    RigidBody(
+                                        name = rigidBody.nameLocal.takeIf(String::isNotBlank),
+                                        collisionGroup = rigidBody.groupId,
+                                        collisionMask = rigidBody.nonCollisionGroup,
+                                        shape = when (rigidBody.shape) {
+                                            PmxRigidBody.ShapeType.SPHERE -> RigidBody.ShapeType.SPHERE
+                                            PmxRigidBody.ShapeType.BOX -> RigidBody.ShapeType.BOX
+                                            PmxRigidBody.ShapeType.CAPSULE -> RigidBody.ShapeType.CAPSULE
+                                        },
+                                        shapeSize = rigidBody.shapeSize,
+                                        shapePosition = rigidBody.shapePosition,
+                                        shapeRotation = rigidBody.shapeRotation,
+                                        mass = rigidBody.mass,
+                                        moveAttenuation = rigidBody.moveAttenuation,
+                                        rotationDamping = rigidBody.rotationDamping,
+                                        repulsion = rigidBody.repulsion,
+                                        frictionForce = rigidBody.frictionForce,
+                                        physicsMode = when (rigidBody.physicsMode) {
+                                            PmxRigidBody.PhysicsMode.FOLLOW_BONE -> RigidBody.PhysicsMode.FOLLOW_BONE
+                                            PmxRigidBody.PhysicsMode.PHYSICS -> RigidBody.PhysicsMode.PHYSICS
+                                            PmxRigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
+                                        },
+                                    )
+                                },
                             )
                         )
                     }

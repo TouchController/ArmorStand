@@ -13,6 +13,7 @@ class PhysicsScene(
 ) : AutoCloseable {
     private val pointer: Long
     private var closed = false
+    internal val rigidBodyCount = rigidBodies.size
 
     init {
         require(rigidBodies.isNotEmpty()) { "Rigidbodies must not be empty" }

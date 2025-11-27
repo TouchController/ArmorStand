@@ -10,6 +10,7 @@ kt_merge_library(
         "//blazerod/render/main:main_base",
         "//blazerod/render/main/render",
         "//blazerod/render/main/extension",
+        "//blazerod/render/main/physics",
         "//blazerod/render/main/runtime/data",
         "//blazerod/render/main/runtime/resource",
         "//blazerod/render/main/runtime/uniform",
@@ -25,5 +26,6 @@ kt_merge_library(
         "//blazerod/render/game:remapped_client_access_widened_named",
         "@maven//:org_joml_joml",
         "@maven//:it_unimi_dsi_fastutil",
+        "@maven//:org_lwjgl_lwjgl",
     ],
 )

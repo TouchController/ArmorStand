@@ -18,58 +18,90 @@ struct PhysicsFilterCallback : public btOverlapFilterCallback {
     }
 };
 
-class FollowBoneMotionState : public btMotionState {
-   private:
-    PhysicsWorld* world;
-    size_t rigidbody_index;
+void PhysicsMotionState::getWorldTransform(btTransform& world_transform) const { world_transform = this->transform; }
 
+void PhysicsMotionState::setWorldTransform(const btTransform& world_transform) {
+    this->transform = world_transform;
+    isDirty = true;
+}
+
+PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vector3f& position,
+                                       const Vector3f& rotation) {
+    transform.setIdentity();
+
+    btMatrix3x3 rotation_matrix;
+    rotation_matrix.setEulerZYX(rotation.x, rotation.y, rotation.z);
+    btVector3 pos(position.x, position.y, position.z);
+    btTransform rigidbody_transform;
+    rigidbody_transform.setIdentity();
+    rigidbody_transform.setOrigin(pos);
+    rigidbody_transform.setBasis(rotation_matrix);
+
+    from_node_to_world.mult(rigidbody_transform, initial_transform.inverse());
+    from_world_to_node = from_node_to_world.inverse();
+}
+
+class FollowBoneObjectMotionState : public PhysicsMotionState {
    public:
-    FollowBoneMotionState(PhysicsWorld* world, size_t rigidbody_index)
-        : world(world), rigidbody_index(rigidbody_index) {}
-    void getWorldTransform(btTransform& world_transform) const override {
-        world_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[this->rigidbody_index * 16]);
+    FollowBoneObjectMotionState(btTransform& initial_transform, const Vector3f& position, const Vector3f& rotation)
+        : PhysicsMotionState(initial_transform, position, rotation) {}
+
+    void GetFromWorld(const PhysicsWorld* world, size_t rigidbody_index) override {
+        btTransform node_transform;
+        node_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+        this->transform.mult(node_transform, this->from_node_to_world);
     }
 
     void setWorldTransform(const btTransform& world_transform) override {}
+
+    void SetToWorld(PhysicsWorld* world, size_t rigidbody_index) override { this->isDirty = false; }
 };
 
-class PhysicsMotionState : public btMotionState {
+class PhysicsObjectMotionState : public PhysicsMotionState {
+   public:
+    PhysicsObjectMotionState(btTransform& initial_transform, const Vector3f& position, const Vector3f& rotation)
+        : PhysicsMotionState(initial_transform, position, rotation) {}
+
+    void GetFromWorld(const PhysicsWorld* world, size_t rigidbody_index) override {
+        btTransform node_transform;
+        node_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+        this->transform.mult(node_transform, this->from_node_to_world);
+    }
+
+    void SetToWorld(PhysicsWorld* world, size_t rigidbody_index) override {
+        this->isDirty = false;
+        btTransform node_transform;
+        node_transform.mult(this->transform, this->from_world_to_node);
+        node_transform.getOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+    }
+};
+
+class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
    private:
-    PhysicsWorld* world;
-    size_t rigidbody_index;
+    btVector3 origin;
 
    public:
-    PhysicsMotionState(PhysicsWorld* world, size_t rigidbody_index) : world(world), rigidbody_index(rigidbody_index) {}
-    void getWorldTransform(btTransform& world_transform) const override {
-        world_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[this->rigidbody_index * 16]);
+    PhysicsPlusBoneObjectMotionState(btTransform& initial_transform, const Vector3f& position, const Vector3f& rotation)
+        : PhysicsMotionState(initial_transform, position, rotation) {}
+
+    void GetFromWorld(const PhysicsWorld* world, size_t rigidbody_index) override {
+        btTransform node_transform;
+        node_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+        this->transform.mult(node_transform, this->from_node_to_world);
+        this->origin = transform.getOrigin();
     }
-    void setWorldTransform(const btTransform& world_transform) override {
-        world_transform.getOpenGLMatrix(&world->GetTransformBuffer()[this->rigidbody_index * 16]);
+
+    void SetToWorld(PhysicsWorld* world, size_t rigidbody_index) override {
+        this->isDirty = false;
+        btTransform world_transform = this->transform;
+        world_transform.setOrigin(this->origin);
+        btTransform node_transform;
+        node_transform.mult(world_transform, this->from_world_to_node);
+        node_transform.getOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
     }
 };
 
-class PhysicsPlusBoneDynamicMotionState : public btMotionState {
-   private:
-    PhysicsWorld* world;
-    size_t rigidbody_index;
-
-   public:
-    PhysicsPlusBoneDynamicMotionState(PhysicsWorld* world, size_t rigidbody_index)
-        : world(world), rigidbody_index(rigidbody_index) {}
-    void getWorldTransform(btTransform& world_transform) const override {
-        world_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[this->rigidbody_index * 16]);
-    }
-    void setWorldTransform(const btTransform& world_transform) override {
-        btTransform original_transform;
-        original_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[this->rigidbody_index * 16]);
-        btTransform final_transform = world_transform;
-        final_transform.setOrigin(original_transform.getOrigin());
-        final_transform.getOpenGLMatrix(&world->GetTransformBuffer()[this->rigidbody_index * 16]);
-    }
-};
-
-PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_count, float* initial_transform)
-    : transform_buffer(initial_transform, initial_transform + initial_transform_count) {
+PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_count, float* initial_transform) {
     this->broadphase = std::make_unique<btDbvtBroadphase>();
     this->collision_config = std::make_unique<btDefaultCollisionConfiguration>();
     this->dispatcher = std::make_unique<btCollisionDispatcher>(this->collision_config.get());
@@ -92,15 +124,20 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     this->filter_callback = std::move(filter_callback);
 
     const auto& rigidbodies = scene.GetRigidBodies();
-    if (transform_buffer.size() != rigidbodies.size() * 16) {
-        throw std::invalid_argument("Transform buffer size does not match rigidbody count");
+    if (initial_transform_count != rigidbodies.size() * 16) {
+        throw std::invalid_argument("Initial transform count must match rigidbody count");
     }
+    transform_buffer = std::make_unique<float[]>(initial_transform_count);
+    memcpy(transform_buffer.get(), initial_transform, initial_transform_count * sizeof(float));
     this->rigidbodies.reserve(rigidbodies.size());
 
     size_t rigidbody_count = 0;
     for (const RigidBody& rigidbody_item : rigidbodies) {
         size_t rigidbody_index = rigidbody_count++;
         RigidBodyData rigidbody_data;
+
+        btTransform transform;
+        transform.setFromOpenGLMatrix(&initial_transform[rigidbody_index * 16]);
 
         std::unique_ptr<btCollisionShape> shape;
         switch (rigidbody_item.shape_type) {
@@ -131,18 +168,21 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
             shape->calculateLocalInertia(mass, local_inertia);
         }
 
-        std::unique_ptr<btMotionState> motion_state;
+        std::unique_ptr<PhysicsMotionState> motion_state;
         switch (rigidbody_item.physics_mode) {
             case FOLLOW_BONE: {
-                motion_state = std::make_unique<FollowBoneMotionState>(this, rigidbody_index);
+                motion_state = std::make_unique<FollowBoneObjectMotionState>(transform, rigidbody_item.shape_position,
+                                                                             rigidbody_item.shape_rotation);
                 break;
             }
             case PHYSICS: {
-                motion_state = std::make_unique<PhysicsMotionState>(this, rigidbody_index);
+                motion_state = std::make_unique<PhysicsObjectMotionState>(transform, rigidbody_item.shape_position,
+                                                                          rigidbody_item.shape_rotation);
                 break;
             }
             case PHYSICS_PLUS_BONE: {
-                motion_state = std::make_unique<PhysicsPlusBoneDynamicMotionState>(this, rigidbody_index);
+                motion_state = std::make_unique<PhysicsPlusBoneObjectMotionState>(
+                    transform, rigidbody_item.shape_position, rigidbody_item.shape_rotation);
                 break;
             }
 
@@ -175,14 +215,16 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     const auto& joints = scene.GetJoints();
     this->joints.reserve(joints.size());
 
+    size_t joint_count = 0;
     for (const Joint& joint_item : joints) {
-        btMatrix3x3 rotMat;
-        rotMat.setEulerZYX(joint_item.rotation.x, joint_item.rotation.y, joint_item.rotation.z);
+        size_t joint_index = joint_count++;
+        btMatrix3x3 rotation_matrix;
+        rotation_matrix.setEulerZYX(joint_item.rotation.x, joint_item.rotation.y, joint_item.rotation.z);
 
         btTransform transform;
         transform.setIdentity();
         transform.setOrigin(btVector3(joint_item.position.x, joint_item.position.y, joint_item.position.z));
-        transform.setBasis(rotMat);
+        transform.setBasis(rotation_matrix);
 
         size_t rigidbody_a_index = joint_item.rigidbody_a_index;
         if (rigidbody_a_index >= this->rigidbodies.size()) {
@@ -195,10 +237,12 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         }
         const auto& rigidbody_b = this->rigidbodies[joint_item.rigidbody_b_index];
 
-        btTransform inverse_a = rigidbody_a.rigidbody->getWorldTransform().inverse();
-        btTransform inverse_b = rigidbody_b.rigidbody->getWorldTransform().inverse();
-        inverse_a *= transform;
-        inverse_b *= transform;
+        btTransform inverse_a;
+        btTransform inverse_b;
+        inverse_a.setFromOpenGLMatrix(initial_transform + rigidbody_a_index * 16);
+        inverse_b.setFromOpenGLMatrix(initial_transform + rigidbody_b_index * 16);
+        inverse_a = inverse_a.inverse() * transform;
+        inverse_b = inverse_b.inverse() * transform;
 
         auto constraint = std::make_unique<btGeneric6DofSpringConstraint>(
             *rigidbody_a.rigidbody, *rigidbody_b.rigidbody, inverse_a, inverse_b, true);
@@ -252,8 +296,19 @@ PhysicsWorld::~PhysicsWorld() {
     }
 }
 
-void PhysicsWorld::Step(float delta_time, float max_sub_steps, float fixed_time_step) {
-    this->world->stepSimulation(delta_time, max_sub_steps, fixed_time_step);
+void PhysicsWorld::Step(float delta_time, int max_sub_steps, float fixed_time_step) {
+    size_t rigidbody_index = 0;
+    for (auto& rigidbody : this->rigidbodies) {
+        rigidbody.motion_state->GetFromWorld(this, rigidbody_index++);
+    }
+    // this->world->stepSimulation(delta_time, max_sub_steps, fixed_time_step);
+    rigidbody_index = 0;
+    for (auto& rigidbody : this->rigidbodies) {
+        if (!rigidbody.motion_state->IsDirty()) {
+            continue;
+        }
+        rigidbody.motion_state->SetToWorld(this, rigidbody_index++);
+    }
 }
 
 }  // namespace blazerod::physics

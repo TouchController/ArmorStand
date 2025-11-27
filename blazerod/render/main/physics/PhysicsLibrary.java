@@ -29,7 +29,7 @@ public class PhysicsLibrary {
 
     public native static ByteBuffer getTransformBuffer(long physicsWorld);
 
-    public native static void stepPhysicsWorld(long physicsWorld, float deltaTime, float maxSubSteps, float fixedTimeStep);
+    public native static void stepPhysicsWorld(long physicsWorld, float deltaTime, int maxSubSteps, float fixedTimeStep);
 
     public native static void destroyPhysicsWorld(long physicsWorld);
 
@@ -120,7 +120,12 @@ public class PhysicsLibrary {
             } catch (Exception ignored) {
             }
 
-            System.load(outputPath.toAbsolutePath().toString());
+            try {
+                System.load(outputPath.toAbsolutePath().toString());
+            } catch (UnsatisfiedLinkError ex) {
+                logger.error("Failed to load bullet physics native library", ex);
+                return false;
+            }
             try {
                 Files.delete(outputPath);
             } catch (Exception ignored) {

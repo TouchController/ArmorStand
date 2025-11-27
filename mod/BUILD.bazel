@@ -132,10 +132,12 @@ java_binary(
             "$(rlocationpath @yes_steve_model//:model_wine_fox):models/wine_fox," +
             "$(rlocationpath @yes_steve_model//:model_default):models/default",
         "-Ddev.launch.expandRunfileProperties=fabric.remapClasspathFile",
+        "-Djoml.debug=true",
+        "-Djoml.format=false",
         "-Dblazerod.debug=true",
         "-Dblazerod.debug.gui=true",
         "-Darmorstand.debug=true",
-        "-Darmorstand.debug.bone=false",
+        "-Darmorstand.debug.bone=true",
         "-Darmorstand.debug.gui=false",
         "-Xmx4G",
     ],

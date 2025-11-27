@@ -3,12 +3,17 @@ package top.fifthlight.blazerod.runtime
 import net.minecraft.client.render.VertexConsumerProvider
 import org.joml.Matrix4f
 import org.joml.Matrix4fc
+import org.lwjgl.system.MemoryStack
+import org.lwjgl.system.MemoryUtil
 import top.fifthlight.blazerod.api.refcount.AbstractRefCount
 import top.fifthlight.blazerod.api.resource.ModelInstance
 import top.fifthlight.blazerod.api.resource.RenderScene
 import top.fifthlight.blazerod.model.NodeTransform
 import top.fifthlight.blazerod.model.NodeTransformView
 import top.fifthlight.blazerod.model.TransformId
+import top.fifthlight.blazerod.physics.PhysicsInterface
+import top.fifthlight.blazerod.physics.PhysicsScene
+import top.fifthlight.blazerod.physics.PhysicsWorld
 import top.fifthlight.blazerod.runtime.data.LocalMatricesBuffer
 import top.fifthlight.blazerod.runtime.data.MorphTargetBuffer
 import top.fifthlight.blazerod.runtime.data.RenderSkinBuffer
@@ -28,9 +33,6 @@ import java.util.function.Consumer
 class ModelInstanceImpl(
     override val scene: RenderSceneImpl,
 ) : AbstractRefCount(), ModelInstance {
-    companion object {
-        private const val PHYSICS_FPS = 120f
-    }
 
     @ActualConstructor("of")
     constructor(scene: RenderScene) : this(scene as RenderSceneImpl)
@@ -39,10 +41,45 @@ class ModelInstanceImpl(
         get() = "model_instance"
 
     val modelData = ModelData(scene)
+    internal val physicsData = if (PhysicsInterface.isPhysicsAvailable && scene.physicsScene != null) {
+        PhysicsData(scene, modelData, scene.physicsScene)
+    } else {
+        null
+    }
 
     init {
         scene.increaseReferenceCount()
         scene.attachToInstance(this)
+        physicsData?.initialize()
+    }
+
+    class PhysicsData(
+        private val scene: RenderSceneImpl,
+        private val modelData: ModelData,
+        private val physicsScene: PhysicsScene,
+    ) : AutoCloseable {
+        var lastPhysicsTime: Float = -1f
+        private var _world: PhysicsWorld? = null
+        val world: PhysicsWorld
+            get() = _world ?: error("PhysicsWorld is not initialized")
+
+        fun initialize() {
+            if (_world != null) {
+                return
+            }
+            MemoryStack.stackPush().use { stack ->
+                val initialTransform = stack.malloc(scene.rigidBodyComponents.size * 64)
+                scene.rigidBodyComponents.forEach { (nodeIndex, component) ->
+                    val nodeWorldTransform = modelData.worldTransforms[nodeIndex]
+                    nodeWorldTransform.get(component.rigidBodyIndex * 64, initialTransform)
+                }
+                _world = PhysicsWorld(physicsScene, initialTransform)
+            }
+        }
+
+        override fun close() {
+            _world?.close()
+        }
     }
 
     class ModelData(scene: RenderSceneImpl) : AutoCloseable {
@@ -113,6 +150,18 @@ class ModelInstanceImpl(
         transform.setMatrix(transformId, matrix)
     }
 
+    override fun setTransformMatrix(
+        nodeIndex: Int,
+        transformId: TransformId,
+        updater: Consumer<NodeTransform.Matrix>,
+    ) = setTransformMatrix(nodeIndex, transformId) { updater.accept(this) }
+
+    override fun setTransformMatrix(nodeIndex: Int, transformId: TransformId, updater: NodeTransform.Matrix.() -> Unit) {
+        markNodeTransformDirty(scene.nodes[nodeIndex])
+        val transform = modelData.transformMaps[nodeIndex]
+        transform.updateMatrix(transformId, updater)
+    }
+
     override fun setTransformDecomposed(
         nodeIndex: Int,
         transformId: TransformId,
@@ -127,8 +176,7 @@ class ModelInstanceImpl(
         nodeIndex: Int,
         transformId: TransformId,
         updater: Consumer<NodeTransform.Decomposed>,
-    ) =
-        setTransformDecomposed(nodeIndex, transformId) { updater.accept(this) }
+    ) = setTransformDecomposed(nodeIndex, transformId) { updater.accept(this) }
 
     override fun setTransformDecomposed(
         nodeIndex: Int,
@@ -185,12 +233,12 @@ class ModelInstanceImpl(
         scene.updateCamera(this)
     }
 
-    override fun debugRender(viewProjectionMatrix: Matrix4fc, consumers: VertexConsumerProvider) {
-        scene.debugRender(this, viewProjectionMatrix, consumers)
+    override fun debugRender(viewProjectionMatrix: Matrix4fc, consumers: VertexConsumerProvider, time: Float) {
+        scene.debugRender(this, viewProjectionMatrix, consumers, time)
     }
 
-    override fun updateRenderData() {
-        scene.updateRenderData(this)
+    override fun updateRenderData(time: Float) {
+        scene.updateRenderData(this, time)
     }
 
     internal fun updateNodeTransform(nodeIndex: Int) {
@@ -235,6 +283,7 @@ class ModelInstanceImpl(
 
     override fun onClosed() {
         scene.decreaseReferenceCount()
+        physicsData?.close()
         modelData.close()
     }
 }

@@ -3,6 +3,7 @@
 #include <sys/types.h>
 
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 
 namespace blazerod::physics {

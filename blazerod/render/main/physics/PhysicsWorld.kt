@@ -4,6 +4,8 @@ import org.joml.Matrix4f
 import java.lang.AutoCloseable
 import java.lang.ref.Reference
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.*
 
 class PhysicsWorld(
     scene: PhysicsScene,
@@ -11,6 +13,7 @@ class PhysicsWorld(
 ) : AutoCloseable {
     private val pointer: Long
     private var closed = false
+    internal val rigidBodyCount = scene.rigidBodyCount
     private val transformBuffer: ByteBuffer
 
     init {
@@ -22,7 +25,10 @@ class PhysicsWorld(
         } finally {
             Reference.reachabilityFence(initialTransform)
         }
-        transformBuffer = PhysicsLibrary.getTransformBuffer(pointer)
+        transformBuffer = ByteBuffer.allocateDirect(initialTransform.capacity()).order(ByteOrder.nativeOrder())//PhysicsLibrary.getTransformBuffer(pointer).order(ByteOrder.nativeOrder())
+        transformBuffer.put(initialTransform)
+        transformBuffer.clear()
+        initialTransform.clear()
     }
 
     private inline fun <T> requireNotClosed(crossinline block: () -> T): T {
@@ -31,15 +37,21 @@ class PhysicsWorld(
     }
 
     fun getTransform(rigidBodyIndex: Int, dst: Matrix4f): Matrix4f = requireNotClosed {
+        Objects.checkIndex(rigidBodyIndex, rigidBodyCount)
         dst.apply {
-            dst.set(rigidBodyIndex * 64, transformBuffer)
+            set(rigidBodyIndex * 64, transformBuffer)
         }
     }
 
     fun setTransform(rigidBodyIndex: Int, transform: Matrix4f) {
+        Objects.checkIndex(rigidBodyIndex, rigidBodyCount)
         requireNotClosed {
             transform.get(rigidBodyIndex * 64, transformBuffer)
         }
+    }
+
+    fun step(deltaTime: Float, maxSubSteps: Int, fixedTimeStep: Float) {
+        PhysicsLibrary.stepPhysicsWorld(pointer, deltaTime, maxSubSteps, fixedTimeStep)
     }
 
     override fun close() {

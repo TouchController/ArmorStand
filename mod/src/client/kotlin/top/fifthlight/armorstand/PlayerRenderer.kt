@@ -19,6 +19,7 @@ import java.lang.ref.WeakReference
 import java.util.*
 
 object PlayerRenderer {
+    private const val NANOSECONDS_PER_SECOND = 1_000_000_000L
     private var renderingWorld = false
 
     private var prevModelItem = WeakReference<ModelInstanceManager.ModelInstanceItem.Model?>(null)
@@ -92,15 +93,16 @@ object PlayerRenderer {
         val controller = entry.controller
         val instance = entry.instance
 
+        val time = System.nanoTime().toFloat() / NANOSECONDS_PER_SECOND.toFloat()
         controller.apply(uuid, instance, vanillaState)
-        instance.updateRenderData()
+        instance.updateRenderData(time)
 
         val backupItem = matrixStack.peek().copy()
         matrixStack.pop()
         matrixStack.push()
 
         if (ArmorStandClient.instance.debugBone) {
-            instance.debugRender(matrixStack.peek().positionMatrix, consumers)
+            instance.debugRender(matrixStack.peek().positionMatrix, consumers, time)
         } else {
             matrix.set(matrixStack.peek().positionMatrix)
             matrix.scale(ConfigHolder.config.value.modelScale)
