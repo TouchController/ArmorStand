@@ -3,6 +3,7 @@ load("@rules_java//java:defs.bzl", "java_binary")
 java_binary(
     name = "tiny_remapper_worker",
     srcs = glob(["*.java"]),
+    jvm_flags = ["-Xmx1G"],
     main_class = "top.fifthlight.fabazel.remapper.TinyRemapperWorker",
     visibility = ["//visibility:public"],
     deps = [
