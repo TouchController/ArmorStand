@@ -74,7 +74,7 @@ public class BallBlockMod implements ClientModInitializer {
                 matrix.getScale().mul(0.5f);
                 matrix.getTranslation().add(0.5f, 0.5f, 0.5f);
             });
-            BALL_INSTANCE.updateRenderData();
+            BALL_INSTANCE.updateRenderData(0f);
         }).exceptionally(throwable -> {
             MinecraftClient.getInstance().execute(() -> {
                 throw new RuntimeException("Failed to load model: ", throwable);
