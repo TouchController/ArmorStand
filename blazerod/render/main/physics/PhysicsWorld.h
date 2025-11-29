@@ -60,7 +60,7 @@ class PhysicsWorld {
     ~PhysicsWorld();
 
     float* GetTransformBuffer() const { return transform_buffer.get(); }
-    size_t GetTransformBufferSize() { return rigidbodies.size() * 16 * sizeof(float); }
+    size_t GetTransformBufferSize() { return rigidbodies.size() * 7 * sizeof(float); }
     void Step(float delta_time, int max_sub_steps, float fixed_time_step);
 };
 }  // namespace blazerod::physics
