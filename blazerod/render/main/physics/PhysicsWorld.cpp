@@ -7,6 +7,28 @@
 
 namespace blazerod::physics {
 
+static btTransform InvZ(const btTransform& t) {
+    btMatrix3x3 basis = t.getBasis();
+    btVector3 origin = t.getOrigin();
+
+    btVector3 row0 = basis.getRow(0);
+    btVector3 row1 = basis.getRow(1);
+    btVector3 row2 = basis.getRow(2);
+
+    row0.setZ(-row0.z());
+    row1.setZ(-row1.z());
+    row2.setX(-row2.x());
+    row2.setY(-row2.y());
+
+    basis.setValue(row0.x(), row0.y(), row0.z(),
+                   row1.x(), row1.y(), row1.z(),
+                   row2.x(), row2.y(), row2.z());
+
+    origin.setZ(-origin.z());
+
+    return btTransform(basis, origin);
+}
+
 struct PhysicsFilterCallback : public btOverlapFilterCallback {
     btBroadphaseProxy* ground_proxy;
 
@@ -37,7 +59,8 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     rigidbody_transform.setOrigin(pos);
     rigidbody_transform.setBasis(rotation_matrix);
 
-    from_node_to_world.mult(rigidbody_transform, initial_transform.inverse());
+    btTransform initial_lh = InvZ(initial_transform);
+    from_node_to_world.mult(initial_lh.inverse(), rigidbody_transform);
     from_world_to_node = from_node_to_world.inverse();
 }
 
@@ -51,7 +74,9 @@ class FollowBoneObjectMotionState : public PhysicsMotionState {
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
         node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
-        this->transform.mult(node_transform, this->from_node_to_world);
+        
+        btTransform node_lh = InvZ(node_transform);
+        this->transform.mult(node_lh, this->from_node_to_world);
     }
 
     void setWorldTransform(const btTransform& world_transform) override {}
@@ -69,13 +94,17 @@ class PhysicsObjectMotionState : public PhysicsMotionState {
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
         node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
-        this->transform.mult(node_transform, this->from_node_to_world);
+        
+        btTransform node_lh = InvZ(node_transform);
+        this->transform.mult(node_lh, this->from_node_to_world);
     }
 
     void SetToWorld(PhysicsWorld* world, size_t rigidbody_index) override {
         this->isDirty = false;
-        btTransform node_transform;
-        node_transform.mult(this->transform, this->from_world_to_node);
+        btTransform node_transform_lh;
+        node_transform_lh.mult(this->transform, this->from_world_to_node);
+        
+        btTransform node_transform = InvZ(node_transform_lh);
         
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         btVector3 pos = node_transform.getOrigin();
@@ -103,7 +132,9 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
         node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
-        this->transform.mult(node_transform, this->from_node_to_world);
+        
+        btTransform node_lh = InvZ(node_transform);
+        this->transform.mult(node_lh, this->from_node_to_world);
         this->origin = transform.getOrigin();
     }
 
@@ -111,8 +142,10 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
         this->isDirty = false;
         btTransform world_transform = this->transform;
         world_transform.setOrigin(this->origin);
-        btTransform node_transform;
-        node_transform.mult(world_transform, this->from_world_to_node);
+        btTransform node_transform_lh;
+        node_transform_lh.mult(world_transform, this->from_world_to_node);
+        
+        btTransform node_transform = InvZ(node_transform_lh);
         
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         btVector3 pos = node_transform.getOrigin();
@@ -134,7 +167,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     this->solver = std::make_unique<btSequentialImpulseConstraintSolver>();
     this->world = std::make_unique<btDiscreteDynamicsWorld>(this->dispatcher.get(), this->broadphase.get(),
                                                             this->solver.get(), this->collision_config.get());
-    this->world->setGravity(btVector3(0, -9.81, 0));
+    this->world->setGravity(btVector3(0, -98.0f, 0));
 
     this->ground_shape = std::make_unique<btStaticPlaneShape>(btVector3(0, 1, 0), 0.0f);
     btTransform ground_transform;
