@@ -2,6 +2,7 @@ package top.fifthlight.blazerod.physics
 
 import org.joml.Vector3fc
 import top.fifthlight.blazerod.model.RigidBody
+import top.fifthlight.blazerod.model.util.MMD_SCALE
 import top.fifthlight.blazerod.runtime.resource.RenderPhysicsJoint
 import java.lang.ref.Reference
 import java.nio.ByteBuffer
@@ -27,6 +28,11 @@ class PhysicsScene(
             .putFloat(offset + 4, vector.y())
             .putFloat(offset + 8, vector.z())
 
+        fun ByteBuffer.putVector3fScaled(offset: Int, vector: Vector3fc) = this
+            .putFloat(offset + 0, vector.x() * MMD_SCALE)
+            .putFloat(offset + 4, vector.y() * MMD_SCALE)
+            .putFloat(offset + 8, vector.z() * MMD_SCALE)
+
         val rigidBodyItemSize = 72
         val rigidBodiesBuffer = ByteBuffer.allocateDirect(rigidBodyItemSize * rigidBodies.size)
             .order(ByteOrder.nativeOrder())
@@ -36,8 +42,8 @@ class PhysicsScene(
             rigidBodiesBuffer.putInt(offset + 4, rigidBody.collisionMask)
             rigidBodiesBuffer.putInt(offset + 8, rigidBody.shape.ordinal)
             rigidBodiesBuffer.putInt(offset + 12, rigidBody.physicsMode.ordinal)
-            rigidBodiesBuffer.putVector3f(offset + 16, rigidBody.shapeSize)
-            rigidBodiesBuffer.putVector3f(offset + 28, rigidBody.shapePosition)
+            rigidBodiesBuffer.putVector3fScaled(offset + 16, rigidBody.shapeSize)
+            rigidBodiesBuffer.putVector3fScaled(offset + 28, rigidBody.shapePosition)
             rigidBodiesBuffer.putVector3f(offset + 40, rigidBody.shapeRotation)
             rigidBodiesBuffer.putFloat(offset + 52, rigidBody.mass)
             rigidBodiesBuffer.putFloat(offset + 56, rigidBody.moveAttenuation)
@@ -54,10 +60,10 @@ class PhysicsScene(
             jointsBuffer.putInt(offset + 0, joint.type.ordinal)
             jointsBuffer.putInt(offset + 4, joint.rigidBodyAIndex)
             jointsBuffer.putInt(offset + 8, joint.rigidBodyBIndex)
-            jointsBuffer.putVector3f(offset + 12, joint.position)
+            jointsBuffer.putVector3fScaled(offset + 12, joint.position)
             jointsBuffer.putVector3f(offset + 24, joint.rotation)
-            jointsBuffer.putVector3f(offset + 36, joint.positionMin)
-            jointsBuffer.putVector3f(offset + 48, joint.positionMax)
+            jointsBuffer.putVector3fScaled(offset + 36, joint.positionMin)
+            jointsBuffer.putVector3fScaled(offset + 48, joint.positionMax)
             jointsBuffer.putVector3f(offset + 60, joint.rotationMin)
             jointsBuffer.putVector3f(offset + 72, joint.rotationMax)
             jointsBuffer.putVector3f(offset + 84, joint.positionSpring)

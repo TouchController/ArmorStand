@@ -48,7 +48,9 @@ class FollowBoneObjectMotionState : public PhysicsMotionState {
 
     void GetFromWorld(const PhysicsWorld* world, size_t rigidbody_index) override {
         btTransform node_transform;
-        node_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+        float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
+        node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
+        node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         this->transform.mult(node_transform, this->from_node_to_world);
     }
 
@@ -64,7 +66,9 @@ class PhysicsObjectMotionState : public PhysicsMotionState {
 
     void GetFromWorld(const PhysicsWorld* world, size_t rigidbody_index) override {
         btTransform node_transform;
-        node_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+        float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
+        node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
+        node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         this->transform.mult(node_transform, this->from_node_to_world);
     }
 
@@ -72,7 +76,17 @@ class PhysicsObjectMotionState : public PhysicsMotionState {
         this->isDirty = false;
         btTransform node_transform;
         node_transform.mult(this->transform, this->from_world_to_node);
-        node_transform.getOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+        
+        float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
+        btVector3 pos = node_transform.getOrigin();
+        btQuaternion rot = node_transform.getRotation();
+        buffer[0] = pos.x();
+        buffer[1] = pos.y();
+        buffer[2] = pos.z();
+        buffer[3] = rot.x();
+        buffer[4] = rot.y();
+        buffer[5] = rot.z();
+        buffer[6] = rot.w();
     }
 };
 
@@ -86,7 +100,9 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
 
     void GetFromWorld(const PhysicsWorld* world, size_t rigidbody_index) override {
         btTransform node_transform;
-        node_transform.setFromOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+        float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
+        node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
+        node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         this->transform.mult(node_transform, this->from_node_to_world);
         this->origin = transform.getOrigin();
     }
@@ -97,7 +113,17 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
         world_transform.setOrigin(this->origin);
         btTransform node_transform;
         node_transform.mult(world_transform, this->from_world_to_node);
-        node_transform.getOpenGLMatrix(&world->GetTransformBuffer()[rigidbody_index * 16]);
+        
+        float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
+        btVector3 pos = node_transform.getOrigin();
+        btQuaternion rot = node_transform.getRotation();
+        buffer[0] = pos.x();
+        buffer[1] = pos.y();
+        buffer[2] = pos.z();
+        buffer[3] = rot.x();
+        buffer[4] = rot.y();
+        buffer[5] = rot.z();
+        buffer[6] = rot.w();
     }
 };
 
@@ -127,8 +153,27 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     if (initial_transform_count != rigidbodies.size() * 16) {
         throw std::invalid_argument("Initial transform count must match rigidbody count");
     }
-    transform_buffer = std::make_unique<float[]>(initial_transform_count);
-    memcpy(transform_buffer.get(), initial_transform, initial_transform_count * sizeof(float));
+    
+    size_t num_rigidbodies = rigidbodies.size();
+    transform_buffer = std::make_unique<float[]>(num_rigidbodies * 7);
+    
+    // Convert initial matrix transforms to pos+rot format
+    for (size_t i = 0; i < num_rigidbodies; i++) {
+        btTransform transform;
+        transform.setFromOpenGLMatrix(&initial_transform[i * 16]);
+        
+        btVector3 pos = transform.getOrigin();
+        btQuaternion rot = transform.getRotation();
+        
+        transform_buffer[i * 7 + 0] = pos.x();
+        transform_buffer[i * 7 + 1] = pos.y();
+        transform_buffer[i * 7 + 2] = pos.z();
+        transform_buffer[i * 7 + 3] = rot.x();
+        transform_buffer[i * 7 + 4] = rot.y();
+        transform_buffer[i * 7 + 5] = rot.z();
+        transform_buffer[i * 7 + 6] = rot.w();
+    }
+
     this->rigidbodies.reserve(rigidbodies.size());
 
     size_t rigidbody_count = 0;
