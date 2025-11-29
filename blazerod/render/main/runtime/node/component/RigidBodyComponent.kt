@@ -85,8 +85,8 @@ class RigidBodyComponent(
                         instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
                             // Correct math: NewLayer = OldLayer * W^-1 * P
                             // 'this' is OldLayer
-                            this.mul(inverseNodeWorldMatrix) // OldLayer * W^-1
-                            this.mul(physicsMatrix)          // OldLayer * W^-1 * P
+                            this.matrix.mul(inverseNodeWorldMatrix) // OldLayer * W^-1
+                            this.matrix.mul(physicsMatrix)          // OldLayer * W^-1 * P
                         }
                     }
 
