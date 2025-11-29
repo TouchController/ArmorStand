@@ -62,6 +62,8 @@ class ModelInstanceImpl(
         private var _world: PhysicsWorld? = null
         val world: PhysicsWorld
             get() = _world ?: error("PhysicsWorld is not initialized")
+        lateinit var transformArray: FloatArray
+            private set
 
         fun initialize() {
             if (_world != null) {
@@ -74,6 +76,9 @@ class ModelInstanceImpl(
                     nodeWorldTransform.get(component.rigidBodyIndex * 64, initialTransform)
                 }
                 _world = PhysicsWorld(physicsScene, initialTransform)
+                transformArray = FloatArray(scene.rigidBodyComponents.size * 7)
+                // Initial pull to populate array
+                _world!!.pullTransforms(transformArray)
             }
         }
 

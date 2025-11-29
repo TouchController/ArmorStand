@@ -2,6 +2,7 @@ package top.fifthlight.blazerod.runtime.node.component
 
 import net.minecraft.util.Colors
 import org.joml.Matrix4f
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import top.fifthlight.blazerod.model.RigidBody
 import top.fifthlight.blazerod.model.TransformId
@@ -30,6 +31,9 @@ class RigidBodyComponent(
 
     private val physicsMatrix = Matrix4f()
     private val inverseNodeWorldMatrix = Matrix4f()
+    private val tempPos = Vector3f()
+    private val tempRot = Quaternionf()
+
     override fun update(
         phase: UpdatePhase,
         node: RenderNodeImpl,
@@ -41,7 +45,18 @@ class RigidBodyComponent(
                 when (rigidBodyData.physicsMode) {
                     RigidBody.PhysicsMode.FOLLOW_BONE, RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
                         val nodeTransformMatrix = instance.getWorldTransform(node)
-                        physicsData.world.setTransform(rigidBodyIndex, nodeTransformMatrix)
+                        nodeTransformMatrix.getTranslation(tempPos)
+                        nodeTransformMatrix.getUnnormalizedRotation(tempRot)
+                        
+                        val offset = rigidBodyIndex * 7
+                        val array = physicsData.transformArray
+                        array[offset + 0] = tempPos.x
+                        array[offset + 1] = tempPos.y
+                        array[offset + 2] = tempPos.z
+                        array[offset + 3] = tempRot.x
+                        array[offset + 4] = tempRot.y
+                        array[offset + 5] = tempRot.z
+                        array[offset + 6] = tempRot.w
                     }
 
                     RigidBody.PhysicsMode.PHYSICS -> {
@@ -53,11 +68,25 @@ class RigidBodyComponent(
             is UpdatePhase.PhysicsUpdatePost -> {
                 when (rigidBodyData.physicsMode) {
                     RigidBody.PhysicsMode.PHYSICS, RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
-                        val physicsMatrix = physicsData.world.getTransform(rigidBodyIndex, physicsMatrix)
+                        val offset = rigidBodyIndex * 7
+                        val array = physicsData.transformArray
+                        val px = array[offset + 0]
+                        val py = array[offset + 1]
+                        val pz = array[offset + 2]
+                        val qx = array[offset + 3]
+                        val qy = array[offset + 4]
+                        val qz = array[offset + 5]
+                        val qw = array[offset + 6]
+                        
+                        physicsMatrix.translationRotate(px, py, pz, qx, qy, qz, qw)
+                        
                         val inverseNodeWorldMatrix = instance.getWorldTransform(node).invert(inverseNodeWorldMatrix)
-                        val deltaTransformMatrix = physicsMatrix.mul(inverseNodeWorldMatrix)
+                        
                         instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
-                            matrix.mul(deltaTransformMatrix)
+                            // Correct math: NewLayer = OldLayer * W^-1 * P
+                            // 'this' is OldLayer
+                            this.mul(inverseNodeWorldMatrix) // OldLayer * W^-1
+                            this.mul(physicsMatrix)          // OldLayer * W^-1 * P
                         }
                     }
 

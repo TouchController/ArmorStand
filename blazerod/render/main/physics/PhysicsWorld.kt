@@ -7,6 +7,7 @@ import java.lang.AutoCloseable
 import java.lang.ref.Reference
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.util.*
 
 class PhysicsWorld(
@@ -17,6 +18,7 @@ class PhysicsWorld(
     private var closed = false
     internal val rigidBodyCount = scene.rigidBodyCount
     private val transformBuffer: ByteBuffer
+    private val transformValues: FloatBuffer
 
     init {
         if (!PhysicsLibrary.isPhysicsAvailable()) {
@@ -28,6 +30,7 @@ class PhysicsWorld(
             Reference.reachabilityFence(initialTransform)
         }
         transformBuffer = PhysicsLibrary.getTransformBuffer(pointer).order(ByteOrder.nativeOrder())
+        transformValues = transformBuffer.asFloatBuffer()
         // transformBuffer.put(initialTransform) // Buffer formats are different now
         // transformBuffer.clear()
         // initialTransform.clear()
@@ -67,6 +70,22 @@ class PhysicsWorld(
             transformBuffer.putFloat(offset + 16, rot.y)
             transformBuffer.putFloat(offset + 20, rot.z)
             transformBuffer.putFloat(offset + 24, rot.w)
+        }
+    }
+
+    fun pullTransforms(dst: FloatArray) {
+        requireNotClosed {
+            require(dst.size >= rigidBodyCount * 7)
+            transformValues.clear()
+            transformValues.get(dst, 0, rigidBodyCount * 7)
+        }
+    }
+
+    fun pushTransforms(src: FloatArray) {
+        requireNotClosed {
+            require(src.size >= rigidBodyCount * 7)
+            transformValues.clear()
+            transformValues.put(src, 0, rigidBodyCount * 7)
         }
     }
 

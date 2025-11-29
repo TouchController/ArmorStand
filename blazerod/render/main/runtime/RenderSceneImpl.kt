@@ -158,11 +158,13 @@ class RenderSceneImpl(
             data.lastPhysicsTime = time
 
             executePhase(instance, UpdatePhase.PhysicsUpdatePre)
+            data.world.pushTransforms(data.transformArray)
             measureTime {
                 data.world.step(timeStep, PHYSICS_MAX_SUB_STEP_COUNT, PHYSICS_TIME_STEP)
             }.let {
                 println("Physics step time: $it, timeStep: $timeStep")
             }
+            data.world.pullTransforms(data.transformArray)
             executePhase(instance, UpdatePhase.PhysicsUpdatePost)
             executePhase(instance, UpdatePhase.GlobalTransformPropagation)
         }
