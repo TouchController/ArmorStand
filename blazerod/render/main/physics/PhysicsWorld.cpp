@@ -323,16 +323,11 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     for (const Joint& joint_item : joints) {
         size_t joint_index = joint_count++;
         btMatrix3x3 rotation_matrix;
-        // rotation_matrix.setEulerZYX(joint_item.rotation.x, joint_item.rotation.y, joint_item.rotation.z);
-        float rx_val = -joint_item.rotation.x;
-        float ry_val = joint_item.rotation.y; // PmxLoader already negated Y.
-        float rz_val = joint_item.rotation.z;
-
-        // Saba uses setEulerZYX for Joints (unlike RigidBodies where it constructs manually).
-        // We must match this convention to ensure Constraint Frames are correct.
-        // setEulerZYX(yaw, pitch, roll) -> (y, x, z) usually, but Saba passes (x, y, z).
-        // We pass our corrected coordinates (-x, -y, z).
-        rotation_matrix.setEulerZYX(rx_val, ry_val, rz_val);
+        // Match Saba's MMDPhysics PMX joint path: use preprocessed joint rotation directly.
+        rotation_matrix.setEulerZYX(
+            joint_item.rotation.x,
+            joint_item.rotation.y,
+            joint_item.rotation.z);
 
         btTransform transform;
         transform.setIdentity();
@@ -365,17 +360,11 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         constraint->setLinearUpperLimit(
             btVector3(joint_item.position_max.x, joint_item.position_max.y, joint_item.position_max.z));
 
-        // Kotlin/PmxLoader keeps Y-angle limits in original PMX sign space, but
-        // joint_item.rotation.y (used for the frame) has Y already negated.
-        // Map Y limits into the same flipped-Y basis as the joint frame:
-        //   y_phys = -y_pmx  =>  [min_pmx, max_pmx] -> [-max_pmx, -min_pmx]
-        btScalar angYLower = -joint_item.rotation_max.y;
-        btScalar angYUpper = -joint_item.rotation_min.y;
-
+        // Apply angular limits directly from the preprocessed min/max values.
         constraint->setAngularLowerLimit(
-            btVector3(joint_item.rotation_min.x, angYLower, joint_item.rotation_min.z));
+            btVector3(joint_item.rotation_min.x, joint_item.rotation_min.y, joint_item.rotation_min.z));
         constraint->setAngularUpperLimit(
-            btVector3(joint_item.rotation_max.x, angYUpper, joint_item.rotation_max.z));
+            btVector3(joint_item.rotation_max.x, joint_item.rotation_max.y, joint_item.rotation_max.z));
 
         if (joint_index < 16) {
             btVector3 body_a_pos = body_a_transform.getOrigin();
