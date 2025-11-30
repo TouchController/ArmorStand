@@ -40,7 +40,17 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     float ry_val = rotation.y;
     float rz_val = rotation.z;
 
-    rotation_matrix.setEulerZYX(rx_val, ry_val, rz_val);
+    btMatrix3x3 rot_x(1, 0, 0,
+                      0, cos(rx_val), -sin(rx_val),
+                      0, sin(rx_val),  cos(rx_val));
+    btMatrix3x3 rot_y(cos(ry_val), 0, sin(ry_val),
+                      0,          1,          0,
+                      -sin(ry_val), 0, cos(ry_val));
+    btMatrix3x3 rot_z(cos(rz_val), -sin(rz_val), 0,
+                      sin(rz_val),  cos(rz_val), 0,
+                      0,           0,           1);
+
+    rotation_matrix = rot_y * rot_x * rot_z;
 
     // Kotlin / PMX loader passes shape_position in world/model space.
     // We need a LOCAL offset from the bone (initial_transform's origin) so that:
@@ -285,7 +295,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
             }
         }
 
-        btRigidBody::btRigidBodyConstructionInfo rigidbody_info(rigidbody_item.mass, motion_state.get(), shape.get(),
+        btRigidBody::btRigidBodyConstructionInfo rigidbody_info(mass, motion_state.get(), shape.get(),
                                                                 local_inertia);
         rigidbody_info.m_linearDamping = rigidbody_item.move_attenuation;
         rigidbody_info.m_angularDamping = rigidbody_item.rotation_damping;
