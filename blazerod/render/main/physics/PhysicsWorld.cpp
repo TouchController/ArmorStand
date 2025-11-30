@@ -44,7 +44,7 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     
     rotation_matrix = rot_y * rot_x * rot_z;
 
-    btVector3 pos(position.x, position.y, -position.z);
+    btVector3 pos(position.x, position.y, position.z);
     btTransform rigidbody_transform;
     rigidbody_transform.setIdentity();
     rigidbody_transform.setBasis(rotation_matrix);
@@ -71,10 +71,10 @@ class FollowBoneObjectMotionState : public PhysicsMotionState {
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         // Input: MMD (LH) -> Bullet (RH)
         // Flip Z position.
-        node_transform.setOrigin(btVector3(buffer[0], buffer[1], -buffer[2]));
+        node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
         // Flip X and Y rotation (preserve Z rotation direction relative to flipped axis).
         // MMD Quaternion (x, y, z, w) -> Bullet Quaternion (-x, -y, z, w)
-        node_transform.setRotation(btQuaternion(-buffer[3], -buffer[4], buffer[5], buffer[6]));
+        node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         
         btTransform node_rh = node_transform;
         this->transform.mult(node_rh, this->from_node_to_world);
@@ -94,8 +94,8 @@ class PhysicsObjectMotionState : public PhysicsMotionState {
         btTransform node_transform;
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         // Input: MMD (LH) -> Bullet (RH)
-        node_transform.setOrigin(btVector3(buffer[0], buffer[1], -buffer[2]));
-        node_transform.setRotation(btQuaternion(-buffer[3], -buffer[4], buffer[5], buffer[6]));
+        node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
+        node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         
         btTransform node_rh = node_transform;
         this->transform.mult(node_rh, this->from_node_to_world);
@@ -116,10 +116,10 @@ class PhysicsObjectMotionState : public PhysicsMotionState {
         // Flip Z back.
         buffer[0] = pos.x();
         buffer[1] = pos.y();
-        buffer[2] = -pos.z();
+        buffer[2] = pos.z();
         // Flip X and Y back.
-        buffer[3] = -rot.x();
-        buffer[4] = -rot.y();
+        buffer[3] = rot.x();
+        buffer[4] = rot.y();
         buffer[5] = rot.z();
         buffer[6] = rot.w();
     }
@@ -137,8 +137,8 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
         btTransform node_transform;
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         // Input: MMD (LH) -> Bullet (RH)
-        node_transform.setOrigin(btVector3(buffer[0], buffer[1], -buffer[2]));
-        node_transform.setRotation(btQuaternion(-buffer[3], -buffer[4], buffer[5], buffer[6]));
+        node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
+        node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         
         btTransform node_rh = node_transform;
         this->transform.mult(node_rh, this->from_node_to_world);
@@ -161,9 +161,9 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
         // Output: Bullet (RH) -> MMD (LH)
         buffer[0] = pos.x();
         buffer[1] = pos.y();
-        buffer[2] = -pos.z();
-        buffer[3] = -rot.x();
-        buffer[4] = -rot.y();
+        buffer[2] = pos.z();
+        buffer[3] = rot.x();
+        buffer[4] = rot.y();
         buffer[5] = rot.z();
         buffer[6] = rot.w();
     }
@@ -320,7 +320,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
 
         btTransform transform;
         transform.setIdentity();
-        transform.setOrigin(btVector3(joint_item.position.x, joint_item.position.y, -joint_item.position.z));
+        transform.setOrigin(btVector3(joint_item.position.x, joint_item.position.y, joint_item.position.z));
         transform.setBasis(rotation_matrix);
 
         size_t rigidbody_a_index = joint_item.rigidbody_a_index;
@@ -345,14 +345,14 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         auto constraint = std::make_unique<btGeneric6DofSpringConstraint>(
             *rigidbody_a.rigidbody, *rigidbody_b.rigidbody, inverse_a, inverse_b, true);
         constraint->setLinearLowerLimit(
-            btVector3(joint_item.position_min.x, joint_item.position_min.y, -joint_item.position_max.z));
+            btVector3(joint_item.position_min.x, joint_item.position_min.y, joint_item.position_min.z));
         constraint->setLinearUpperLimit(
-            btVector3(joint_item.position_max.x, joint_item.position_max.y, -joint_item.position_min.z));
+            btVector3(joint_item.position_max.x, joint_item.position_max.y, joint_item.position_max.z));
 
         constraint->setAngularLowerLimit(
-            btVector3(joint_item.rotation_min.x, -joint_item.rotation_max.y, joint_item.rotation_min.z));
+            btVector3(joint_item.rotation_min.x, joint_item.rotation_min.y, joint_item.rotation_min.z));
         constraint->setAngularUpperLimit(
-            btVector3(joint_item.rotation_max.x, -joint_item.rotation_min.y, joint_item.rotation_max.z));
+            btVector3(joint_item.rotation_max.x, joint_item.rotation_max.y, joint_item.rotation_max.z));
 
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
