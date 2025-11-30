@@ -46,7 +46,14 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     
     rotation_matrix = rot_y * rot_x * rot_z;
 
-    btVector3 pos(position.x, position.y, position.z);
+    // Kotlin / PMX loader passes shape_position in world/model space.
+    // We need a LOCAL offset from the bone (initial_transform's origin) so that:
+    //   world_COM = bone_world * local_offset
+    // and world_COM matches the original shape_position.
+    btVector3 bone_origin = initial_transform.getOrigin();
+    btVector3 pos(position.x - bone_origin.x(),
+                  position.y - bone_origin.y(),
+                  position.z - bone_origin.z());
     btTransform local_offset;
     local_offset.setIdentity();
     local_offset.setBasis(rotation_matrix);
@@ -55,9 +62,9 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     btTransform initial_lh = initial_transform;
     from_node_to_world = local_offset;
     from_world_to_node = from_node_to_world.inverse();
-    
-    // Initialize the Physics Body to the current Bone position + Offset.
-    // This ensures that even if the model is posed (not in Bind Pose), the body starts aligned with the bone.
+
+    // Initialize the rigidbody so that its center-of-mass is at the PMX shape_position in world space.
+    // world_COM = bone_world * local_offset
     this->transform.mult(initial_lh, from_node_to_world);
 }
 
@@ -142,7 +149,11 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
         
         btTransform node_rh = node_transform;
         this->transform.mult(node_rh, this->from_node_to_world);
-        this->origin = transform.getOrigin();
+        // For PHYSICS_PLUS_BONE, keep translation locked to the bone (node) position
+        // and only let Bullet drive the rotation. Use the node's origin here so that
+        // we don't propagate the rigidbody's center-of-mass offset back into the
+        // engine space, which was causing hair bodies to jump far away.
+        this->origin = node_rh.getOrigin();
     }
 
     void SetToWorld(PhysicsWorld* world, size_t rigidbody_index) override {
