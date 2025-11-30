@@ -632,22 +632,44 @@ class ModelPreprocessor private constructor(
         return Pair(expressions, expressionGroups)
     }
 
-    private fun loadPhysicalJoints(modelPhysicalJoints: List<PhysicalJoint>) = modelPhysicalJoints.mapNotNull {
-        RenderPhysicsJoint(
-            name = it.name,
-            type = it.type,
-            rigidBodyAIndex = rigidBodyIdToIndexMap[it.rigidBodyA] ?: return@mapNotNull null,
-            rigidBodyBIndex = rigidBodyIdToIndexMap[it.rigidBodyB] ?: return@mapNotNull null,
-            position = it.position,
-            rotation = it.rotation,
-            positionMin = it.positionMin,
-            positionMax = it.positionMax,
-            rotationMin = it.rotationMin,
-            rotationMax = it.rotationMax,
-            positionSpring = it.positionSpring,
-            rotationSpring = it.rotationSpring,
-        )
-    }
+    private fun loadPhysicalJoints(modelPhysicalJoints: List<PhysicalJoint>) =
+        modelPhysicalJoints.mapIndexedNotNull { index, joint ->
+            val rigidBodyAIndex = rigidBodyIdToIndexMap[joint.rigidBodyA] ?: return@mapIndexedNotNull null
+            val rigidBodyBIndex = rigidBodyIdToIndexMap[joint.rigidBodyB] ?: return@mapIndexedNotNull null
+
+            if (index < 16) {
+                println(
+                    "PHYSDBG JOINT_KT " +
+                        "idx=$index " +
+                        "name=${joint.name} " +
+                        "A=$rigidBodyAIndex " +
+                        "B=$rigidBodyBIndex " +
+                        "pos=(${joint.position.x()},${joint.position.y()},${joint.position.z()}) " +
+                        "rot=(${joint.rotation.x()},${joint.rotation.y()},${joint.rotation.z()}) " +
+                        "posMin=(${joint.positionMin.x()},${joint.positionMin.y()},${joint.positionMin.z()}) " +
+                        "posMax=(${joint.positionMax.x()},${joint.positionMax.y()},${joint.positionMax.z()}) " +
+                        "rotMin=(${joint.rotationMin.x()},${joint.rotationMin.y()},${joint.rotationMin.z()}) " +
+                        "rotMax=(${joint.rotationMax.x()},${joint.rotationMax.y()},${joint.rotationMax.z()}) " +
+                        "posSpring=(${joint.positionSpring.x()},${joint.positionSpring.y()},${joint.positionSpring.z()}) " +
+                        "rotSpring=(${joint.rotationSpring.x()},${joint.rotationSpring.y()},${joint.rotationSpring.z()})"
+                )
+            }
+
+            RenderPhysicsJoint(
+                name = joint.name,
+                type = joint.type,
+                rigidBodyAIndex = rigidBodyAIndex,
+                rigidBodyBIndex = rigidBodyBIndex,
+                position = joint.position,
+                rotation = joint.rotation,
+                positionMin = joint.positionMin,
+                positionMax = joint.positionMax,
+                rotationMin = joint.rotationMin,
+                rotationMax = joint.rotationMax,
+                positionSpring = joint.positionSpring,
+                rotationSpring = joint.rotationSpring,
+            )
+        }
 
     private fun loadScene(scene: Scene, expressions: List<Expression>): PreProcessModelLoadInfo {
         val rootNode = NodeLoadInfo(

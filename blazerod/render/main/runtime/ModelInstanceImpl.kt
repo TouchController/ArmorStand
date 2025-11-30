@@ -3,6 +3,8 @@ package top.fifthlight.blazerod.runtime
 import net.minecraft.client.render.VertexConsumerProvider
 import org.joml.Matrix4f
 import org.joml.Matrix4fc
+import org.joml.Quaternionf
+import org.joml.Vector3f
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import top.fifthlight.blazerod.api.refcount.AbstractRefCount
@@ -84,6 +86,42 @@ class ModelInstanceImpl(
                 transformArray = FloatArray(scene.rigidBodyComponents.size * 7)
                 // Initial pull to populate array
                 _world!!.pullTransforms(transformArray)
+
+                // Debug: log initial bone vs rigidbody transforms for the first few bodies
+                val world = _world!!
+                val maxLogged = minOf(scene.rigidBodyComponents.size, 16)
+                for (i in 0 until maxLogged) {
+                    val (nodeIndex, component) = scene.rigidBodyComponents[i]
+                    val node = scene.nodes[nodeIndex]
+
+                    val boneWorld = modelData.worldTransforms[nodeIndex]
+                    val bonePos = Vector3f()
+                    val boneRot = Quaternionf()
+                    boneWorld.getTranslation(bonePos)
+                    boneWorld.getUnnormalizedRotation(boneRot)
+
+                    val bodyMatrix = Matrix4f()
+                    world.getTransform(component.rigidBodyIndex, bodyMatrix)
+                    val bodyPos = Vector3f()
+                    val bodyRot = Quaternionf()
+                    bodyMatrix.getTranslation(bodyPos)
+                    bodyMatrix.getUnnormalizedRotation(bodyRot)
+
+                    val rb = component.rigidBodyData
+                    println(
+                        "PHYSDBG RB_INIT " +
+                            "idx=${component.rigidBodyIndex} " +
+                            "nodeIndex=$nodeIndex " +
+                            "nodeName=${node.nodeName} " +
+                            "mode=${rb.physicsMode} " +
+                            "shapePos=(${rb.shapePosition.x()},${rb.shapePosition.y()},${rb.shapePosition.z()}) " +
+                            "shapeRot=(${rb.shapeRotation.x()},${rb.shapeRotation.y()},${rb.shapeRotation.z()}) " +
+                            "bonePos=(${bonePos.x},${bonePos.y},${bonePos.z}) " +
+                            "boneRot=(${boneRot.x},${boneRot.y},${boneRot.z},${boneRot.w}) " +
+                            "bodyPos=(${bodyPos.x},${bodyPos.y},${bodyPos.z}) " +
+                            "bodyRot=(${bodyRot.x},${bodyRot.y},${bodyRot.z},${bodyRot.w})"
+                    )
+                }
             }
         }
 
