@@ -35,7 +35,7 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     // We also need to flip Y and Z-position to fully convert from MMD (LH) to Bullet (RH).
     
     float rx_val = -rotation.x;
-    float ry_val = -rotation.y;
+    float ry_val = rotation.y; // PmxLoader already negated Y. Keep it as is (so it is -y).
     float rz_val = rotation.z;
 
     btMatrix3x3 rot_x(1, 0, 0, 0, cos(rx_val), -sin(rx_val), 0, sin(rx_val), cos(rx_val));
@@ -309,7 +309,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         btMatrix3x3 rotation_matrix;
         // rotation_matrix.setEulerZYX(joint_item.rotation.x, joint_item.rotation.y, joint_item.rotation.z);
         float rx_val = -joint_item.rotation.x;
-        float ry_val = -joint_item.rotation.y;
+        float ry_val = joint_item.rotation.y; // PmxLoader already negated Y.
         float rz_val = joint_item.rotation.z;
 
         // Saba uses setEulerZYX for Joints (unlike RigidBodies where it constructs manually).
@@ -350,9 +350,9 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
             btVector3(joint_item.position_max.x, joint_item.position_max.y, -joint_item.position_min.z));
 
         constraint->setAngularLowerLimit(
-            btVector3(-joint_item.rotation_max.x, -joint_item.rotation_max.y, joint_item.rotation_min.z));
+            btVector3(joint_item.rotation_min.x, -joint_item.rotation_max.y, joint_item.rotation_min.z));
         constraint->setAngularUpperLimit(
-            btVector3(-joint_item.rotation_min.x, -joint_item.rotation_min.y, joint_item.rotation_max.z));
+            btVector3(joint_item.rotation_max.x, -joint_item.rotation_min.y, joint_item.rotation_max.z));
 
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
