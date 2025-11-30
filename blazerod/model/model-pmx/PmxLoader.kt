@@ -360,9 +360,9 @@ class PmxLoader : ModelFileLoader {
                 val x = buffer.getFloat(inputPosition)
                 val y = buffer.getFloat(inputPosition + 4)
                 val z = buffer.getFloat(inputPosition + 8)
-                outputBuffer.putFloat(outputPosition, x * -MMD_SCALE)
+                outputBuffer.putFloat(outputPosition, x * MMD_SCALE)
                 outputBuffer.putFloat(outputPosition + 4, y * MMD_SCALE)
-                outputBuffer.putFloat(outputPosition + 8, z * MMD_SCALE)
+                outputBuffer.putFloat(outputPosition + 8, z * -MMD_SCALE)
                 outputPosition += 12
                 inputPosition += 12
 
@@ -370,9 +370,9 @@ class PmxLoader : ModelFileLoader {
                 val nx = buffer.getFloat(inputPosition)
                 val ny = buffer.getFloat(inputPosition + 4)
                 val nz = buffer.getFloat(inputPosition + 8)
-                outputBuffer.putFloat(outputPosition, -nx)
+                outputBuffer.putFloat(outputPosition, nx)
                 outputBuffer.putFloat(outputPosition + 4, ny)
-                outputBuffer.putFloat(outputPosition + 8, nz)
+                outputBuffer.putFloat(outputPosition + 8, -nz)
                 outputPosition += 12
                 inputPosition += 12
 
@@ -695,7 +695,7 @@ class PmxLoader : ModelFileLoader {
 
         private fun Vector3f.transformPosition() = also {
             mul(MMD_SCALE)
-            x = -x
+            z = -z
         }
 
         private fun loadBones(buffer: ByteBuffer) {
@@ -855,9 +855,9 @@ class PmxLoader : ModelFileLoader {
                             val vertexIndex = loadVertexIndex(buffer)
 
                             // Push data into corresponding building morph target
-                            val x = buffer.getFloat() * -MMD_SCALE
+                            val x = buffer.getFloat() * MMD_SCALE
                             val y = buffer.getFloat() * MMD_SCALE
-                            val z = buffer.getFloat() * MMD_SCALE
+                            val z = buffer.getFloat() * -MMD_SCALE
 
                             // Lookup each material
                             for (materialIndex in materials.indices) {
@@ -1064,13 +1064,13 @@ class PmxLoader : ModelFileLoader {
 
                 val positionMinimumOrig = loadVector3f(buffer).transformPosition()
                 val positionMaximumOrig = loadVector3f(buffer).transformPosition()
-                val positionMinimum = Vector3f(positionMaximumOrig.x, positionMinimumOrig.y, positionMinimumOrig.z)
-                val positionMaximum = Vector3f(positionMinimumOrig.x, positionMaximumOrig.y, positionMaximumOrig.z)
+                val positionMinimum = Vector3f(positionMinimumOrig.x, positionMinimumOrig.y, positionMaximumOrig.z)
+                val positionMaximum = Vector3f(positionMaximumOrig.x, positionMaximumOrig.y, positionMinimumOrig.z)
 
                 val rotationMinimumOrig = loadVector3f(buffer)
                 val rotationMaximumOrig = loadVector3f(buffer)
-                val rotationMinimum = Vector3f(-rotationMaximumOrig.x, rotationMinimumOrig.y, rotationMinimumOrig.z)
-                val rotationMaximum = Vector3f(-rotationMinimumOrig.x, rotationMaximumOrig.y, rotationMaximumOrig.z)
+                val rotationMinimum = Vector3f(-rotationMaximumOrig.x, -rotationMaximumOrig.y, rotationMinimumOrig.z)
+                val rotationMaximum = Vector3f(-rotationMinimumOrig.x, -rotationMinimumOrig.y, rotationMaximumOrig.z)
                 val positionSpring = loadVector3f(buffer)
                 val rotationSpring = loadVector3f(buffer).also { it.x *= -1 }
 
