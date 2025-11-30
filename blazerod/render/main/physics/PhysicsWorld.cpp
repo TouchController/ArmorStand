@@ -7,28 +7,6 @@
 
 namespace blazerod::physics {
 
-static btTransform InvZ(const btTransform& t) {
-    btMatrix3x3 basis = t.getBasis();
-    btVector3 origin = t.getOrigin();
-
-    btVector3 row0 = basis.getRow(0);
-    btVector3 row1 = basis.getRow(1);
-    btVector3 row2 = basis.getRow(2);
-
-    row0.setZ(-row0.z());
-    row1.setZ(-row1.z());
-    row2.setX(-row2.x());
-    row2.setY(-row2.y());
-
-    basis.setValue(row0.x(), row0.y(), row0.z(),
-                   row1.x(), row1.y(), row1.z(),
-                   row2.x(), row2.y(), row2.z());
-
-    origin.setZ(-origin.z());
-
-    return btTransform(basis, origin);
-}
-
 struct PhysicsFilterCallback : public btOverlapFilterCallback {
     btBroadphaseProxy* ground_proxy;
 
@@ -56,13 +34,10 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     btVector3 pos(position.x, position.y, position.z);
     btTransform rigidbody_transform;
     rigidbody_transform.setIdentity();
-    rigidbody_transform.setOrigin(pos);
     rigidbody_transform.setBasis(rotation_matrix);
 
-    rigidbody_transform = InvZ(rigidbody_transform);
-
-    btTransform initial_lh = InvZ(initial_transform);
-    from_node_to_world.mult(initial_lh.inverse(), rigidbody_transform);
+    btTransform initial_lh = initial_transform;
+    from_node_to_world.mult(initial_lh, rigidbody_transform);
     from_world_to_node = from_node_to_world.inverse();
 }
 
@@ -77,7 +52,7 @@ class FollowBoneObjectMotionState : public PhysicsMotionState {
         node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
         node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         
-        btTransform node_lh = InvZ(node_transform);
+        btTransform node_lh = node_transform;
         this->transform.mult(node_lh, this->from_node_to_world);
     }
 
@@ -97,7 +72,7 @@ class PhysicsObjectMotionState : public PhysicsMotionState {
         node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
         node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         
-        btTransform node_lh = InvZ(node_transform);
+        btTransform node_lh = node_transform;
         this->transform.mult(node_lh, this->from_node_to_world);
     }
 
@@ -106,7 +81,7 @@ class PhysicsObjectMotionState : public PhysicsMotionState {
         btTransform node_transform_lh;
         node_transform_lh.mult(this->transform, this->from_world_to_node);
         
-        btTransform node_transform = InvZ(node_transform_lh);
+        btTransform node_transform = node_transform_lh;
         
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         btVector3 pos = node_transform.getOrigin();
@@ -135,7 +110,7 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
         node_transform.setOrigin(btVector3(buffer[0], buffer[1], buffer[2]));
         node_transform.setRotation(btQuaternion(buffer[3], buffer[4], buffer[5], buffer[6]));
         
-        btTransform node_lh = InvZ(node_transform);
+        btTransform node_lh = node_transform;
         this->transform.mult(node_lh, this->from_node_to_world);
         this->origin = transform.getOrigin();
     }
@@ -147,7 +122,7 @@ class PhysicsPlusBoneObjectMotionState : public PhysicsMotionState {
         btTransform node_transform_lh;
         node_transform_lh.mult(world_transform, this->from_world_to_node);
         
-        btTransform node_transform = InvZ(node_transform_lh);
+        btTransform node_transform = node_transform_lh;
         
         float* buffer = &world->GetTransformBuffer()[rigidbody_index * 7];
         btVector3 pos = node_transform.getOrigin();
@@ -280,7 +255,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         rigidbody_info.m_additionalDamping = true;
 
         auto rigidbody = std::make_unique<btRigidBody>(rigidbody_info);
-        this->world->addRigidBody(rigidbody.get());
+        this->world->addRigidBody(rigidbody.get(), rigidbody_item.collision_group, rigidbody_item.collision_mask);
         rigidbody->setActivationState(DISABLE_DEACTIVATION);
         if (rigidbody_item.physics_mode == PhysicsMode::FOLLOW_BONE) {
             rigidbody->setCollisionFlags(rigidbody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
@@ -305,7 +280,6 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         transform.setIdentity();
         transform.setOrigin(btVector3(joint_item.position.x, joint_item.position.y, joint_item.position.z));
         transform.setBasis(rotation_matrix);
-        transform = InvZ(transform);
 
         size_t rigidbody_a_index = joint_item.rigidbody_a_index;
         if (rigidbody_a_index >= this->rigidbodies.size()) {
@@ -320,11 +294,9 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
 
         btTransform body_a_transform;
         body_a_transform.setFromOpenGLMatrix(initial_transform + rigidbody_a_index * 16);
-        body_a_transform = InvZ(body_a_transform);
 
         btTransform body_b_transform;
         body_b_transform.setFromOpenGLMatrix(initial_transform + rigidbody_b_index * 16);
-        body_b_transform = InvZ(body_b_transform);
 
         btTransform inverse_a = body_a_transform.inverse() * transform;
         btTransform inverse_b = body_b_transform.inverse() * transform;
@@ -351,7 +323,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         }
         if (joint_item.position_spring.z != 0.0f) {
             constraint->enableSpring(2, true);
-            constraint->setStiffness(2, -joint_item.position_spring.z);
+            constraint->setStiffness(2, joint_item.position_spring.z);
         }
         if (joint_item.rotation_spring.x != 0.0f) {
             constraint->enableSpring(3, true);
