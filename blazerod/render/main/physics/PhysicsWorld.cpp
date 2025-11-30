@@ -1,5 +1,6 @@
 #include "PhysicsWorld.h"
 
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -405,27 +406,27 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
 
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
-            constraint->setStiffness(0, joint_item.position_spring.x);
+            constraint->setStiffness(0, std::abs(joint_item.position_spring.x));
         }
         if (joint_item.position_spring.y != 0.0f) {
             constraint->enableSpring(1, true);
-            constraint->setStiffness(1, joint_item.position_spring.y);
+            constraint->setStiffness(1, std::abs(joint_item.position_spring.y));
         }
         if (joint_item.position_spring.z != 0.0f) {
             constraint->enableSpring(2, true);
-            constraint->setStiffness(2, joint_item.position_spring.z);
+            constraint->setStiffness(2, std::abs(joint_item.position_spring.z));
         }
         if (joint_item.rotation_spring.x != 0.0f) {
             constraint->enableSpring(3, true);
-            constraint->setStiffness(3, joint_item.rotation_spring.x);
+            constraint->setStiffness(3, std::abs(joint_item.rotation_spring.x));
         }
         if (joint_item.rotation_spring.y != 0.0f) {
             constraint->enableSpring(4, true);
-            constraint->setStiffness(4, joint_item.rotation_spring.y);
+            constraint->setStiffness(4, std::abs(joint_item.rotation_spring.y));
         }
         if (joint_item.rotation_spring.z != 0.0f) {
             constraint->enableSpring(5, true);
-            constraint->setStiffness(5, joint_item.rotation_spring.z);
+            constraint->setStiffness(5, std::abs(joint_item.rotation_spring.z));
         }
 
         this->world->addConstraint(constraint.get(), true);
