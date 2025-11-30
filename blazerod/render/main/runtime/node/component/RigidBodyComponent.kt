@@ -70,6 +70,7 @@ class RigidBodyComponent(
                     RigidBody.PhysicsMode.PHYSICS, RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
                         val offset = rigidBodyIndex * 7
                         val array = physicsData.transformArray
+
                         val px = array[offset + 0]
                         val py = array[offset + 1]
                         val pz = array[offset + 2]
@@ -77,9 +78,14 @@ class RigidBodyComponent(
                         val qy = array[offset + 4]
                         val qz = array[offset + 5]
                         val qw = array[offset + 6]
-                        
                         physicsMatrix.translationRotate(px, py, pz, qx, qy, qz, qw)
-                        
+
+                        if (rigidBodyData.physicsMode == RigidBody.PhysicsMode.PHYSICS_PLUS_BONE) {
+                            val nodeTransformMatrix = instance.getWorldTransform(node)
+                            nodeTransformMatrix.getTranslation(tempPos)
+                            physicsMatrix.setTranslation(tempPos)
+                        }
+
                         val inverseNodeWorldMatrix = instance.getWorldTransform(node).invert(inverseNodeWorldMatrix)
                         
                         instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
