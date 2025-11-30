@@ -1,0 +1,44 @@
+﻿2025-11-30T02:26:19.2751311Z Current runner version: '2.329.0'
+2025-11-30T02:26:19.2777349Z ##[group]Runner Image Provisioner
+2025-11-30T02:26:19.2778466Z Hosted Compute Agent
+2025-11-30T02:26:19.2779423Z Version: 20251016.436
+2025-11-30T02:26:19.2780352Z Commit: 8ab8ac8bfd662a3739dab9fe09456aba92132568
+2025-11-30T02:26:19.2781414Z Build Date: 2025-10-15T20:44:12Z
+2025-11-30T02:26:19.2782571Z ##[endgroup]
+2025-11-30T02:26:19.2783471Z ##[group]Operating System
+2025-11-30T02:26:19.2784416Z Ubuntu
+2025-11-30T02:26:19.2785199Z 24.04.3
+2025-11-30T02:26:19.2786004Z LTS
+2025-11-30T02:26:19.2786915Z ##[endgroup]
+2025-11-30T02:26:19.2787876Z ##[group]Runner Image
+2025-11-30T02:26:19.2788899Z Image: ubuntu-24.04
+2025-11-30T02:26:19.2789687Z Version: 20251112.124.1
+2025-11-30T02:26:19.2791430Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251112.124/images/ubuntu/Ubuntu2404-Readme.md
+2025-11-30T02:26:19.2793774Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251112.124
+2025-11-30T02:26:19.2795786Z ##[endgroup]
+2025-11-30T02:26:19.2800443Z ##[group]GITHUB_TOKEN Permissions
+2025-11-30T02:26:19.2803409Z Actions: write
+2025-11-30T02:26:19.2804352Z ArtifactMetadata: write
+2025-11-30T02:26:19.2805315Z Attestations: write
+2025-11-30T02:26:19.2806230Z Checks: write
+2025-11-30T02:26:19.2807368Z Contents: write
+2025-11-30T02:26:19.2808176Z Deployments: write
+2025-11-30T02:26:19.2809138Z Discussions: write
+2025-11-30T02:26:19.2809988Z Issues: write
+2025-11-30T02:26:19.2810826Z Metadata: read
+2025-11-30T02:26:19.2811530Z Models: read
+2025-11-30T02:26:19.2812445Z Packages: write
+2025-11-30T02:26:19.2813154Z Pages: write
+2025-11-30T02:26:19.2813944Z PullRequests: write
+2025-11-30T02:26:19.2815000Z RepositoryProjects: write
+2025-11-30T02:26:19.2816083Z SecurityEvents: write
+2025-11-30T02:26:19.2817183Z Statuses: write
+2025-11-30T02:26:19.2818168Z ##[endgroup]
+2025-11-30T02:26:19.2821054Z Secret source: Actions
+2025-11-30T02:26:19.2822109Z Prepare workflow directory
+2025-11-30T02:26:19.3263556Z Prepare all required actions
+2025-11-30T02:26:19.3318751Z Getting action download info
+2025-11-30T02:26:19.6583574Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2025-11-30T02:26:19.9373701Z Download action repository 'bazel-contrib/setup-bazel@0.14.0' (SHA:e8776f58fb6a6e9055cbaf1b38c52ccc5247e9c4)
+2025-11-30T02:26:20.7293732Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2025-11-30T02:26:20.9238505Z Complete job name: build-with-bazel

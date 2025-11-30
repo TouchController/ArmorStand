@@ -1,0 +1,71 @@
+﻿2025-11-30T02:26:20.9931431Z ##[group]Run actions/checkout@v4
+2025-11-30T02:26:20.9932322Z with:
+2025-11-30T02:26:20.9932761Z   repository: Sylsatra/ArmorStand
+2025-11-30T02:26:20.9933444Z   token: ***
+2025-11-30T02:26:20.9934084Z   ssh-strict: true
+2025-11-30T02:26:20.9934807Z   ssh-user: git
+2025-11-30T02:26:20.9935504Z   persist-credentials: true
+2025-11-30T02:26:20.9936248Z   clean: true
+2025-11-30T02:26:20.9937243Z   sparse-checkout-cone-mode: true
+2025-11-30T02:26:20.9938191Z   fetch-depth: 1
+2025-11-30T02:26:20.9938972Z   fetch-tags: false
+2025-11-30T02:26:20.9939778Z   show-progress: true
+2025-11-30T02:26:20.9940555Z   lfs: false
+2025-11-30T02:26:20.9941235Z   submodules: false
+2025-11-30T02:26:20.9941773Z   set-safe-directory: true
+2025-11-30T02:26:20.9942630Z ##[endgroup]
+2025-11-30T02:26:21.1039209Z Syncing repository: Sylsatra/ArmorStand
+2025-11-30T02:26:21.1041223Z ##[group]Getting Git version info
+2025-11-30T02:26:21.1042023Z Working directory is '/home/runner/work/ArmorStand/ArmorStand'
+2025-11-30T02:26:21.1043067Z [command]/usr/bin/git version
+2025-11-30T02:26:21.1102728Z git version 2.51.2
+2025-11-30T02:26:21.1129356Z ##[endgroup]
+2025-11-30T02:26:21.1142354Z Temporarily overriding HOME='/home/runner/work/_temp/6d2baab3-6bfd-4167-be5a-0a2cae9bfb19' before making global git config changes
+2025-11-30T02:26:21.1143932Z Adding repository directory to the temporary git global config as a safe directory
+2025-11-30T02:26:21.1154452Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ArmorStand/ArmorStand
+2025-11-30T02:26:21.1190397Z Deleting the contents of '/home/runner/work/ArmorStand/ArmorStand'
+2025-11-30T02:26:21.1193885Z ##[group]Initializing the repository
+2025-11-30T02:26:21.1197783Z [command]/usr/bin/git init /home/runner/work/ArmorStand/ArmorStand
+2025-11-30T02:26:21.1311486Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-11-30T02:26:21.1312671Z hint: is subject to change. To configure the initial branch name to use in all
+2025-11-30T02:26:21.1313652Z hint: of your new repositories, which will suppress this warning, call:
+2025-11-30T02:26:21.1314419Z hint:
+2025-11-30T02:26:21.1315069Z hint: 	git config --global init.defaultBranch <name>
+2025-11-30T02:26:21.1315694Z hint:
+2025-11-30T02:26:21.1316271Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-11-30T02:26:21.1317373Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-11-30T02:26:21.1318401Z hint:
+2025-11-30T02:26:21.1319105Z hint: 	git branch -m <name>
+2025-11-30T02:26:21.1319664Z hint:
+2025-11-30T02:26:21.1320289Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-11-30T02:26:21.1321374Z Initialized empty Git repository in /home/runner/work/ArmorStand/ArmorStand/.git/
+2025-11-30T02:26:21.1329776Z [command]/usr/bin/git remote add origin https://github.com/Sylsatra/ArmorStand
+2025-11-30T02:26:21.1376960Z ##[endgroup]
+2025-11-30T02:26:21.1377766Z ##[group]Disabling automatic garbage collection
+2025-11-30T02:26:21.1381075Z [command]/usr/bin/git config --local gc.auto 0
+2025-11-30T02:26:21.1412461Z ##[endgroup]
+2025-11-30T02:26:21.1413841Z ##[group]Setting up auth
+2025-11-30T02:26:21.1419987Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-11-30T02:26:21.1451182Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-11-30T02:26:21.1795883Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-11-30T02:26:21.1825767Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-11-30T02:26:21.2040174Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2025-11-30T02:26:21.2069998Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2025-11-30T02:26:21.2295742Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-11-30T02:26:21.2328844Z ##[endgroup]
+2025-11-30T02:26:21.2330261Z ##[group]Fetching the repository
+2025-11-30T02:26:21.2338969Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +3f0d9c3830614990305a25aac7f81a7df6678688:refs/remotes/origin/my-physics
+2025-11-30T02:26:21.8875742Z From https://github.com/Sylsatra/ArmorStand
+2025-11-30T02:26:21.8878158Z  * [new ref]         3f0d9c3830614990305a25aac7f81a7df6678688 -> origin/my-physics
+2025-11-30T02:26:21.8910556Z ##[endgroup]
+2025-11-30T02:26:21.8912283Z ##[group]Determining the checkout info
+2025-11-30T02:26:21.8914170Z ##[endgroup]
+2025-11-30T02:26:21.8918782Z [command]/usr/bin/git sparse-checkout disable
+2025-11-30T02:26:21.8958816Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-11-30T02:26:21.8984835Z ##[group]Checking out the ref
+2025-11-30T02:26:21.8989273Z [command]/usr/bin/git checkout --progress --force -B my-physics refs/remotes/origin/my-physics
+2025-11-30T02:26:22.0744406Z Switched to a new branch 'my-physics'
+2025-11-30T02:26:22.0747151Z branch 'my-physics' set up to track 'origin/my-physics'.
+2025-11-30T02:26:22.0760458Z ##[endgroup]
+2025-11-30T02:26:22.0797519Z [command]/usr/bin/git log -1 --format=%H
+2025-11-30T02:26:22.0818924Z 3f0d9c3830614990305a25aac7f81a7df6678688

@@ -1166,6 +1166,20 @@ class PmxLoader : ModelFileLoader {
                             )
                         )
                     }
+                    boneToRigidBodyMap[index]?.forEach { index ->
+                        add(
+                            NodeComponent.RigidBodyComponent(
+                                rigidBodyId = RigidBodyId(modelId, index),
+                                rigidBody = rigidBodies[index].let { rigidBody ->
+                                    RigidBody(
+                                        name = rigidBody.nameLocal.takeIf(String::isNotBlank),
+                                        collisionGroup = 1 shl rigidBody.groupId,
+                                        collisionMask = rigidBody.nonCollisionGroup.inv() and 0xFFFF,
+                                        shape = when (rigidBody.shape) {
+                                            PmxRigidBody.ShapeType.SPHERE -> RigidBody.ShapeType.SPHERE
+                                            PmxRigidBody.ShapeType.BOX -> RigidBody.ShapeType.BOX
+                                            PmxRigidBody.ShapeType.CAPSULE -> RigidBody.ShapeType.CAPSULE
+                                        },
                                         shapeSize = rigidBody.shapeSize,
                                         shapePosition = rigidBody.shapePosition,
                                         shapeRotation = rigidBody.shapeRotation,
