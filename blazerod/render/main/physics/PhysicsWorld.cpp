@@ -321,11 +321,11 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         }
         const auto& rigidbody_b = this->rigidbodies[joint_item.rigidbody_b_index];
 
-        btTransform body_a_transform;
-        body_a_transform.setFromOpenGLMatrix(initial_transform + rigidbody_a_index * 16);
+        const btTransform& body_a_transform = this->rigidbodies[rigidbody_a_index].rigidbody->getWorldTransform();
 
         btTransform body_b_transform;
-        body_b_transform.setFromOpenGLMatrix(initial_transform + rigidbody_b_index * 16);
+        // body_b_transform.setFromOpenGLMatrix(initial_transform + rigidbody_b_index * 16);
+        const btTransform& body_b_transform = this->rigidbodies[rigidbody_b_index].rigidbody->getWorldTransform();
 
         btTransform inverse_a = body_a_transform.inverse() * transform;
         btTransform inverse_b = body_b_transform.inverse() * transform;
@@ -385,7 +385,10 @@ PhysicsWorld::~PhysicsWorld() {
 void PhysicsWorld::Step(float delta_time, int max_sub_steps, float fixed_time_step) {
     size_t rigidbody_index = 0;
     for (auto& rigidbody : this->rigidbodies) {
-        rigidbody.motion_state->GetFromWorld(this, rigidbody_index++);
+        if (rigidbody.physics_mode == PhysicsMode::FOLLOW_BONE || rigidbody.physics_mode == PhysicsMode::PHYSICS_PLUS_BONE) {
+             rigidbody.motion_state->GetFromWorld(this, rigidbody_index);
+        }
+        rigidbody_index++;
     }
     this->world->stepSimulation(delta_time, max_sub_steps, fixed_time_step);
     rigidbody_index = 0;
