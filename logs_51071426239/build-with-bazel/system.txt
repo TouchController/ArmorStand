@@ -1,5 +1,0 @@
-2025-11-30T02:26:15.3880000Z Requested labels: ubuntu-24.04
-2025-11-30T02:26:15.3880000Z Job defined at: Sylsatra/ArmorStand/.github/workflows/build.yml@refs/heads/my-physics
-2025-11-30T02:26:15.3880000Z Waiting for a runner to pick up this job...
-2025-11-30T02:26:15.8970000Z Job is about to start running on the hosted runner: GitHub Actions 1000000066
-2025-11-30T02:26:15.8970000Z Job is waiting for a hosted runner to come online.

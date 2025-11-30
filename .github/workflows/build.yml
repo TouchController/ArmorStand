@@ -15,7 +15,7 @@ jobs:
       - uses: bazel-contrib/setup-bazel@0.14.0
         with:
           bazelisk-cache: true
-          disk-cache: false
+          disk-cache: true
           repository-cache: true
       - name: build
         run: |

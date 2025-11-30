@@ -50,6 +50,11 @@ class ModelInstanceImpl(
     init {
         scene.increaseReferenceCount()
         scene.attachToInstance(this)
+        // Ensure transforms are calculated (Bind Pose) before initializing physics
+        // Otherwise rigid bodies will be initialized with Identity transforms, leading to incorrect offsets
+        for (i in scene.nodes.indices) {
+            updateNodeTransform(i)
+        }
         physicsData?.initialize()
     }
 
