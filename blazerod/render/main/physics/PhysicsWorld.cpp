@@ -56,7 +56,9 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     from_node_to_world.mult(initial_lh.inverse(), rigidbody_transform);
     from_world_to_node = from_node_to_world.inverse();
     
-    this->transform = rigidbody_transform;
+    // Initialize the Physics Body to the current Bone position + Offset.
+    // This ensures that even if the model is posed (not in Bind Pose), the body starts aligned with the bone.
+    this->transform.mult(initial_lh, from_node_to_world);
 }
 
 class FollowBoneObjectMotionState : public PhysicsMotionState {
@@ -297,11 +299,11 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         float ry_val = joint_item.rotation.y;
         float rz_val = joint_item.rotation.z;
 
-        btMatrix3x3 rot_x(1, 0, 0, 0, cos(rx_val), -sin(rx_val), 0, sin(rx_val), cos(rx_val));
-        btMatrix3x3 rot_y(cos(ry_val), 0, sin(ry_val), 0, 1, 0, -sin(ry_val), 0, cos(ry_val));
-        btMatrix3x3 rot_z(cos(rz_val), -sin(rz_val), 0, sin(rz_val), cos(rz_val), 0, 0, 0, 1);
-        
-        rotation_matrix = rot_y * rot_x * rot_z;
+        // Saba uses setEulerZYX for Joints (unlike RigidBodies where it constructs manually).
+        // We must match this convention to ensure Constraint Frames are correct.
+        // setEulerZYX(yaw, pitch, roll) -> (y, x, z) usually, but Saba passes (x, y, z).
+        // We pass our corrected coordinates (-x, -y, z).
+        rotation_matrix.setEulerZYX(rx_val, ry_val, rz_val);
 
         btTransform transform;
         transform.setIdentity();
