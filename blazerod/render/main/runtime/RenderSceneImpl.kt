@@ -3,6 +3,8 @@ package top.fifthlight.blazerod.runtime
 import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap
 import net.minecraft.client.render.VertexConsumerProvider
 import org.joml.Matrix4fc
+import org.joml.Quaternionf
+import org.joml.Vector3f
 import top.fifthlight.blazerod.api.refcount.AbstractRefCount
 import top.fifthlight.blazerod.api.resource.RenderExpression
 import top.fifthlight.blazerod.api.resource.RenderExpressionGroup
@@ -165,6 +167,45 @@ class RenderSceneImpl(
                 println("Physics step time: $it, timeStep: $timeStep")
             }
             data.world.pullTransforms(data.transformArray)
+
+            if (data.debugStepCount < 10) {
+                val maxLogged = minOf(rigidBodyComponents.size, 16)
+                for (i in 0 until maxLogged) {
+                    val (nodeIndex, component) = rigidBodyComponents[i]
+                    val node = nodes[nodeIndex]
+
+                    val boneWorld = instance.modelData.worldTransforms[nodeIndex]
+                    val bonePos = Vector3f()
+                    val boneRot = Quaternionf()
+                    boneWorld.getTranslation(bonePos)
+                    boneWorld.getUnnormalizedRotation(boneRot)
+
+                    val offset = component.rigidBodyIndex * 7
+                    val array = data.transformArray
+                    val px = array[offset + 0]
+                    val py = array[offset + 1]
+                    val pz = array[offset + 2]
+                    val qx = array[offset + 3]
+                    val qy = array[offset + 4]
+                    val qz = array[offset + 5]
+                    val qw = array[offset + 6]
+
+                    println(
+                        "PHYSDBG RB_STEP " +
+                            "step=${data.debugStepCount} " +
+                            "idx=${component.rigidBodyIndex} " +
+                            "nodeIndex=$nodeIndex " +
+                            "nodeName=${node.nodeName} " +
+                            "mode=${component.rigidBodyData.physicsMode} " +
+                            "bonePos=(${bonePos.x},${bonePos.y},${bonePos.z}) " +
+                            "boneRot=(${boneRot.x},${boneRot.y},${boneRot.z},${boneRot.w}) " +
+                            "bodyPos=($px,$py,$pz) " +
+                            "bodyRot=($qx,$qy,$qz,$qw)"
+                    )
+                }
+            }
+            data.debugStepCount++
+
             executePhase(instance, UpdatePhase.PhysicsUpdatePost)
             executePhase(instance, UpdatePhase.GlobalTransformPropagation)
         }
