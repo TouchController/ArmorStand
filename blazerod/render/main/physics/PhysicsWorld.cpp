@@ -59,6 +59,8 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     rigidbody_transform.setOrigin(pos);
     rigidbody_transform.setBasis(rotation_matrix);
 
+    rigidbody_transform = InvZ(rigidbody_transform);
+
     btTransform initial_lh = InvZ(initial_transform);
     from_node_to_world.mult(initial_lh.inverse(), rigidbody_transform);
     from_world_to_node = from_node_to_world.inverse();
@@ -303,6 +305,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         transform.setIdentity();
         transform.setOrigin(btVector3(joint_item.position.x, joint_item.position.y, joint_item.position.z));
         transform.setBasis(rotation_matrix);
+        transform = InvZ(transform);
 
         size_t rigidbody_a_index = joint_item.rigidbody_a_index;
         if (rigidbody_a_index >= this->rigidbodies.size()) {
@@ -315,12 +318,16 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         }
         const auto& rigidbody_b = this->rigidbodies[joint_item.rigidbody_b_index];
 
-        btTransform inverse_a;
-        btTransform inverse_b;
-        inverse_a.setFromOpenGLMatrix(initial_transform + rigidbody_a_index * 16);
-        inverse_b.setFromOpenGLMatrix(initial_transform + rigidbody_b_index * 16);
-        inverse_a = inverse_a.inverse() * transform;
-        inverse_b = inverse_b.inverse() * transform;
+        btTransform body_a_transform;
+        body_a_transform.setFromOpenGLMatrix(initial_transform + rigidbody_a_index * 16);
+        body_a_transform = InvZ(body_a_transform);
+
+        btTransform body_b_transform;
+        body_b_transform.setFromOpenGLMatrix(initial_transform + rigidbody_b_index * 16);
+        body_b_transform = InvZ(body_b_transform);
+
+        btTransform inverse_a = body_a_transform.inverse() * transform;
+        btTransform inverse_b = body_b_transform.inverse() * transform;
 
         auto constraint = std::make_unique<btGeneric6DofSpringConstraint>(
             *rigidbody_a.rigidbody, *rigidbody_b.rigidbody, inverse_a, inverse_b, true);
