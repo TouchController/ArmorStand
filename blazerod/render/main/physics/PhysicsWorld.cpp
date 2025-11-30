@@ -454,10 +454,10 @@ void PhysicsWorld::Step(float delta_time, int max_sub_steps, float fixed_time_st
     this->world->stepSimulation(delta_time, max_sub_steps, fixed_time_step);
     rigidbody_index = 0;
     for (auto& rigidbody : this->rigidbodies) {
-        if (!rigidbody.motion_state->IsDirty()) {
-            continue;
+        if (rigidbody.motion_state->IsDirty()) {
+            rigidbody.motion_state->SetToWorld(this, rigidbody_index);
         }
-        rigidbody.motion_state->SetToWorld(this, rigidbody_index++);
+        rigidbody_index++;
     }
 }
 
