@@ -349,10 +349,17 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         constraint->setLinearUpperLimit(
             btVector3(joint_item.position_max.x, joint_item.position_max.y, joint_item.position_max.z));
 
+        // Kotlin/PmxLoader keeps Y-angle limits in original PMX sign space, but
+        // joint_item.rotation.y (used for the frame) has Y already negated.
+        // Map Y limits into the same flipped-Y basis as the joint frame:
+        //   y_phys = -y_pmx  =>  [min_pmx, max_pmx] -> [-max_pmx, -min_pmx]
+        btScalar angYLower = -joint_item.rotation_max.y;
+        btScalar angYUpper = -joint_item.rotation_min.y;
+
         constraint->setAngularLowerLimit(
-            btVector3(joint_item.rotation_min.x, joint_item.rotation_min.y, joint_item.rotation_min.z));
+            btVector3(joint_item.rotation_min.x, angYLower, joint_item.rotation_min.z));
         constraint->setAngularUpperLimit(
-            btVector3(joint_item.rotation_max.x, joint_item.rotation_max.y, joint_item.rotation_max.z));
+            btVector3(joint_item.rotation_max.x, angYUpper, joint_item.rotation_max.z));
 
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
