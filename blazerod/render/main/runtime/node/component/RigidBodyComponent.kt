@@ -83,10 +83,10 @@ class RigidBodyComponent(
                         val inverseNodeWorldMatrix = instance.getWorldTransform(node).invert(inverseNodeWorldMatrix)
                         
                         instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
-                            // Correct math: NewLayer = OldLayer * W^-1 * P
-                            // 'this' is OldLayer
-                            this.matrix.mul(inverseNodeWorldMatrix) // OldLayer * W^-1
-                            this.matrix.mul(physicsMatrix)          // OldLayer * W^-1 * P
+                            // Correct math: NewLayer = W^-1 * P
+                            // 'this' is OldLayer, but we overwrite it
+                            this.matrix.set(inverseNodeWorldMatrix) // W^-1
+                            this.matrix.mul(physicsMatrix)          // W^-1 * P
                         }
                     }
 
