@@ -36,15 +36,11 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     // We need to flip X to match PmxLoader's limits/springs logic and Saba's InvZ behavior (which negates Rx and Ry).
     // We also need to flip Y and Z-position to fully convert from MMD (LH) to Bullet (RH).
     
-    float rx_val = -rotation.x;
-    float ry_val = rotation.y; // PmxLoader already negated Y. Keep it as is (so it is -y).
+    float rx_val = rotation.x;
+    float ry_val = rotation.y;
     float rz_val = rotation.z;
 
-    btMatrix3x3 rot_x(1, 0, 0, 0, cos(rx_val), -sin(rx_val), 0, sin(rx_val), cos(rx_val));
-    btMatrix3x3 rot_y(cos(ry_val), 0, sin(ry_val), 0, 1, 0, -sin(ry_val), 0, cos(ry_val));
-    btMatrix3x3 rot_z(cos(rz_val), -sin(rz_val), 0, sin(rz_val), cos(rz_val), 0, 0, 0, 1);
-    
-    rotation_matrix = rot_y * rot_x * rot_z;
+    rotation_matrix.setEulerZYX(rx_val, ry_val, rz_val);
 
     // Kotlin / PMX loader passes shape_position in world/model space.
     // We need a LOCAL offset from the bone (initial_transform's origin) so that:
