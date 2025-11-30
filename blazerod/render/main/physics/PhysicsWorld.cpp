@@ -284,6 +284,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         rigidbody_data.shape = std::move(shape);
         rigidbody_data.motion_state = std::move(motion_state);
         rigidbody_data.rigidbody = std::move(rigidbody);
+        rigidbody_data.physics_mode = rigidbody_item.physics_mode;
         this->rigidbodies.push_back(std::move(rigidbody_data));
     }
 
@@ -323,7 +324,6 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
 
         const btTransform& body_a_transform = this->rigidbodies[rigidbody_a_index].rigidbody->getWorldTransform();
 
-        btTransform body_b_transform;
         // body_b_transform.setFromOpenGLMatrix(initial_transform + rigidbody_b_index * 16);
         const btTransform& body_b_transform = this->rigidbodies[rigidbody_b_index].rigidbody->getWorldTransform();
 

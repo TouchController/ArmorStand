@@ -35,6 +35,7 @@ struct RigidBodyData {
     std::unique_ptr<btCollisionShape> shape;
     std::unique_ptr<PhysicsMotionState> motion_state;
     std::unique_ptr<btRigidBody> rigidbody;
+    PhysicsMode physics_mode;
 };
 
 class PhysicsWorld {
