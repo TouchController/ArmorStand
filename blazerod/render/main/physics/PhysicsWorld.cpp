@@ -30,16 +30,13 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     transform.setIdentity();
 
     btMatrix3x3 rotation_matrix;
-    // Match Saba's rotation order: Ry * Rx * Rz
-    // And flip Z rotation to match PmxLoader's X-Mirror world (PmxLoader flips Y, we flip Z to complete the mirror?)
-    // Actually, if PmxLoader flips Y, and we want to match Saba which uses InvZ (Z-flip).
-    // Let's just replicate Saba's Ry * Rx * Rz logic, but with our Z-flipped input?
-    // PmxLoader: y *= -1.
-    // We: z *= -1.
+    // PmxLoader already flips Y.
+    // We need to flip X to match PmxLoader's limits/springs logic and Saba's InvZ behavior (which negates Rx and Ry).
+    // We keep Z as is (Saba InvZ preserves Rz).
     
-    float rx_val = rotation.x;
+    float rx_val = -rotation.x;
     float ry_val = rotation.y;
-    float rz_val = -rotation.z; // Flip Z to match coordinate mirror
+    float rz_val = rotation.z;
 
     btMatrix3x3 rot_x(1, 0, 0, 0, cos(rx_val), -sin(rx_val), 0, sin(rx_val), cos(rx_val));
     btMatrix3x3 rot_y(cos(ry_val), 0, sin(ry_val), 0, 1, 0, -sin(ry_val), 0, cos(ry_val));
@@ -296,9 +293,9 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         size_t joint_index = joint_count++;
         btMatrix3x3 rotation_matrix;
         // rotation_matrix.setEulerZYX(joint_item.rotation.x, joint_item.rotation.y, joint_item.rotation.z);
-        float rx_val = joint_item.rotation.x;
+        float rx_val = -joint_item.rotation.x;
         float ry_val = joint_item.rotation.y;
-        float rz_val = -joint_item.rotation.z;
+        float rz_val = joint_item.rotation.z;
 
         btMatrix3x3 rot_x(1, 0, 0, 0, cos(rx_val), -sin(rx_val), 0, sin(rx_val), cos(rx_val));
         btMatrix3x3 rot_y(cos(ry_val), 0, sin(ry_val), 0, 1, 0, -sin(ry_val), 0, cos(ry_val));
