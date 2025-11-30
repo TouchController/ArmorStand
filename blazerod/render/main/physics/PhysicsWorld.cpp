@@ -51,12 +51,15 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     btTransform rigidbody_transform;
     rigidbody_transform.setIdentity();
     rigidbody_transform.setBasis(rotation_matrix);
+    rigidbody_transform.setOrigin(pos);
 
     btTransform initial_lh = initial_transform;
     // Correct offset calculation: Offset = Bone^-1 * Body
     // This gives the Body's position relative to the Bone.
     from_node_to_world.mult(initial_lh.inverse(), rigidbody_transform);
     from_world_to_node = from_node_to_world.inverse();
+    
+    this->transform = rigidbody_transform;
 }
 
 class FollowBoneObjectMotionState : public PhysicsMotionState {
