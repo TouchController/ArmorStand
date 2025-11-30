@@ -45,15 +45,13 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     rotation_matrix = rot_y * rot_x * rot_z;
 
     btVector3 pos(position.x, position.y, position.z);
-    btTransform rigidbody_transform;
-    rigidbody_transform.setIdentity();
-    rigidbody_transform.setBasis(rotation_matrix);
-    rigidbody_transform.setOrigin(pos);
+    btTransform local_offset;
+    local_offset.setIdentity();
+    local_offset.setBasis(rotation_matrix);
+    local_offset.setOrigin(pos);
 
     btTransform initial_lh = initial_transform;
-    // Correct offset calculation: Offset = Bone^-1 * Body
-    // This gives the Body's position relative to the Bone.
-    from_node_to_world.mult(initial_lh.inverse(), rigidbody_transform);
+    from_node_to_world = local_offset;
     from_world_to_node = from_node_to_world.inverse();
     
     // Initialize the Physics Body to the current Bone position + Offset.
