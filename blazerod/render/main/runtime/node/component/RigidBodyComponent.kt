@@ -84,29 +84,17 @@ class RigidBodyComponent(
                         val qw = array[offset + 6]
                         physicsMatrix.translationRotate(px, py, pz, qx, qy, qz, qw)
 
+                        baseWorldMatrix.set(instance.getWorldTransformNoPhysics(node))
                         if (rigidBodyData.physicsMode == RigidBody.PhysicsMode.PHYSICS_PLUS_BONE) {
-                            val nodeTransformMatrix = instance.getWorldTransform(node)
-                            nodeTransformMatrix.getTranslation(tempPos)
+                            baseWorldMatrix.getTranslation(tempPos)
                             physicsMatrix.setTranslation(tempPos)
                         }
 
-                        if (rigidBodyData.physicsMode == RigidBody.PhysicsMode.PHYSICS) {
-                            baseWorldMatrix.set(instance.getWorldTransformNoPhysics(node))
-                            baseWorldMatrix.invert(inverseNodeWorldMatrix)
-                            inverseNodeWorldMatrix.mul(physicsMatrix)
+                        baseWorldMatrix.invert(inverseNodeWorldMatrix)
+                        inverseNodeWorldMatrix.mul(physicsMatrix)
 
-                            instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
-                                this.matrix.set(inverseNodeWorldMatrix)
-                            }
-                        } else {
-                            val inverseNodeWorldMatrix = instance.getWorldTransform(node).invert(inverseNodeWorldMatrix)
-
-                            instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
-                                // Correct math: NewLayer = OldLayer * W^-1 * P
-                                // 'this' is OldLayer
-                                this.matrix.mul(inverseNodeWorldMatrix) // OldLayer * W^-1
-                                this.matrix.mul(physicsMatrix)          // OldLayer * W^-1 * P
-                            }
+                        instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
+                            this.matrix.set(inverseNodeWorldMatrix)
                         }
                     }
 
