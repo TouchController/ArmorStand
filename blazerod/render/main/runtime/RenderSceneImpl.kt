@@ -169,6 +169,47 @@ class RenderSceneImpl(
             }
             data.world.pullTransforms(data.transformArray)
 
+            run {
+                val array = data.transformArray
+                val basePos = Vector3f()
+                val baseRot = Quaternionf()
+                val clampMatrix = Matrix4f()
+                val maxDistSq = 4.0f
+                val maxRadiusSq = 100.0f
+
+                for (i in 0 until rigidBodyComponents.size) {
+                    val (nodeIndex, component) = rigidBodyComponents[i]
+                    val offset = component.rigidBodyIndex * 7
+
+                    val px = array[offset + 0]
+                    val py = array[offset + 1]
+                    val pz = array[offset + 2]
+
+                    val baseWorld = instance.modelData.worldTransformsNoPhysics[nodeIndex]
+                    baseWorld.getTranslation(basePos)
+                    baseWorld.getUnnormalizedRotation(baseRot)
+
+                    val dx = px - basePos.x
+                    val dy = py - basePos.y
+                    val dz = pz - basePos.z
+                    val distSq = dx * dx + dy * dy + dz * dz
+                    val bodyRadiusSq = px * px + py * py + pz * pz
+
+                    if (distSq > maxDistSq || bodyRadiusSq > maxRadiusSq) {
+                        array[offset + 0] = basePos.x
+                        array[offset + 1] = basePos.y
+                        array[offset + 2] = basePos.z
+                        array[offset + 3] = baseRot.x
+                        array[offset + 4] = baseRot.y
+                        array[offset + 5] = baseRot.z
+                        array[offset + 6] = baseRot.w
+
+                        clampMatrix.translationRotate(basePos, baseRot)
+                        data.world.setTransform(component.rigidBodyIndex, clampMatrix)
+                    }
+                }
+            }
+
             if (data.explosionLogCount < 64) {
                 val array = data.transformArray
                 val bonePos = Vector3f()
