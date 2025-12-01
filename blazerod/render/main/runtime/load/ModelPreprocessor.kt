@@ -650,11 +650,11 @@ class ModelPreprocessor private constructor(
             var rotationSpring = joint.rotationSpring
 
             if (name != null && name.startsWith("Skirt_")) {
-                val angleScale = 20f
+                val angleScale = 8f
                 rotationMin = Vector3f(rotationMin).mul(angleScale)
                 rotationMax = Vector3f(rotationMax).mul(angleScale)
 
-                val skirtSpring = 2.0f
+                val skirtSpring = 4.0f
                 rotationSpring = Vector3f(
                     if (rotationSpring.x() == 0f) skirtSpring else rotationSpring.x(),
                     if (rotationSpring.y() == 0f) skirtSpring else rotationSpring.y(),
@@ -667,7 +667,7 @@ class ModelPreprocessor private constructor(
                 rotationSpring = Vector3f(rotationSpring).mul(hairSpringScale)
             }
 
-            if (index < 64) {
+            if (index < 128) {
                 println(
                     "PHYSDBG JOINT_KT " +
                         "idx=$index " +
