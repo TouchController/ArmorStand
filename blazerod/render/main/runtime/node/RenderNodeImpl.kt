@@ -105,6 +105,8 @@ fun ModelInstanceImpl.getTransformMap(node: RenderNodeImpl) = modelData.transfor
 fun ModelInstanceImpl.getWorldTransform(node: RenderNodeImpl) = modelData.worldTransforms[node.nodeIndex]
 fun ModelInstanceImpl.getTransformMap(nodeIndex: Int) = modelData.transformMaps[nodeIndex]
 fun ModelInstanceImpl.getWorldTransform(nodeIndex: Int) = modelData.worldTransforms[nodeIndex]
+fun ModelInstanceImpl.getWorldTransformNoPhysics(node: RenderNodeImpl) = modelData.worldTransformsNoPhysics[node.nodeIndex]
+fun ModelInstanceImpl.getWorldTransformNoPhysics(nodeIndex: Int) = modelData.worldTransformsNoPhysics[nodeIndex]
 private fun ModelInstanceImpl.isNodeTransformDirty(node: RenderNodeImpl) = modelData.transformDirty[node.nodeIndex]
 fun ModelInstanceImpl.markNodeTransformDirty(node: RenderNodeImpl) {
     if (!modelData.transformDirty[node.nodeIndex]) {

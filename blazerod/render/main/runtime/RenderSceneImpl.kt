@@ -159,6 +159,7 @@ class RenderSceneImpl(
 
             data.lastPhysicsTime = time
 
+            instance.updateWorldTransformsNoPhysics()
             executePhase(instance, UpdatePhase.PhysicsUpdatePre)
             data.world.pushTransforms(data.transformArray)
             measureTime {

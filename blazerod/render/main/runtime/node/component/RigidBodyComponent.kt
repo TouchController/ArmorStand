@@ -9,8 +9,8 @@ import top.fifthlight.blazerod.model.TransformId
 import top.fifthlight.blazerod.runtime.ModelInstanceImpl
 import top.fifthlight.blazerod.runtime.node.RenderNodeImpl
 import top.fifthlight.blazerod.runtime.node.UpdatePhase
-import top.fifthlight.blazerod.runtime.node.getTransformMap
 import top.fifthlight.blazerod.runtime.node.getWorldTransform
+import top.fifthlight.blazerod.runtime.node.getWorldTransformNoPhysics
 
 class RigidBodyComponent(
     val rigidBodyIndex: Int,
@@ -91,17 +91,7 @@ class RigidBodyComponent(
                         }
 
                         if (rigidBodyData.physicsMode == RigidBody.PhysicsMode.PHYSICS) {
-                            val transformMap = instance.getTransformMap(node)
-                            val baseLocal = transformMap.getSum(TransformId.EXTERNAL_PARENT_DEFORM)
-
-                            val parent = node.parent
-                            if (parent != null) {
-                                baseWorldMatrix.set(instance.getWorldTransform(parent))
-                            } else {
-                                baseWorldMatrix.identity()
-                            }
-
-                            baseWorldMatrix.mul(baseLocal)
+                            baseWorldMatrix.set(instance.getWorldTransformNoPhysics(node))
                             baseWorldMatrix.invert(inverseNodeWorldMatrix)
                             inverseNodeWorldMatrix.mul(physicsMatrix)
 
