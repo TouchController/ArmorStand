@@ -4,6 +4,7 @@ import com.mojang.blaze3d.textures.TextureFormat
 import com.mojang.blaze3d.vertex.VertexFormat
 import com.mojang.blaze3d.vertex.VertexFormatElement
 import kotlinx.coroutines.*
+import org.joml.Vector3f
 import top.fifthlight.blazerod.api.resource.RenderExpression
 import top.fifthlight.blazerod.api.resource.RenderExpressionGroup
 import top.fifthlight.blazerod.extension.NativeImageExt
@@ -637,21 +638,50 @@ class ModelPreprocessor private constructor(
             val rigidBodyAIndex = rigidBodyIdToIndexMap[joint.rigidBodyA] ?: return@mapIndexedNotNull null
             val rigidBodyBIndex = rigidBodyIdToIndexMap[joint.rigidBodyB] ?: return@mapIndexedNotNull null
 
+            val name = joint.name
+
+            var position = joint.position
+            var rotation = joint.rotation
+            var positionMin = joint.positionMin
+            var positionMax = joint.positionMax
+            var rotationMin = joint.rotationMin
+            var rotationMax = joint.rotationMax
+            var positionSpring = joint.positionSpring
+            var rotationSpring = joint.rotationSpring
+
+            if (name != null && name.startsWith("Skirt_")) {
+                val angleScale = 20f
+                rotationMin = Vector3f(rotationMin).mul(angleScale)
+                rotationMax = Vector3f(rotationMax).mul(angleScale)
+
+                val skirtSpring = 2.0f
+                rotationSpring = Vector3f(
+                    if (rotationSpring.x() == 0f) skirtSpring else rotationSpring.x(),
+                    if (rotationSpring.y() == 0f) skirtSpring else rotationSpring.y(),
+                    if (rotationSpring.z() == 0f) skirtSpring else rotationSpring.z(),
+                )
+            }
+
+            if (name != null && (name.startsWith("Hair_") || name.startsWith("Braid_") || name.startsWith("Ribbon_"))) {
+                val hairSpringScale = 0.25f
+                rotationSpring = Vector3f(rotationSpring).mul(hairSpringScale)
+            }
+
             if (index < 64) {
                 println(
                     "PHYSDBG JOINT_KT " +
                         "idx=$index " +
-                        "name=${joint.name} " +
+                        "name=$name " +
                         "A=$rigidBodyAIndex " +
                         "B=$rigidBodyBIndex " +
-                        "pos=(${joint.position.x()},${joint.position.y()},${joint.position.z()}) " +
-                        "rot=(${joint.rotation.x()},${joint.rotation.y()},${joint.rotation.z()}) " +
-                        "posMin=(${joint.positionMin.x()},${joint.positionMin.y()},${joint.positionMin.z()}) " +
-                        "posMax=(${joint.positionMax.x()},${joint.positionMax.y()},${joint.positionMax.z()}) " +
-                        "rotMin=(${joint.rotationMin.x()},${joint.rotationMin.y()},${joint.rotationMin.z()}) " +
-                        "rotMax=(${joint.rotationMax.x()},${joint.rotationMax.y()},${joint.rotationMax.z()}) " +
-                        "posSpring=(${joint.positionSpring.x()},${joint.positionSpring.y()},${joint.positionSpring.z()}) " +
-                        "rotSpring=(${joint.rotationSpring.x()},${joint.rotationSpring.y()},${joint.rotationSpring.z()})"
+                        "pos=(${position.x()},${position.y()},${position.z()}) " +
+                        "rot=(${rotation.x()},${rotation.y()},${rotation.z()}) " +
+                        "posMin=(${positionMin.x()},${positionMin.y()},${positionMin.z()}) " +
+                        "posMax=(${positionMax.x()},${positionMax.y()},${positionMax.z()}) " +
+                        "rotMin=(${rotationMin.x()},${rotationMin.y()},${rotationMin.z()}) " +
+                        "rotMax=(${rotationMax.x()},${rotationMax.y()},${rotationMax.z()}) " +
+                        "posSpring=(${positionSpring.x()},${positionSpring.y()},${positionSpring.z()}) " +
+                        "rotSpring=(${rotationSpring.x()},${rotationSpring.y()},${rotationSpring.z()})"
                 )
             }
 
@@ -660,14 +690,14 @@ class ModelPreprocessor private constructor(
                 type = joint.type,
                 rigidBodyAIndex = rigidBodyAIndex,
                 rigidBodyBIndex = rigidBodyBIndex,
-                position = joint.position,
-                rotation = joint.rotation,
-                positionMin = joint.positionMin,
-                positionMax = joint.positionMax,
-                rotationMin = joint.rotationMin,
-                rotationMax = joint.rotationMax,
-                positionSpring = joint.positionSpring,
-                rotationSpring = joint.rotationSpring,
+                position = position,
+                rotation = rotation,
+                positionMin = positionMin,
+                positionMax = positionMax,
+                rotationMin = rotationMin,
+                rotationMax = rotationMax,
+                positionSpring = positionSpring,
+                rotationSpring = rotationSpring,
             )
         }
 
