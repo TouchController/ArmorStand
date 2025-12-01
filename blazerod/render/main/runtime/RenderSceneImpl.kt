@@ -287,6 +287,22 @@ class RenderSceneImpl(
                             "bodyPos=($px,$py,$pz) " +
                             "bodyRot=($qx,$qy,$qz,$qw)"
                     )
+
+                    if (node.nodeName != null && node.nodeName.startsWith("Skirt_")) {
+                        val shapePos = component.rigidBodyData.shapePosition
+                        val shapeRot = component.rigidBodyData.shapeRotation
+                        println(
+                            "PHYSDBG RB_SKIRT " +
+                                "step=${data.debugStepCount} " +
+                                "idx=${component.rigidBodyIndex} " +
+                                "nodeIndex=$nodeIndex " +
+                                "nodeName=${node.nodeName} " +
+                                "shapePos=(${shapePos.x()},${shapePos.y()},${shapePos.z()}) " +
+                                "shapeRot=(${shapeRot.x()},${shapeRot.y()},${shapeRot.z()}) " +
+                                "bonePos=(${bonePos.x},${bonePos.y},${bonePos.z}) " +
+                                "bodyPos=($px,$py,$pz)"
+                        )
+                    }
                 }
             }
             data.debugStepCount++
