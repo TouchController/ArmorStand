@@ -9,6 +9,7 @@ import top.fifthlight.blazerod.model.TransformId
 import top.fifthlight.blazerod.runtime.ModelInstanceImpl
 import top.fifthlight.blazerod.runtime.node.RenderNodeImpl
 import top.fifthlight.blazerod.runtime.node.UpdatePhase
+import top.fifthlight.blazerod.runtime.node.getTransformMap
 import top.fifthlight.blazerod.runtime.node.getWorldTransform
 
 class RigidBodyComponent(
@@ -31,6 +32,8 @@ class RigidBodyComponent(
 
     private val physicsMatrix = Matrix4f()
     private val inverseNodeWorldMatrix = Matrix4f()
+    private val baseWorldMatrix = Matrix4f()
+
     private val tempPos = Vector3f()
     private val tempRot = Quaternionf()
 
@@ -69,6 +72,7 @@ class RigidBodyComponent(
                 when (rigidBodyData.physicsMode) {
                     RigidBody.PhysicsMode.PHYSICS, RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
                         val offset = rigidBodyIndex * 7
+
                         val array = physicsData.transformArray
 
                         val px = array[offset + 0]
@@ -86,13 +90,33 @@ class RigidBodyComponent(
                             physicsMatrix.setTranslation(tempPos)
                         }
 
-                        val inverseNodeWorldMatrix = instance.getWorldTransform(node).invert(inverseNodeWorldMatrix)
-                        
-                        instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
-                            // Correct math: NewLayer = OldLayer * W^-1 * P
-                            // 'this' is OldLayer
-                            this.matrix.mul(inverseNodeWorldMatrix) // OldLayer * W^-1
-                            this.matrix.mul(physicsMatrix)          // OldLayer * W^-1 * P
+                        if (rigidBodyData.physicsMode == RigidBody.PhysicsMode.PHYSICS) {
+                            val transformMap = instance.getTransformMap(node)
+                            val baseLocal = transformMap.getSum(TransformId.EXTERNAL_PARENT_DEFORM)
+
+                            val parent = node.parent
+                            if (parent != null) {
+                                baseWorldMatrix.set(instance.getWorldTransform(parent))
+                            } else {
+                                baseWorldMatrix.identity()
+                            }
+
+                            baseWorldMatrix.mul(baseLocal)
+                            baseWorldMatrix.invert(inverseNodeWorldMatrix)
+                            inverseNodeWorldMatrix.mul(physicsMatrix)
+
+                            instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
+                                this.matrix.set(inverseNodeWorldMatrix)
+                            }
+                        } else {
+                            val inverseNodeWorldMatrix = instance.getWorldTransform(node).invert(inverseNodeWorldMatrix)
+
+                            instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
+                                // Correct math: NewLayer = OldLayer * W^-1 * P
+                                // 'this' is OldLayer
+                                this.matrix.mul(inverseNodeWorldMatrix) // OldLayer * W^-1
+                                this.matrix.mul(physicsMatrix)          // OldLayer * W^-1 * P
+                            }
                         }
                     }
 
