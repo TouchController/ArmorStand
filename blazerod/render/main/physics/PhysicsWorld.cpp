@@ -339,8 +339,8 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     size_t joint_count = 0;
     for (const Joint& joint_item : joints) {
         size_t joint_index = joint_count++;
-        const float POSITION_SPRING_SCALE = 0.25f;
-        const float ROTATION_SPRING_SCALE = 0.10f;
+        const float POSITION_SPRING_SCALE = 0.15f;
+        const float ROTATION_SPRING_SCALE = 0.15f;
         const float SPRING_DAMPING = 1.0f;
         btMatrix3x3 rotation_matrix;
         // Match Saba's MMDPhysics PMX joint path: use preprocessed joint rotation directly.
