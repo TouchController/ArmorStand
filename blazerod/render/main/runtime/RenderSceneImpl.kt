@@ -2,6 +2,7 @@ package top.fifthlight.blazerod.runtime
 
 import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap
 import net.minecraft.client.render.VertexConsumerProvider
+import org.joml.Matrix4f
 import org.joml.Matrix4fc
 import org.joml.Quaternionf
 import org.joml.Vector3f
