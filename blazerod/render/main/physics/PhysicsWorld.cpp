@@ -32,10 +32,7 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
     transform.setIdentity();
 
     btMatrix3x3 rotation_matrix;
-    // PmxLoader already flips Y.
-    // We need to flip X to match PmxLoader's limits/springs logic and Saba's InvZ behavior (which negates Rx and Ry).
-    // We also need to flip Y and Z-position to fully convert from MMD (LH) to Bullet (RH).
-    
+    // PmxLoader already applies the necessary axis flips to the Euler angles.
     float rx_val = rotation.x;
     float ry_val = rotation.y;
     float rz_val = rotation.z;
@@ -52,26 +49,26 @@ PhysicsMotionState::PhysicsMotionState(btTransform& initial_transform, const Vec
 
     rotation_matrix = rot_y * rot_x * rot_z;
 
-    // Kotlin / PMX loader passes shape_position in world/model space.
-    // We need a LOCAL offset from the bone (initial_transform's origin) so that:
-    //   world_COM = bone_world * local_offset
-    // and world_COM matches the original shape_position.
-    btVector3 bone_origin = initial_transform.getOrigin();
-    btVector3 pos(position.x - bone_origin.x(),
-                  position.y - bone_origin.y(),
-                  position.z - bone_origin.z());
-    btTransform local_offset;
-    local_offset.setIdentity();
-    local_offset.setBasis(rotation_matrix);
-    local_offset.setOrigin(pos);
+    // Build the rigid-body transform in model/world space from the PMX
+    // shape position and rotation.
+    btTransform bone_transform = initial_transform;
+    btTransform rb_transform;
+    rb_transform.setIdentity();
+    rb_transform.setBasis(rotation_matrix);
+    rb_transform.setOrigin(btVector3(position.x, position.y, position.z));
 
-    btTransform initial_lh = initial_transform;
+    // Local offset from the bone to the rigid body, matching Saba's
+    // MMDPhysics logic: offset = inverse(boneGlobal) * rbMat.
+    btTransform bone_inverse = bone_transform.inverse();
+    btTransform local_offset = bone_inverse * rb_transform;
+
     from_node_to_world = local_offset;
     from_world_to_node = from_node_to_world.inverse();
 
-    // Initialize the rigidbody so that its center-of-mass is at the PMX shape_position in world space.
-    // world_COM = bone_world * local_offset
-    this->transform.mult(initial_lh, from_node_to_world);
+    // Initialize the rigid body so that its center-of-mass starts exactly
+    // at the PMX shape_position in world space (no extra bone rotation
+    // applied on top).
+    this->transform = rb_transform;
 }
 
 class FollowBoneObjectMotionState : public PhysicsMotionState {
