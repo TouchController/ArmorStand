@@ -168,6 +168,48 @@ class RenderSceneImpl(
             }
             data.world.pullTransforms(data.transformArray)
 
+            if (data.explosionLogCount < 64) {
+                val array = data.transformArray
+                val bonePos = Vector3f()
+                for (i in 0 until rigidBodyComponents.size) {
+                    val (nodeIndex, component) = rigidBodyComponents[i]
+                    val offset = component.rigidBodyIndex * 7
+                    val px = array[offset + 0]
+                    val py = array[offset + 1]
+                    val pz = array[offset + 2]
+
+                    val boneWorld = instance.modelData.worldTransforms[nodeIndex]
+                    boneWorld.getTranslation(bonePos)
+
+                    val dx = px - bonePos.x
+                    val dy = py - bonePos.y
+                    val dz = pz - bonePos.z
+                    val distSq = dx * dx + dy * dy + dz * dz
+                    val bodyRadiusSq = px * px + py * py + pz * pz
+
+                    if (distSq > 9.0f || bodyRadiusSq > 400.0f) {
+                        val node = nodes[nodeIndex]
+                        val mode = component.rigidBodyData.physicsMode
+                        println(
+                            "PHYSERR RB_EXPLODE " +
+                                "step=${data.debugStepCount} " +
+                                "idx=${component.rigidBodyIndex} " +
+                                "nodeIndex=$nodeIndex " +
+                                "nodeName=${node.nodeName} " +
+                                "mode=$mode " +
+                                "bodyPos=($px,$py,$pz) " +
+                                "bonePos=(${bonePos.x},${bonePos.y},${bonePos.z}) " +
+                                "distSq=$distSq " +
+                                "bodyRadiusSq=$bodyRadiusSq"
+                        )
+                        data.explosionLogCount++
+                        if (data.explosionLogCount >= 64) {
+                            break
+                        }
+                    }
+                }
+            }
+
             if (data.debugStepCount < 10) {
                 val maxLogged = minOf(rigidBodyComponents.size, 16)
                 for (i in 0 until maxLogged) {

@@ -67,6 +67,7 @@ class ModelInstanceImpl(
     ) : AutoCloseable {
         var lastPhysicsTime: Float = -1f
         var debugStepCount: Int = 0
+        var explosionLogCount: Int = 0
         private var _world: PhysicsWorld? = null
         val world: PhysicsWorld
             get() = _world ?: error("PhysicsWorld is not initialized")
