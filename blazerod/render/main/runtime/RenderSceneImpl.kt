@@ -254,7 +254,7 @@ class RenderSceneImpl(
             }
 
             if (data.debugStepCount < 10) {
-                val maxLogged = minOf(rigidBodyComponents.size, 16)
+                val maxLogged = minOf(rigidBodyComponents.size, 48)
                 for (i in 0 until maxLogged) {
                     val (nodeIndex, component) = rigidBodyComponents[i]
                     val node = nodes[nodeIndex]

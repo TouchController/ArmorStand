@@ -637,7 +637,7 @@ class ModelPreprocessor private constructor(
             val rigidBodyAIndex = rigidBodyIdToIndexMap[joint.rigidBodyA] ?: return@mapIndexedNotNull null
             val rigidBodyBIndex = rigidBodyIdToIndexMap[joint.rigidBodyB] ?: return@mapIndexedNotNull null
 
-            if (index < 16) {
+            if (index < 64) {
                 println(
                     "PHYSDBG JOINT_KT " +
                         "idx=$index " +
