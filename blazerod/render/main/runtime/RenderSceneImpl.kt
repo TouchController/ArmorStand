@@ -37,7 +37,7 @@ class RenderSceneImpl(
     val renderTransform: NodeTransform?,
 ) : AbstractRefCount(), RenderScene {
     companion object {
-        private const val PHYSICS_MAX_SUB_STEP_COUNT = 1
+        private const val PHYSICS_MAX_SUB_STEP_COUNT = 10
         private const val PHYSICS_FPS = 120f
         private const val PHYSICS_TIME_STEP = 1f / PHYSICS_FPS
     }
