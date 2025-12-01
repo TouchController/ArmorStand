@@ -339,6 +339,9 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     size_t joint_count = 0;
     for (const Joint& joint_item : joints) {
         size_t joint_index = joint_count++;
+        const float POSITION_SPRING_SCALE = 0.25f;
+        const float ROTATION_SPRING_SCALE = 0.25f;
+        const float SPRING_DAMPING = 0.8f;
         btMatrix3x3 rotation_matrix;
         // Match Saba's MMDPhysics PMX joint path: use preprocessed joint rotation directly.
         rotation_matrix.setEulerZYX(
@@ -412,27 +415,33 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
 
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
-            constraint->setStiffness(0, std::abs(joint_item.position_spring.x));
+            constraint->setStiffness(0, std::abs(joint_item.position_spring.x) * POSITION_SPRING_SCALE);
+            constraint->setDamping(0, SPRING_DAMPING);
         }
         if (joint_item.position_spring.y != 0.0f) {
             constraint->enableSpring(1, true);
-            constraint->setStiffness(1, std::abs(joint_item.position_spring.y));
+            constraint->setStiffness(1, std::abs(joint_item.position_spring.y) * POSITION_SPRING_SCALE);
+            constraint->setDamping(1, SPRING_DAMPING);
         }
         if (joint_item.position_spring.z != 0.0f) {
             constraint->enableSpring(2, true);
-            constraint->setStiffness(2, std::abs(joint_item.position_spring.z));
+            constraint->setStiffness(2, std::abs(joint_item.position_spring.z) * POSITION_SPRING_SCALE);
+            constraint->setDamping(2, SPRING_DAMPING);
         }
         if (joint_item.rotation_spring.x != 0.0f) {
             constraint->enableSpring(3, true);
-            constraint->setStiffness(3, std::abs(joint_item.rotation_spring.x));
+            constraint->setStiffness(3, std::abs(joint_item.rotation_spring.x) * ROTATION_SPRING_SCALE);
+            constraint->setDamping(3, SPRING_DAMPING);
         }
         if (joint_item.rotation_spring.y != 0.0f) {
             constraint->enableSpring(4, true);
-            constraint->setStiffness(4, std::abs(joint_item.rotation_spring.y));
+            constraint->setStiffness(4, std::abs(joint_item.rotation_spring.y) * ROTATION_SPRING_SCALE);
+            constraint->setDamping(4, SPRING_DAMPING);
         }
         if (joint_item.rotation_spring.z != 0.0f) {
             constraint->enableSpring(5, true);
-            constraint->setStiffness(5, std::abs(joint_item.rotation_spring.z));
+            constraint->setStiffness(5, std::abs(joint_item.rotation_spring.z) * ROTATION_SPRING_SCALE);
+            constraint->setDamping(5, SPRING_DAMPING);
         }
 
         this->world->addConstraint(constraint.get(), true);
