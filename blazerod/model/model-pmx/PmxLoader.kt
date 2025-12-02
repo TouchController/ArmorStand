@@ -1171,6 +1171,22 @@ class PmxLoader : ModelFileLoader {
                             NodeComponent.RigidBodyComponent(
                                 rigidBodyId = RigidBodyId(modelId, index),
                                 rigidBody = rigidBodies[index].let { rigidBody ->
+                                    val basePhysicsMode = when (rigidBody.physicsMode) {
+                                        PmxRigidBody.PhysicsMode.FOLLOW_BONE -> RigidBody.PhysicsMode.FOLLOW_BONE
+                                        PmxRigidBody.PhysicsMode.PHYSICS -> RigidBody.PhysicsMode.PHYSICS
+                                        PmxRigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
+                                    }
+
+                                    val adjustedPhysicsMode =
+                                        if (rigidBody.nameLocal.startsWith("Skirt_") &&
+                                            rigidBody.nameLocal.endsWith("錘") &&
+                                            basePhysicsMode == RigidBody.PhysicsMode.PHYSICS
+                                        ) {
+                                            RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
+                                        } else {
+                                            basePhysicsMode
+                                        }
+
                                     RigidBody(
                                         name = rigidBody.nameLocal.takeIf(String::isNotBlank),
                                         collisionGroup = 1 shl rigidBody.groupId,
@@ -1188,11 +1204,7 @@ class PmxLoader : ModelFileLoader {
                                         rotationDamping = rigidBody.rotationDamping,
                                         repulsion = rigidBody.repulsion,
                                         frictionForce = rigidBody.frictionForce,
-                                        physicsMode = when (rigidBody.physicsMode) {
-                                            PmxRigidBody.PhysicsMode.FOLLOW_BONE -> RigidBody.PhysicsMode.FOLLOW_BONE
-                                            PmxRigidBody.PhysicsMode.PHYSICS -> RigidBody.PhysicsMode.PHYSICS
-                                            PmxRigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
-                                        },
+                                        physicsMode = adjustedPhysicsMode,
                                     )
                                 },
                             )
