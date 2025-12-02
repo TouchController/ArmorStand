@@ -635,55 +635,58 @@ class ModelPreprocessor private constructor(
 
     private fun loadPhysicalJoints(modelPhysicalJoints: List<PhysicalJoint>) =
         modelPhysicalJoints.mapIndexedNotNull { index, joint ->
-            val rigidBodyAIndex = rigidBodyIdToIndexMap[joint.rigidBodyA] ?: return@mapIndexedNotNull null
-            val rigidBodyBIndex = rigidBodyIdToIndexMap[joint.rigidBodyB] ?: return@mapIndexedNotNull null
 
-            val name = joint.name
+                val name = joint.name
 
-            var position = joint.position
-            var rotation = joint.rotation
-            var positionMin = joint.positionMin
-            var positionMax = joint.positionMax
-            var rotationMin = joint.rotationMin
-            var rotationMax = joint.rotationMax
-            var positionSpring = joint.positionSpring
-            var rotationSpring = joint.rotationSpring
+                var position = joint.position
+                var rotation = joint.rotation
+                var positionMin = joint.positionMin
+                var positionMax = joint.positionMax
+                var rotationMin = joint.rotationMin
+                var rotationMax = joint.rotationMax
+                var positionSpring = joint.positionSpring
+                var rotationSpring = joint.rotationSpring
 
-            if (name != null && name.startsWith("Skirt_")) {
-                val angleScale = 8f
-                rotationMin = Vector3f(rotationMin).mul(angleScale)
-                rotationMax = Vector3f(rotationMax).mul(angleScale)
+                if (name != null && (name.startsWith("Skirt_") || name.startsWith("スカート"))) {
+                    val angleScale = 8f
+                    rotationMin = Vector3f(rotationMin).mul(angleScale)
+                    rotationMax = Vector3f(rotationMax).mul(angleScale)
 
-                val skirtSpring = 4.0f
-                rotationSpring = Vector3f(
-                    if (rotationSpring.x() == 0f) skirtSpring else rotationSpring.x(),
-                    if (rotationSpring.y() == 0f) skirtSpring else rotationSpring.y(),
-                    if (rotationSpring.z() == 0f) skirtSpring else rotationSpring.z(),
-                )
-            }
+                    val skirtSpring = 4.0f
+                    rotationSpring =
+                        if (name.startsWith("スカート横_")) {
+                            Vector3f(skirtSpring, skirtSpring, skirtSpring)
+                        } else {
+                            Vector3f(
+                                if (rotationSpring.x() == 0f) skirtSpring else rotationSpring.x(),
+                                if (rotationSpring.y() == 0f) skirtSpring else rotationSpring.y(),
+                                if (rotationSpring.z() == 0f) skirtSpring else rotationSpring.z(),
+                            )
+                        }
+                }
 
-            if (name != null && (name.startsWith("Hair_") || name.startsWith("Braid_") || name.startsWith("Ribbon_"))) {
-                val hairSpringScale = 0.25f
-                rotationSpring = Vector3f(rotationSpring).mul(hairSpringScale)
-            }
+                if (name != null && (name.startsWith("Hair_") || name.startsWith("Braid_") || name.startsWith("Ribbon_"))) {
+                    val hairSpringScale = 0.25f
+                    rotationSpring = Vector3f(rotationSpring).mul(hairSpringScale)
+                }
 
-            if (index < 128) {
-                println(
-                    "PHYSDBG JOINT_KT " +
-                        "idx=$index " +
-                        "name=$name " +
-                        "A=$rigidBodyAIndex " +
-                        "B=$rigidBodyBIndex " +
-                        "pos=(${position.x()},${position.y()},${position.z()}) " +
-                        "rot=(${rotation.x()},${rotation.y()},${rotation.z()}) " +
-                        "posMin=(${positionMin.x()},${positionMin.y()},${positionMin.z()}) " +
-                        "posMax=(${positionMax.x()},${positionMax.y()},${positionMax.z()}) " +
-                        "rotMin=(${rotationMin.x()},${rotationMin.y()},${rotationMin.z()}) " +
-                        "rotMax=(${rotationMax.x()},${rotationMax.y()},${rotationMax.z()}) " +
-                        "posSpring=(${positionSpring.x()},${positionSpring.y()},${positionSpring.z()}) " +
-                        "rotSpring=(${rotationSpring.x()},${rotationSpring.y()},${rotationSpring.z()})"
-                )
-            }
+                if (index < 128) {
+                    println(
+                        "PHYSDBG JOINT_KT " +
+                            "idx=$index " +
+                            "name=$name " +
+                            "A=$rigidBodyAIndex " +
+                            "B=$rigidBodyBIndex " +
+                            "pos=(${position.x()},${position.y()},${position.z()}) " +
+                            "rot=(${rotation.x()},${rotation.y()},${rotation.z()}) " +
+                            "posMin=(${positionMin.x()},${positionMin.y()},${positionMin.z()}) " +
+                            "posMax=(${positionMax.x()},${positionMax.y()},${positionMax.z()}) " +
+                            "rotMin=(${rotationMin.x()},${rotationMin.y()},${rotationMin.z()}) " +
+                            "rotMax=(${rotationMax.x()},${rotationMax.y()},${rotationMax.z()}) " +
+                            "posSpring=(${positionSpring.x()},${positionSpring.y()},${positionSpring.z()}) " +
+                            "rotSpring=(${rotationSpring.x()},${rotationSpring.y()},${rotationSpring.z()})"
+                    )
+                }
 
             RenderPhysicsJoint(
                 name = joint.name,

@@ -441,6 +441,8 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
             constraint->setDamping(5, SPRING_DAMPING);
         }
 
+        constraint->setEquilibriumPoint();
+
         this->world->addConstraint(constraint.get(), true);
         this->joints.push_back(std::move(constraint));
     }
