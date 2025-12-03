@@ -657,7 +657,14 @@ class ModelPreprocessor private constructor(
                     } else {
                         null
                     }
+                    val segmentIndex = if (isAsciiSkirt) {
+                        val parts = name.substringAfter("Skirt_").split('_')
+                        parts.getOrNull(1)?.toIntOrNull()
+                    } else {
+                        null
+                    }
                     val isOuterAsciiSkirt = ringChar != null && ringChar in 'B'..'Z'
+                    val isDeepSegment = segmentIndex != null && segmentIndex >= 4
 
                     val angleScale = when (ringChar) {
                         'B' -> 5f
@@ -668,9 +675,14 @@ class ModelPreprocessor private constructor(
                     rotationMax = Vector3f(rotationMax).mul(angleScale)
 
                     if (isOuterAsciiSkirt) {
-                        val (maxBend, maxYaw) = when (ringChar) {
+                        val (baseMaxBend, baseMaxYaw) = when (ringChar) {
                             'B' -> 1.2f to 0.8f
                             else -> 1.0f to 0.6f
+                        }
+                        val (maxBend, maxYaw) = if (isDeepSegment) {
+                            baseMaxBend * 0.6f to baseMaxYaw * 0.3f
+                        } else {
+                            baseMaxBend to baseMaxYaw
                         }
                         rotationMin = rotationMin.set(
                             rotationMin.x().coerceIn(-maxBend, maxBend),
@@ -684,12 +696,17 @@ class ModelPreprocessor private constructor(
                         )
                     }
 
+                    // Lock linear DOFs for skirt joints so they behave as pure rotational constraints.
+                    positionMin = Vector3f(0f, 0f, 0f)
+                    positionMax = Vector3f(0f, 0f, 0f)
+
                     val skirtSpring = 4.0f
-                    val springScale = when (ringChar) {
+                    val baseSpringScale = when (ringChar) {
                         'B' -> 0.75f
                         in 'C'..'Z' -> 0.5f
                         else -> 1.0f
                     }
+                    val springScale = if (isDeepSegment) baseSpringScale * 0.5f else baseSpringScale
                     val effectiveSpring = skirtSpring * springScale
 
                     rotationSpring =
