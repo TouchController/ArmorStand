@@ -638,6 +638,9 @@ class ModelPreprocessor private constructor(
 
                 val name = joint.name
 
+                val rigidBodyAIndex = rigidBodyIdToIndexMap[joint.rigidBodyA] ?: return@mapIndexedNotNull null
+                val rigidBodyBIndex = rigidBodyIdToIndexMap[joint.rigidBodyB] ?: return@mapIndexedNotNull null
+
                 var position = joint.position
                 var rotation = joint.rotation
                 var positionMin = joint.positionMin
