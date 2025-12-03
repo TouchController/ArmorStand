@@ -651,19 +651,44 @@ class ModelPreprocessor private constructor(
                 var rotationSpring = joint.rotationSpring
 
                 if (name != null && (name.startsWith("Skirt_") || name.startsWith("スカート"))) {
-                    val angleScale = 8f
+                    val isAsciiSkirt = name.startsWith("Skirt_")
+                    val isOuterAsciiSkirt = if (isAsciiSkirt) {
+                        val ringTag = name.substringAfter("Skirt_").substringBefore('_')
+                        ringTag.length == 1 && ringTag[0] in 'C'..'Z'
+                    } else {
+                        false
+                    }
+
+                    val angleScale = if (isOuterAsciiSkirt) 3f else 8f
                     rotationMin = Vector3f(rotationMin).mul(angleScale)
                     rotationMax = Vector3f(rotationMax).mul(angleScale)
 
+                    if (isOuterAsciiSkirt) {
+                        val maxAbs = 1.0f
+                        rotationMin = rotationMin.set(
+                            rotationMin.x().coerceIn(-maxAbs, maxAbs),
+                            rotationMin.y().coerceIn(-maxAbs, maxAbs),
+                            rotationMin.z().coerceIn(-maxAbs, maxAbs),
+                        )
+                        rotationMax = rotationMax.set(
+                            rotationMax.x().coerceIn(-maxAbs, maxAbs),
+                            rotationMax.y().coerceIn(-maxAbs, maxAbs),
+                            rotationMax.z().coerceIn(-maxAbs, maxAbs),
+                        )
+                    }
+
                     val skirtSpring = 4.0f
+                    val springScale = if (isOuterAsciiSkirt) 0.5f else 1.0f
+                    val effectiveSpring = skirtSpring * springScale
+
                     rotationSpring =
                         if (name.startsWith("スカート横_")) {
-                            Vector3f(skirtSpring, skirtSpring, skirtSpring)
+                            Vector3f(effectiveSpring, effectiveSpring, effectiveSpring)
                         } else {
                             Vector3f(
-                                if (rotationSpring.x() == 0f) skirtSpring else rotationSpring.x(),
-                                if (rotationSpring.y() == 0f) skirtSpring else rotationSpring.y(),
-                                if (rotationSpring.z() == 0f) skirtSpring else rotationSpring.z(),
+                                if (rotationSpring.x() == 0f) effectiveSpring else rotationSpring.x() * springScale,
+                                if (rotationSpring.y() == 0f) effectiveSpring else rotationSpring.y() * springScale,
+                                if (rotationSpring.z() == 0f) effectiveSpring else rotationSpring.z() * springScale,
                             )
                         }
                 }
