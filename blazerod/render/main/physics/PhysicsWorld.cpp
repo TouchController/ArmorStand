@@ -458,6 +458,40 @@ PhysicsWorld::~PhysicsWorld() {
     }
 }
 
+void PhysicsWorld::ResetRigidBody(size_t rigidbody_index, float px, float py, float pz,
+                                  float qx, float qy, float qz, float qw) {
+    if (rigidbody_index >= this->rigidbodies.size()) {
+        throw std::out_of_range("Invalid rigidbody index");
+    }
+
+    auto& rigidbody_data = this->rigidbodies[rigidbody_index];
+
+    btTransform node_transform;
+    node_transform.setIdentity();
+    node_transform.setOrigin(btVector3(px, py, pz));
+    node_transform.setRotation(btQuaternion(qx, qy, qz, qw));
+
+    btTransform world_transform;
+    world_transform.mult(node_transform, rigidbody_data.motion_state->GetFromNodeToWorld());
+
+    rigidbody_data.motion_state->SetWorldTransformDirect(world_transform);
+    rigidbody_data.rigidbody->setWorldTransform(world_transform);
+    rigidbody_data.rigidbody->setInterpolationWorldTransform(world_transform);
+    rigidbody_data.rigidbody->setLinearVelocity(btVector3(0, 0, 0));
+    rigidbody_data.rigidbody->setAngularVelocity(btVector3(0, 0, 0));
+    rigidbody_data.rigidbody->clearForces();
+
+    float* buffer = this->transform_buffer.get();
+    float* dst = &buffer[rigidbody_index * 7];
+    dst[0] = px;
+    dst[1] = py;
+    dst[2] = pz;
+    dst[3] = qx;
+    dst[4] = qy;
+    dst[5] = qz;
+    dst[6] = qw;
+}
+
 void PhysicsWorld::Step(float delta_time, int max_sub_steps, float fixed_time_step) {
     size_t rigidbody_index = 0;
     for (auto& rigidbody : this->rigidbodies) {

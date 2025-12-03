@@ -206,7 +206,7 @@ class RenderSceneImpl(
                         array[offset + 6] = baseRot.w
 
                         clampMatrix.translationRotate(basePos, baseRot)
-                        data.world.setTransform(component.rigidBodyIndex, clampMatrix)
+                        data.world.resetRigidBody(component.rigidBodyIndex, basePos, baseRot)
                     }
                 }
             }

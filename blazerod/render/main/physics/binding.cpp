@@ -117,6 +117,19 @@ JNIEXPORT void JNICALL Java_top_fifthlight_blazerod_physics_PhysicsLibrary_stepP
 
 /*
  * Class:     top_fifthlight_blazerod_physics_PhysicsLibrary
+ * Method:    resetRigidBody
+ * Signature: (JIFFFFFFFF)V
+ */
+JNIEXPORT void JNICALL Java_top_fifthlight_blazerod_physics_PhysicsLibrary_resetRigidBody(
+    JNIEnv* env, jclass clazz, jlong physics_world, jint rigidbody_index,
+    jfloat px, jfloat py, jfloat pz,
+    jfloat qx, jfloat qy, jfloat qz, jfloat qw) {
+    auto physics_world_ptr = reinterpret_cast<PhysicsWorld*>(physics_world);
+    physics_world_ptr->ResetRigidBody(static_cast<size_t>(rigidbody_index), px, py, pz, qx, qy, qz, qw);
+}
+
+/*
+ * Class:     top_fifthlight_blazerod_physics_PhysicsLibrary
  * Method:    destroyPhysicsWorld
  * Signature: (J)V
  */

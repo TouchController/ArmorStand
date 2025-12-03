@@ -73,6 +73,18 @@ class PhysicsWorld(
         }
     }
 
+    fun resetRigidBody(rigidBodyIndex: Int, position: Vector3f, rotation: Quaternionf) {
+        Objects.checkIndex(rigidBodyIndex, rigidBodyCount)
+        requireNotClosed {
+            PhysicsLibrary.resetRigidBody(
+                pointer,
+                rigidBodyIndex,
+                position.x, position.y, position.z,
+                rotation.x, rotation.y, rotation.z, rotation.w,
+            )
+        }
+    }
+
     fun pullTransforms(dst: FloatArray) {
         requireNotClosed {
             require(dst.size >= rigidBodyCount * 7)
