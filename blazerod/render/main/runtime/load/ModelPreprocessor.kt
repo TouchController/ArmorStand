@@ -756,7 +756,9 @@ class ModelPreprocessor private constructor(
                     if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C' || ringChar == 'D')) {
                         val linearSpring = (skirtSpring * 0.5f) * springScale
                         if (linearSpring > 0f) {
-                            positionSpring = Vector3f(linearSpring, linearSpring, linearSpring)
+                            // Apply linear spring only on the vertical axis so we pull the skirt
+                            // panels toward the correct height without introducing a sideways bias.
+                            positionSpring = Vector3f(0f, linearSpring, 0f)
                         }
                     }
 
