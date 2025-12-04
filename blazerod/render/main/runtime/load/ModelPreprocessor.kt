@@ -681,9 +681,10 @@ class ModelPreprocessor private constructor(
                         }
                         val bendDepthScale = when {
                             segmentIndex == null || segmentIndex <= 2 -> 1.0f
-                            segmentIndex == 3 -> 0.8f
-                            else -> 0.6f
+                            segmentIndex == 3 -> 0.7f
+                            else -> 0.45f
                         }
+
                         val yawDepthScale = when {
                             segmentIndex == null || segmentIndex <= 2 -> 1.0f
                             segmentIndex == 3 -> 0.6f
@@ -713,8 +714,17 @@ class ModelPreprocessor private constructor(
                     }
 
                     // Lock linear DOFs for skirt joints so they behave as pure rotational constraints.
-                    positionMin = Vector3f(0f, 0f, 0f)
-                    positionMax = Vector3f(0f, 0f, 0f)
+                    val allowLinearSlack =
+                        isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C') &&
+                            segmentIndex != null && segmentIndex >= 3
+                    if (allowLinearSlack) {
+                        val slack = 0.02f
+                        positionMin = Vector3f(-slack, -slack, -slack)
+                        positionMax = Vector3f(slack, slack, slack)
+                    } else {
+                        positionMin = Vector3f(0f, 0f, 0f)
+                        positionMax = Vector3f(0f, 0f, 0f)
+                    }
 
                     val skirtSpring = 4.0f
                     val baseSpringScale = when (ringChar) {
