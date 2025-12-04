@@ -778,7 +778,7 @@ class ModelPreprocessor private constructor(
                             else -> 0.6f
                         }
                         val spring = base * depthScaleForSpring
-                        Vector3f(spring, spring, spring)
+                        Vector3f(spring, spring * 0.35f, spring)
                     } else if (name.startsWith("スカート横_")) {
                         Vector3f(effectiveSpring, effectiveSpring, effectiveSpring)
                     } else {
