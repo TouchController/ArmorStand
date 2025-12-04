@@ -679,13 +679,18 @@ class ModelPreprocessor private constructor(
                             'B' -> 1.2f to 0.8f
                             else -> 1.0f to 0.6f
                         }
-                        val depthScale = when {
+                        val bendDepthScale = when {
                             segmentIndex == null || segmentIndex <= 2 -> 1.0f
                             segmentIndex == 3 -> 0.8f
                             else -> 0.6f
                         }
-                        val maxBend = baseMaxBend * depthScale
-                        val maxYaw = baseMaxYaw * depthScale
+                        val yawDepthScale = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.6f
+                            else -> 0.4f
+                        }
+                        val maxBend = baseMaxBend * bendDepthScale
+                        val maxYaw = baseMaxYaw * yawDepthScale
                         rotationMin = Vector3f(-maxBend, -maxYaw, -maxBend)
                         rotationMax = Vector3f(maxBend, maxYaw, maxBend)
                     } else if (isOuterAsciiSkirt) {
@@ -722,8 +727,8 @@ class ModelPreprocessor private constructor(
 
                     rotationSpring = if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
                         val base = when (ringChar) {
-                            'B' -> if (isDeepSegment) 5.0f else 6.0f
-                            'C' -> if (isDeepSegment) 4.0f else 4.5f
+                            'B' -> 6.0f
+                            'C' -> 4.5f
                             else -> effectiveSpring
                         }
                         Vector3f(base, base, base)
