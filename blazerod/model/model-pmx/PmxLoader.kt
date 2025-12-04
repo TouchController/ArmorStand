@@ -1178,14 +1178,18 @@ class PmxLoader : ModelFileLoader {
                                         PmxRigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
                                     }
 
-                                    val adjustedPhysicsMode =
-                                        if (rigidBody.nameLocal.startsWith("Skirt_") &&
-                                            basePhysicsMode == RigidBody.PhysicsMode.PHYSICS
-                                        ) {
+                                    val nameLocal = rigidBody.nameLocal
+                                    val adjustedPhysicsMode = when {
+                                        nameLocal.startsWith("Ribbon_Braid_") -> basePhysicsMode
+                                        nameLocal.startsWith("Ribbon_") ||
+                                            nameLocal.startsWith("Pocket Watch_") ||
+                                            nameLocal.startsWith("Strap_") ->
+                                            RigidBody.PhysicsMode.FOLLOW_BONE
+                                        nameLocal.startsWith("Skirt_") &&
+                                            basePhysicsMode == RigidBody.PhysicsMode.PHYSICS ->
                                             RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
-                                        } else {
-                                            basePhysicsMode
-                                        }
+                                        else -> basePhysicsMode
+                                    }
 
                                     val baseGroup = 1 shl rigidBody.groupId
                                     var collisionMask = rigidBody.nonCollisionGroup.inv() and 0xFFFF
