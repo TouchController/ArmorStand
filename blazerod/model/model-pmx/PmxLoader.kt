@@ -1189,7 +1189,7 @@ class PmxLoader : ModelFileLoader {
                                     val baseGroup = 1 shl rigidBody.groupId
                                     var collisionMask = rigidBody.nonCollisionGroup.inv() and 0xFFFF
                                     if (rigidBody.nameLocal.startsWith("Skirt_")) {
-                                        collisionMask = collisionMask and baseGroup.inv()
+                                        collisionMask = 0
                                     }
 
                                     RigidBody(
