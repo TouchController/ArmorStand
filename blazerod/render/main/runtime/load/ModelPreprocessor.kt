@@ -674,11 +674,22 @@ class ModelPreprocessor private constructor(
                     rotationMin = Vector3f(rotationMin).mul(angleScale)
                     rotationMax = Vector3f(rotationMax).mul(angleScale)
 
-                    if (isOuterAsciiSkirt) {
+                    if (isOuterAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
                         val (baseMaxBend, baseMaxYaw) = when (ringChar) {
                             'B' -> 1.2f to 0.8f
                             else -> 1.0f to 0.6f
                         }
+                        val depthScale = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.8f
+                            else -> 0.6f
+                        }
+                        val maxBend = baseMaxBend * depthScale
+                        val maxYaw = baseMaxYaw * depthScale
+                        rotationMin = Vector3f(-maxBend, -maxYaw, -maxBend)
+                        rotationMax = Vector3f(maxBend, maxYaw, maxBend)
+                    } else if (isOuterAsciiSkirt) {
+                        val (baseMaxBend, baseMaxYaw) = 1.0f to 0.6f
                         val (maxBend, maxYaw) = if (isDeepSegment) {
                             baseMaxBend * 0.6f to baseMaxYaw * 0.3f
                         } else {
@@ -709,16 +720,22 @@ class ModelPreprocessor private constructor(
                     val springScale = if (isDeepSegment) baseSpringScale * 0.5f else baseSpringScale
                     val effectiveSpring = skirtSpring * springScale
 
-                    rotationSpring =
-                        if (name.startsWith("スカート横_")) {
-                            Vector3f(effectiveSpring, effectiveSpring, effectiveSpring)
-                        } else {
-                            Vector3f(
-                                if (rotationSpring.x() == 0f) effectiveSpring else rotationSpring.x() * springScale,
-                                if (rotationSpring.y() == 0f) effectiveSpring else rotationSpring.y() * springScale,
-                                if (rotationSpring.z() == 0f) effectiveSpring else rotationSpring.z() * springScale,
-                            )
+                    rotationSpring = if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
+                        val base = when (ringChar) {
+                            'B' -> if (isDeepSegment) 5.0f else 6.0f
+                            'C' -> if (isDeepSegment) 4.0f else 4.5f
+                            else -> effectiveSpring
                         }
+                        Vector3f(base, base, base)
+                    } else if (name.startsWith("スカート横_")) {
+                        Vector3f(effectiveSpring, effectiveSpring, effectiveSpring)
+                    } else {
+                        Vector3f(
+                            if (rotationSpring.x() == 0f) effectiveSpring else rotationSpring.x() * springScale,
+                            if (rotationSpring.y() == 0f) effectiveSpring else rotationSpring.y() * springScale,
+                            if (rotationSpring.z() == 0f) effectiveSpring else rotationSpring.z() * springScale,
+                        )
+                    }
                 }
 
                 if (name != null && (name.startsWith("Hair_") || name.startsWith("Braid_") || name.startsWith("Ribbon_"))) {
