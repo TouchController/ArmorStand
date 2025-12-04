@@ -1166,21 +1166,30 @@ class PmxLoader : ModelFileLoader {
                             )
                         )
                     }
+                    boneToRigidBodyMap[index]?.forEach { index ->
+                        add(
+                            NodeComponent.RigidBodyComponent(
+                                rigidBodyId = RigidBodyId(modelId, index),
+                                rigidBody = rigidBodies[index].let { rigidBody ->
+                                    val basePhysicsMode = when (rigidBody.physicsMode) {
+                                        PmxRigidBody.PhysicsMode.FOLLOW_BONE -> RigidBody.PhysicsMode.FOLLOW_BONE
+                                        PmxRigidBody.PhysicsMode.PHYSICS -> RigidBody.PhysicsMode.PHYSICS
+                                        PmxRigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
+                                    }
 
-                                            val adjustedPhysicsMode =
-                                                if (rigidBody.nameLocal.startsWith("Skirt_") &&
-                                                    basePhysicsMode == RigidBody.PhysicsMode.PHYSICS
-                                                ) {
-                                                    RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
-                                                } else {
-                                                    basePhysicsMode
-                                                }
+                                    val adjustedPhysicsMode =
+                                        if (rigidBody.nameLocal.startsWith("Skirt_") &&
+                                            basePhysicsMode == RigidBody.PhysicsMode.PHYSICS
+                                        ) {
+                                            RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
+                                        } else {
+                                            basePhysicsMode
+                                        }
 
-                                            val baseGroup = 1 shl rigidBody.groupId
-                                            var collisionMask = rigidBody.nonCollisionGroup.inv() and 0xFFFF
-                                            if (rigidBody.nameLocal.startsWith("Skirt_")) {
-                                                collisionMask = collisionMask and baseGroup.inv()
-                                            }
+                                    val baseGroup = 1 shl rigidBody.groupId
+                                    var collisionMask = rigidBody.nonCollisionGroup.inv() and 0xFFFF
+                                    if (rigidBody.nameLocal.startsWith("Skirt_")) {
+                                        collisionMask = collisionMask and baseGroup.inv()
                                     }
 
                                     RigidBody(
