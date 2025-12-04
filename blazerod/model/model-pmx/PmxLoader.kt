@@ -1191,10 +1191,7 @@ class PmxLoader : ModelFileLoader {
                                     var collisionMask = rigidBody.nonCollisionGroup.inv() and 0xFFFF
                                     val defaultMask = collisionMask
                                     if (rigidBody.nameLocal.startsWith("Skirt_")) {
-                                        // Keep skirt self-collision (group 9) but drop collisions with
-                                        // accessories/weapon (group 4) to avoid asymmetric pushing.
-                                        val accessoryGroupMask = 1 shl 4
-                                        collisionMask = collisionMask and accessoryGroupMask.inv()
+                                        collisionMask = 0
                                     }
                                     println(
                                         "PHYSDBG RB_GROUP " +
