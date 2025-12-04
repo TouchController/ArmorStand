@@ -694,6 +694,23 @@ class ModelPreprocessor private constructor(
                         val maxYaw = baseMaxYaw * yawDepthScale
                         rotationMin = Vector3f(-maxBend, -maxYaw, -maxBend)
                         rotationMax = Vector3f(maxBend, maxYaw, maxBend)
+                    } else if (isOuterAsciiSkirt && ringChar == 'D') {
+                        val baseMaxBend = 0.8f
+                        val baseMaxYaw = 0.5f
+                        val bendDepthScale = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.8f
+                            else -> 0.6f
+                        }
+                        val yawDepthScale = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.7f
+                            else -> 0.5f
+                        }
+                        val maxBend = baseMaxBend * bendDepthScale
+                        val maxYaw = baseMaxYaw * yawDepthScale
+                        rotationMin = Vector3f(-maxBend, -maxYaw, -maxBend)
+                        rotationMax = Vector3f(maxBend, maxYaw, maxBend)
                     } else if (isOuterAsciiSkirt) {
                         val (baseMaxBend, baseMaxYaw) = 1.0f to 0.6f
                         val (maxBend, maxYaw) = if (isDeepSegment) {
@@ -715,8 +732,10 @@ class ModelPreprocessor private constructor(
 
                     // Lock linear DOFs for skirt joints so they behave as pure rotational constraints.
                     val allowLinearSlack =
-                        isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C') &&
+                        isAsciiSkirt && ringChar != null &&
+                            (ringChar == 'B' || ringChar == 'C' || ringChar == 'D') &&
                             segmentIndex != null && segmentIndex >= 3
+
                     if (allowLinearSlack) {
                         val slack = 0.04f
                         positionMin = Vector3f(-slack, -slack, -slack)
