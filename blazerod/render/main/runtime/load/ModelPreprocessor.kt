@@ -759,11 +759,15 @@ class ModelPreprocessor private constructor(
                     val effectiveSpring = skirtSpring * springScale
 
                     if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C' || ringChar == 'D')) {
-                        val linearSpring = (skirtSpring * 0.5f) * springScale
-                        if (linearSpring > 0f) {
-                            // Apply linear spring only on the vertical axis so we pull the skirt
-                            // panels toward the correct height without introducing a sideways bias.
-                            positionSpring = Vector3f(0f, linearSpring, 0f)
+                        if (ringChar == 'B' || ringChar == 'C') {
+                            positionSpring = Vector3f(0f, 0f, 0f)
+                        } else {
+                            val linearSpring = (skirtSpring * 0.5f) * springScale
+                            if (linearSpring > 0f) {
+                                // Apply linear spring only on the vertical axis so we pull the skirt
+                                // panels toward the correct height without introducing a sideways bias.
+                                positionSpring = Vector3f(0f, linearSpring, 0f)
+                            }
                         }
                     }
 
@@ -778,7 +782,7 @@ class ModelPreprocessor private constructor(
                             segmentIndex == 3 -> 0.8f
                             else -> 0.6f
                         }
-                        val spring = base * depthScaleForSpring
+                        val spring = base * depthScaleForSpring * 0.25f
                         Vector3f(spring, spring * 0.35f, spring)
                     } else if (name.startsWith("スカート横_")) {
                         Vector3f(effectiveSpring, effectiveSpring, effectiveSpring)
