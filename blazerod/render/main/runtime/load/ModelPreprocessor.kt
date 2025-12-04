@@ -666,6 +666,10 @@ class ModelPreprocessor private constructor(
                     val isOuterAsciiSkirt = ringChar != null && ringChar in 'B'..'Z'
                     val isDeepSegment = segmentIndex != null && segmentIndex >= 4
 
+                    if (isAsciiSkirt && ringChar != null && ringChar in 'A'..'D') {
+                        rotation = Vector3f(0f, 0f, 0f)
+                    }
+
                     val angleScale = when (ringChar) {
                         'B' -> 5f
                         in 'C'..'Z' -> 3f
