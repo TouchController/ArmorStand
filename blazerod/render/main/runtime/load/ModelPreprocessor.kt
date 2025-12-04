@@ -730,7 +730,6 @@ class ModelPreprocessor private constructor(
                         )
                     }
 
-                    // Lock linear DOFs for skirt joints so they behave as pure rotational constraints.
                     val allowLinearSlack =
                         isAsciiSkirt && ringChar != null &&
                             (ringChar == 'B' || ringChar == 'C' || ringChar == 'D') &&
@@ -753,6 +752,13 @@ class ModelPreprocessor private constructor(
                     }
                     val springScale = if (isDeepSegment) baseSpringScale * 0.5f else baseSpringScale
                     val effectiveSpring = skirtSpring * springScale
+
+                    if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C' || ringChar == 'D')) {
+                        val linearSpring = (skirtSpring * 0.5f) * springScale
+                        if (linearSpring > 0f) {
+                            positionSpring = Vector3f(linearSpring, linearSpring, linearSpring)
+                        }
+                    }
 
                     rotationSpring = if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
                         val base = when (ringChar) {
