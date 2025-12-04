@@ -718,7 +718,7 @@ class ModelPreprocessor private constructor(
                         isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C') &&
                             segmentIndex != null && segmentIndex >= 3
                     if (allowLinearSlack) {
-                        val slack = 0.02f
+                        val slack = 0.04f
                         positionMin = Vector3f(-slack, -slack, -slack)
                         positionMax = Vector3f(slack, slack, slack)
                     } else {
@@ -737,11 +737,17 @@ class ModelPreprocessor private constructor(
 
                     rotationSpring = if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
                         val base = when (ringChar) {
-                            'B' -> 6.0f
-                            'C' -> 4.5f
+                            'B' -> 5.0f
+                            'C' -> 4.0f
                             else -> effectiveSpring
                         }
-                        Vector3f(base, base, base)
+                        val depthScaleForSpring = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.8f
+                            else -> 0.6f
+                        }
+                        val spring = base * depthScaleForSpring
+                        Vector3f(spring, spring, spring)
                     } else if (name.startsWith("スカート横_")) {
                         Vector3f(effectiveSpring, effectiveSpring, effectiveSpring)
                     } else {
