@@ -1166,6 +1166,7 @@ class PmxLoader : ModelFileLoader {
                             )
                         )
                     }
+
                     boneToRigidBodyMap[index]?.forEach { index ->
                         add(
                             NodeComponent.RigidBodyComponent(
@@ -1188,6 +1189,15 @@ class PmxLoader : ModelFileLoader {
 
                                     val baseGroup = 1 shl rigidBody.groupId
                                     var collisionMask = rigidBody.nonCollisionGroup.inv() and 0xFFFF
+                                    println(
+                                        "PHYSDBG RB_GROUP " +
+                                            "idx=$index " +
+                                            "name=${rigidBody.nameLocal} " +
+                                            "groupId=${rigidBody.groupId} " +
+                                            "nonColl=${rigidBody.nonCollisionGroup} " +
+                                            "baseGroup=$baseGroup " +
+                                            "defaultMask=$collisionMask",
+                                    )
                                     if (rigidBody.nameLocal.startsWith("Skirt_")) {
                                         collisionMask = 0
                                     }
