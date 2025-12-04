@@ -1180,6 +1180,8 @@ class PmxLoader : ModelFileLoader {
 
                                     val nameLocal = rigidBody.nameLocal
                                     val adjustedPhysicsMode = when {
+                                        nameLocal.startsWith("Skirt_D_") ->
+                                            RigidBody.PhysicsMode.FOLLOW_BONE
                                         nameLocal.startsWith("Ribbon_Braid_") -> basePhysicsMode
                                         nameLocal.startsWith("Ribbon_") ||
                                             nameLocal.startsWith("Pocket Watch_") ||
