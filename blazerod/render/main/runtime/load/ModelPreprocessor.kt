@@ -751,6 +751,7 @@ class ModelPreprocessor private constructor(
                     val skirtSpring = 4.0f
                     val baseSpringScale = when (ringChar) {
                         'B' -> 0.75f
+                        'D' -> 0.75f
                         in 'C'..'Z' -> 0.5f
                         else -> 1.0f
                     }
