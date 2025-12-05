@@ -679,6 +679,7 @@ class ModelPreprocessor private constructor(
                     rotationMax = Vector3f(rotationMax).mul(angleScale)
 
                     if (isOuterAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
+
                         val (baseMaxBend, baseMaxYaw) = when (ringChar) {
                             'B' -> 1.2f to 0.8f
                             else -> 1.0f to 0.6f
@@ -732,6 +733,12 @@ class ModelPreprocessor private constructor(
                             rotationMax.y().coerceIn(-maxYaw, maxYaw),
                             rotationMax.z().coerceIn(-maxBend, maxBend),
                         )
+                    }
+
+                    if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
+                        val smallYaw = 0.1f
+                        rotationMin = Vector3f(rotationMin.x(), -smallYaw, rotationMin.z())
+                        rotationMax = Vector3f(rotationMax.x(), smallYaw, rotationMax.z())
                     }
 
                     val allowLinearSlack =
