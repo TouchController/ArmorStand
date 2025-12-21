@@ -1022,7 +1022,10 @@ class PmxLoader : ModelFileLoader {
                     shape = loadShapeType(buffer.get()),
                     shapeSize = loadVector3f(buffer).mul(MMD_SCALE),
                     shapePosition = loadVector3f(buffer).transformPosition(),
-                    shapeRotation = loadVector3f(buffer).also { it.y *= -1 },
+                    shapeRotation = loadVector3f(buffer).also {
+                        it.y *= -1
+                        it.z *= -1
+                    },
                     mass = buffer.getFloat(),
                     moveAttenuation = buffer.getFloat(),
                     rotationDamping = buffer.getFloat(),
@@ -1060,7 +1063,10 @@ class PmxLoader : ModelFileLoader {
                 val rigidBodyIndexA = loadRigidBodyIndex(buffer)
                 val rigidBodyIndexB = loadRigidBodyIndex(buffer)
                 val position = loadVector3f(buffer).transformPosition()
-                val rotation = loadVector3f(buffer).also { it.y *= -1 }
+                val rotation = loadVector3f(buffer).also {
+                    it.y *= -1
+                    it.z *= -1
+                }
 
                 val positionMinimumOrig = loadVector3f(buffer).transformPosition()
                 val positionMaximumOrig = loadVector3f(buffer).transformPosition()
@@ -1069,10 +1075,18 @@ class PmxLoader : ModelFileLoader {
 
                 val rotationMinimumOrig = loadVector3f(buffer)
                 val rotationMaximumOrig = loadVector3f(buffer)
-                val rotationMinimum = Vector3f(-rotationMaximumOrig.x, rotationMinimumOrig.y, rotationMinimumOrig.z)
-                val rotationMaximum = Vector3f(-rotationMinimumOrig.x, rotationMaximumOrig.y, rotationMaximumOrig.z)
+                val rotationMinimum = Vector3f(
+                    rotationMinimumOrig.x,
+                    -rotationMaximumOrig.y,
+                    -rotationMaximumOrig.z,
+                )
+                val rotationMaximum = Vector3f(
+                    rotationMaximumOrig.x,
+                    -rotationMinimumOrig.y,
+                    -rotationMinimumOrig.z,
+                )
                 val positionSpring = loadVector3f(buffer)
-                val rotationSpring = loadVector3f(buffer).also { it.x *= -1 }
+                val rotationSpring = loadVector3f(buffer)
 
                 PmxJoint(
                     nameLocal = nameLocal,
@@ -1172,6 +1186,7 @@ class PmxLoader : ModelFileLoader {
                             NodeComponent.RigidBodyComponent(
                                 rigidBodyId = RigidBodyId(modelId, index),
                                 rigidBody = rigidBodies[index].let { rigidBody ->
+                                    val enableNameBasedOverrides = false
                                     val basePhysicsMode = when (rigidBody.physicsMode) {
                                         PmxRigidBody.PhysicsMode.FOLLOW_BONE -> RigidBody.PhysicsMode.FOLLOW_BONE
                                         PmxRigidBody.PhysicsMode.PHYSICS -> RigidBody.PhysicsMode.PHYSICS
@@ -1179,26 +1194,27 @@ class PmxLoader : ModelFileLoader {
                                     }
 
                                     val nameLocal = rigidBody.nameLocal
-                                    val adjustedPhysicsMode = when {
-                                        nameLocal.startsWith("Skirt_D_") ->
-                                            RigidBody.PhysicsMode.FOLLOW_BONE
-                                        nameLocal.startsWith("Ribbon_Braid_") -> basePhysicsMode
-                                        nameLocal.startsWith("Ribbon_") ||
-                                            nameLocal.startsWith("Pocket Watch_") ||
-                                            nameLocal.startsWith("Strap_") ->
-                                            RigidBody.PhysicsMode.FOLLOW_BONE
-                                        nameLocal.startsWith("Skirt_") &&
-                                            basePhysicsMode == RigidBody.PhysicsMode.PHYSICS ->
-                                            RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
-                                        else -> basePhysicsMode
+                                    val adjustedPhysicsMode = if (enableNameBasedOverrides) {
+                                        when {
+                                            nameLocal.startsWith("Skirt_D_") ->
+                                                RigidBody.PhysicsMode.FOLLOW_BONE
+                                            nameLocal.startsWith("Ribbon_Braid_") -> basePhysicsMode
+                                            nameLocal.startsWith("Ribbon_") ||
+                                                nameLocal.startsWith("Pocket Watch_") ||
+                                                nameLocal.startsWith("Strap_") ->
+                                                RigidBody.PhysicsMode.FOLLOW_BONE
+                                            nameLocal.startsWith("Skirt_") &&
+                                                basePhysicsMode == RigidBody.PhysicsMode.PHYSICS ->
+                                                RigidBody.PhysicsMode.PHYSICS_PLUS_BONE
+                                            else -> basePhysicsMode
+                                        }
+                                    } else {
+                                        basePhysicsMode
                                     }
 
                                     val baseGroup = 1 shl rigidBody.groupId
                                     var collisionMask = rigidBody.nonCollisionGroup.inv() and 0xFFFF
                                     val defaultMask = collisionMask
-                                    if (rigidBody.nameLocal.startsWith("Skirt_")) {
-                                        collisionMask = 0
-                                    }
                                     println(
                                         "PHYSDBG RB_GROUP " +
                                             "idx=$index " +

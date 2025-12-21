@@ -11,6 +11,7 @@
     "EntityRenderDispatcherMixin",
     "FrustumMixin",
     "GameRendererMixin",
+    "HeldItemFeatureRendererMixin",
     "MinecraftClientMixin",
     "MouseMixin",
     "PlayerEntityRendererMixin",

@@ -5,6 +5,8 @@ import net.minecraft.client.render.entity.state.PlayerEntityRenderState
 import net.minecraft.entity.EntityPose
 import net.minecraft.entity.EntityType
 import net.minecraft.registry.tag.EntityTypeTags
+import net.minecraft.registry.Registries
+import net.minecraft.util.Hand
 import net.minecraft.util.Arm
 import net.minecraft.util.math.Direction
 import net.minecraft.util.math.MathHelper
@@ -226,6 +228,12 @@ sealed interface ModelController {
             abstract fun getItem(set: FullAnimationSet): AnimationItemInstance
             open val loop: Boolean = true
 
+            data class ItemActive(
+                private val item: AnimationItemInstance,
+            ) : PlayState() {
+                override fun getItem(set: FullAnimationSet) = item
+            }
+
             data object Idle : PlayState() {
                 override fun getItem(set: FullAnimationSet) = set.idle
             }
@@ -325,11 +333,54 @@ sealed interface ModelController {
             )
         }
 
+        private fun Arm.toHandSide() = when (this) {
+            Arm.LEFT -> AnimationSet.ItemActiveKey.HandSide.LEFT
+            Arm.RIGHT -> AnimationSet.ItemActiveKey.HandSide.RIGHT
+        }
+
+        private fun getItemActiveAnimation(
+            itemId: net.minecraft.util.Identifier,
+            arm: Arm,
+            actionType: AnimationSet.ItemActiveKey.ActionType,
+        ): AnimationItemInstance? {
+            val key = AnimationSet.ItemActiveKey(
+                itemName = itemId,
+                hand = arm.toHandSide(),
+                actionType = actionType,
+            )
+            return animationSet.itemActive[key]
+        }
+
+        private fun getSwingingHand(mainArm: Arm, arm: Arm): Hand = if (arm == mainArm) {
+            Hand.MAIN_HAND
+        } else {
+            Hand.OFF_HAND
+        }
+
         private fun getState(
             player: AbstractClientPlayerEntity,
             renderState: PlayerEntityRenderState,
         ): PlayState {
             val vehicleType = player.vehicle?.type
+
+            if (player.isUsingItem) {
+                val usedArm = when (player.activeHand) {
+                    Hand.MAIN_HAND -> renderState.mainArm
+                    Hand.OFF_HAND -> if (renderState.mainArm == Arm.RIGHT) Arm.LEFT else Arm.RIGHT
+                    else -> renderState.mainArm
+                }
+                val stack = player.getStackInHand(player.activeHand)
+                val itemId = Registries.ITEM.getId(stack.item)
+                val itemActive = getItemActiveAnimation(
+                    itemId = itemId,
+                    arm = usedArm,
+                    actionType = AnimationSet.ItemActiveKey.ActionType.USING,
+                )
+                if (itemActive != null) {
+                    return PlayState.ItemActive(itemActive)
+                }
+            }
+
             return when {
                 player.isDead -> PlayState.Dying
 
@@ -365,8 +416,27 @@ sealed interface ModelController {
                 player.movement.horizontalLength() > .05 -> PlayState.Walking
 
                 renderState.handSwinging -> when (renderState.preferredArm) {
-                    Arm.LEFT -> PlayState.LeftArmSwinging
-                    Arm.RIGHT -> PlayState.RightArmSwinging
+                    Arm.LEFT -> {
+                        val stack = player.getStackInHand(getSwingingHand(renderState.mainArm, Arm.LEFT))
+                        val itemId = Registries.ITEM.getId(stack.item)
+                        val itemActive = getItemActiveAnimation(
+                            itemId = itemId,
+                            arm = Arm.LEFT,
+                            actionType = AnimationSet.ItemActiveKey.ActionType.SWINGING,
+                        )
+                        itemActive?.let { PlayState.ItemActive(it) } ?: PlayState.LeftArmSwinging
+                    }
+
+                    Arm.RIGHT -> {
+                        val stack = player.getStackInHand(getSwingingHand(renderState.mainArm, Arm.RIGHT))
+                        val itemId = Registries.ITEM.getId(stack.item)
+                        val itemActive = getItemActiveAnimation(
+                            itemId = itemId,
+                            arm = Arm.RIGHT,
+                            actionType = AnimationSet.ItemActiveKey.ActionType.SWINGING,
+                        )
+                        itemActive?.let { PlayState.ItemActive(it) } ?: PlayState.RightArmSwinging
+                    }
                 }
 
                 else -> PlayState.Idle

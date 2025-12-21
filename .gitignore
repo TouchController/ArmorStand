@@ -54,3 +54,6 @@ compile_commands.json
 .bazelbsp
 bazel-*
 external
+
+#KAIMyEntity-C
+KAIMyEntity-C/

@@ -192,6 +192,11 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
                                                             this->solver.get(), this->collision_config.get());
     this->world->setGravity(btVector3(0, -98.0f, 0));
 
+    btContactSolverInfo& solver_info = this->world->getSolverInfo();
+    solver_info.m_numIterations = 20;
+    solver_info.m_splitImpulse = 1;
+    solver_info.m_splitImpulsePenetrationThreshold = -0.04f;
+
     this->ground_shape = std::make_unique<btStaticPlaneShape>(btVector3(0, 1, 0), 0.0f);
     btTransform ground_transform;
     ground_transform.setIdentity();
@@ -301,6 +306,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         rigidbody_info.m_additionalDamping = true;
 
         auto rigidbody = std::make_unique<btRigidBody>(rigidbody_info);
+        rigidbody->setSleepingThresholds(0.01f, 0.0017453293f);
         this->world->addRigidBody(rigidbody.get(), rigidbody_item.collision_group, rigidbody_item.collision_mask);
         rigidbody->setActivationState(DISABLE_DEACTIVATION);
         if (rigidbody_item.physics_mode == PhysicsMode::FOLLOW_BONE) {
@@ -336,9 +342,6 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     size_t joint_count = 0;
     for (const Joint& joint_item : joints) {
         size_t joint_index = joint_count++;
-        const float POSITION_SPRING_SCALE = 0.15f;
-        const float ROTATION_SPRING_SCALE = 0.15f;
-        const float SPRING_DAMPING = 1.0f;
         btMatrix3x3 rotation_matrix;
         // Match Saba's MMDPhysics PMX joint path: use preprocessed joint rotation directly.
         rotation_matrix.setEulerZYX(
@@ -412,38 +415,30 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
 
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
-            constraint->setStiffness(0, std::abs(joint_item.position_spring.x) * POSITION_SPRING_SCALE);
-            constraint->setDamping(0, SPRING_DAMPING);
+            constraint->setStiffness(0, joint_item.position_spring.x);
         }
         if (joint_item.position_spring.y != 0.0f) {
             constraint->enableSpring(1, true);
-            constraint->setStiffness(1, std::abs(joint_item.position_spring.y) * POSITION_SPRING_SCALE);
-            constraint->setDamping(1, SPRING_DAMPING);
+            constraint->setStiffness(1, joint_item.position_spring.y);
         }
         if (joint_item.position_spring.z != 0.0f) {
             constraint->enableSpring(2, true);
-            constraint->setStiffness(2, std::abs(joint_item.position_spring.z) * POSITION_SPRING_SCALE);
-            constraint->setDamping(2, SPRING_DAMPING);
+            constraint->setStiffness(2, joint_item.position_spring.z);
         }
         if (joint_item.rotation_spring.x != 0.0f) {
             constraint->enableSpring(3, true);
-            constraint->setStiffness(3, std::abs(joint_item.rotation_spring.x) * ROTATION_SPRING_SCALE);
-            constraint->setDamping(3, SPRING_DAMPING);
+            constraint->setStiffness(3, joint_item.rotation_spring.x);
         }
         if (joint_item.rotation_spring.y != 0.0f) {
             constraint->enableSpring(4, true);
-            constraint->setStiffness(4, std::abs(joint_item.rotation_spring.y) * ROTATION_SPRING_SCALE);
-            constraint->setDamping(4, SPRING_DAMPING);
+            constraint->setStiffness(4, joint_item.rotation_spring.y);
         }
         if (joint_item.rotation_spring.z != 0.0f) {
             constraint->enableSpring(5, true);
-            constraint->setStiffness(5, std::abs(joint_item.rotation_spring.z) * ROTATION_SPRING_SCALE);
-            constraint->setDamping(5, SPRING_DAMPING);
+            constraint->setStiffness(5, joint_item.rotation_spring.z);
         }
 
-        constraint->setEquilibriumPoint();
-
-        this->world->addConstraint(constraint.get(), true);
+        this->world->addConstraint(constraint.get(), false);
         this->joints.push_back(std::move(constraint));
     }
 }

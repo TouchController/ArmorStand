@@ -35,12 +35,13 @@ class RenderSceneImpl(
     override val expressionGroups: List<RenderExpressionGroup>,
     override val cameras: List<Camera>,
     val physicsJoints: List<RenderPhysicsJoint>,
-    val renderTransform: NodeTransform?,
+    override val renderTransform: NodeTransform?,
 ) : AbstractRefCount(), RenderScene {
     companion object {
         private const val PHYSICS_MAX_SUB_STEP_COUNT = 10
         private const val PHYSICS_FPS = 120f
         private const val PHYSICS_TIME_STEP = 1f / PHYSICS_FPS
+        private const val PHYSICS_ENABLE_CLAMP = false
     }
 
     override val typeId: String
@@ -170,7 +171,7 @@ class RenderSceneImpl(
             }
             data.world.pullTransforms(data.transformArray)
 
-            run {
+            if (PHYSICS_ENABLE_CLAMP) {
                 val array = data.transformArray
                 val basePos = Vector3f()
                 val baseRot = Quaternionf()

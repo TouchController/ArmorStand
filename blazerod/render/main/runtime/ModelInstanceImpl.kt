@@ -42,6 +42,10 @@ class ModelInstanceImpl(
     override val typeId: String
         get() = "model_instance"
 
+    override fun copyNodeWorldTransform(nodeIndex: Int, dest: Matrix4f) {
+        dest.set(modelData.worldTransforms[nodeIndex])
+    }
+
     val modelData = ModelData(scene)
     internal val physicsData = if (PhysicsInterface.isPhysicsAvailable && scene.physicsScene != null) {
         PhysicsData(scene, modelData, scene.physicsScene)

@@ -650,7 +650,9 @@ class ModelPreprocessor private constructor(
                 var positionSpring = joint.positionSpring
                 var rotationSpring = joint.rotationSpring
 
-                if (name != null && (name.startsWith("Skirt_") || name.startsWith("スカート"))) {
+                val enableNameBasedPhysicsTuning = false
+
+                if (enableNameBasedPhysicsTuning && name != null && (name.startsWith("Skirt_") || name.startsWith("スカート"))) {
                     val isAsciiSkirt = name.startsWith("Skirt_")
                     val ringChar = if (isAsciiSkirt) {
                         name.substringAfter("Skirt_").substringBefore('_').singleOrNull()
@@ -802,7 +804,7 @@ class ModelPreprocessor private constructor(
                     }
                 }
 
-                if (name != null && (name.startsWith("Hair_") || name.startsWith("Braid_") || name.startsWith("Ribbon_"))) {
+                if (enableNameBasedPhysicsTuning && name != null && (name.startsWith("Hair_") || name.startsWith("Braid_") || name.startsWith("Ribbon_"))) {
                     val hairSpringScale = 0.25f
                     rotationSpring = Vector3f(rotationSpring).mul(hairSpringScale)
                 }

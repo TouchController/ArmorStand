@@ -4,6 +4,7 @@ import top.fifthlight.blazerod.api.refcount.RefCount
 import top.fifthlight.blazerod.model.Camera
 import top.fifthlight.blazerod.model.HumanoidTag
 import top.fifthlight.blazerod.model.NodeId
+import top.fifthlight.blazerod.model.NodeTransformView
 
 interface RenderScene : RefCount {
     val rootNode: RenderNode
@@ -11,6 +12,8 @@ interface RenderScene : RefCount {
     val expressions: List<RenderExpression>
     val expressionGroups: List<RenderExpressionGroup>
     val cameras: List<Camera>
+
+    val renderTransform: NodeTransformView?
 
     val ikTargetData: List<IkTargetData>
     val nodeIdMap: Map<NodeId, RenderNode>

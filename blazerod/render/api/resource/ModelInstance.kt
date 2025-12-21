@@ -13,6 +13,8 @@ import java.util.function.Consumer
 interface ModelInstance : RefCount {
     val scene: RenderScene
 
+    fun copyNodeWorldTransform(nodeIndex: Int, dest: Matrix4f)
+
     fun clearTransform()
     fun setTransformMatrix(nodeIndex: Int, transformId: TransformId, matrix: Matrix4f)
     fun setTransformMatrix(nodeIndex: Int, transformId: TransformId, updater: Consumer<NodeTransform.Matrix>)
