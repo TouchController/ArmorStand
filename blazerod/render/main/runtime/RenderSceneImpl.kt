@@ -152,6 +152,21 @@ class RenderSceneImpl(
         instance.physicsData?.let { data ->
             if (data.lastPhysicsTime < 0) {
                 data.lastPhysicsTime = time
+
+                instance.updateWorldTransformsNoPhysics()
+                executePhase(instance, UpdatePhase.PhysicsUpdatePre)
+                data.world.pushTransforms(data.transformArray)
+
+                val initPos = Vector3f()
+                val initRot = Quaternionf()
+                for ((nodeIndex, component) in rigidBodyComponents) {
+                    val nodeWorld = instance.modelData.worldTransforms[nodeIndex]
+                    nodeWorld.getTranslation(initPos)
+                    nodeWorld.getUnnormalizedRotation(initRot)
+                    data.world.resetRigidBody(component.rigidBodyIndex, initPos, initRot)
+                }
+                data.world.pullTransforms(data.transformArray)
+
                 return@let
             }
             val timeStep = time - data.lastPhysicsTime
@@ -159,15 +174,18 @@ class RenderSceneImpl(
                 return@let
             }
 
+            val maxTimeStep = PHYSICS_MAX_SUB_STEP_COUNT * PHYSICS_TIME_STEP
+            val clampedTimeStep = minOf(timeStep, maxTimeStep)
+
             data.lastPhysicsTime = time
 
             instance.updateWorldTransformsNoPhysics()
             executePhase(instance, UpdatePhase.PhysicsUpdatePre)
             data.world.pushTransforms(data.transformArray)
             measureTime {
-                data.world.step(timeStep, PHYSICS_MAX_SUB_STEP_COUNT, PHYSICS_TIME_STEP)
+                data.world.step(clampedTimeStep, PHYSICS_MAX_SUB_STEP_COUNT, PHYSICS_TIME_STEP)
             }.let {
-                println("Physics step time: $it, timeStep: $timeStep")
+                println("Physics step time: $it, timeStep: $clampedTimeStep")
             }
             data.world.pullTransforms(data.transformArray)
 
