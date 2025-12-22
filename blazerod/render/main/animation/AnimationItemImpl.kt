@@ -76,10 +76,10 @@ class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : Animatio
             pendingValues.pendingValues[index].let { pendingValue ->
                 channel.applyUnsafe(instance, pendingValue)
             }
-            if (!pendingValues.applied) {
-                pendingValues.applied = true
-                pendingStack.addLast(pendingValues)
-            }
+        }
+        if (!pendingValues.applied) {
+            pendingValues.applied = true
+            pendingStack.addLast(pendingValues)
         }
     }
 }

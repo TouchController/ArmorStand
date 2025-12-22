@@ -11,6 +11,7 @@ import top.fifthlight.blazerod.runtime.node.RenderNodeImpl
 import top.fifthlight.blazerod.runtime.node.UpdatePhase
 import top.fifthlight.blazerod.runtime.node.getTransformMap
 import top.fifthlight.blazerod.runtime.node.getWorldTransform
+import top.fifthlight.blazerod.runtime.node.getWorldTransformNoPhysics
 
 class RigidBodyComponent(
     val rigidBodyIndex: Int,
@@ -48,7 +49,7 @@ class RigidBodyComponent(
             is UpdatePhase.PhysicsUpdatePre -> {
                 when (rigidBodyData.physicsMode) {
                     RigidBody.PhysicsMode.FOLLOW_BONE, RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
-                        val nodeTransformMatrix = instance.getWorldTransform(node)
+                        val nodeTransformMatrix = instance.getWorldTransformNoPhysics(node)
                         nodeTransformMatrix.getTranslation(tempPos)
                         nodeTransformMatrix.getUnnormalizedRotation(tempRot)
                         
