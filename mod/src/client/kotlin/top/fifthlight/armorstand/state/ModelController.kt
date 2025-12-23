@@ -335,6 +335,7 @@ sealed interface ModelController {
         private var keepOverlayUntilFinished: Boolean = false
         private var prevIsUsingItem: Boolean = false
         private var prevHandSwinging: Boolean = false
+        private var lastSwingOverlayStartTick: Long = Long.MIN_VALUE
         private var reset = false
 
         companion object {
@@ -531,8 +532,11 @@ sealed interface ModelController {
             }
 
             val (requestedOverlayItem, requestedOverlayLoop) = overlayRequest ?: Pair(null, null)
+            val nowTick = context.getGameTick()
             val handSwingingRisingEdge = renderState.handSwinging && !prevHandSwinging
-            val shouldRestartOverlay = handSwingingRisingEdge && requestedOverlayLoop == false
+            val swingCooldownActive =
+                renderState.handSwinging && requestedOverlayLoop == false && (nowTick - lastSwingOverlayStartTick) <= 2
+            val shouldRestartOverlay = handSwingingRisingEdge && requestedOverlayLoop == false && !swingCooldownActive
 
             val keepExistingOverlay =
                 requestedOverlayItem == null && keepOverlayUntilFinished && !isFinished(overlayState)
@@ -540,12 +544,16 @@ sealed interface ModelController {
             val effectiveOverlayLoop = if (keepExistingOverlay) overlayLoop else (requestedOverlayLoop ?: true)
             val effectiveKeepUntilFinished = if (keepExistingOverlay) keepOverlayUntilFinished else (requestedOverlayLoop == false)
 
-            val overlayChanged = effectiveOverlayItem != overlayItem || shouldRestartOverlay
+            val overlayChanged = (effectiveOverlayItem != overlayItem || shouldRestartOverlay) && !swingCooldownActive
             if (overlayChanged) {
                 overlayItem = effectiveOverlayItem
                 overlayLoop = effectiveOverlayLoop
                 keepOverlayUntilFinished = effectiveKeepUntilFinished
                 overlayState = effectiveOverlayItem?.createState(context)?.also { configureLoop(it, effectiveOverlayLoop) }
+
+                if (renderState.handSwinging && effectiveOverlayItem != null && effectiveOverlayLoop == false) {
+                    lastSwingOverlayStartTick = nowTick
+                }
             } else {
                 overlayLoop = effectiveOverlayLoop
                 keepOverlayUntilFinished = effectiveKeepUntilFinished
