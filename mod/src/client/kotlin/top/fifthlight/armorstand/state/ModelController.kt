@@ -333,9 +333,7 @@ sealed interface ModelController {
         private var overlayState: AnimationState? = null
         private var overlayLoop: Boolean = true
         private var keepOverlayUntilFinished: Boolean = false
-        private var prevIsUsingItem: Boolean = false
         private var prevHandSwinging: Boolean = false
-        private var lastSwingOverlayStartTick: Long = Long.MIN_VALUE
         private var reset = false
 
         companion object {
@@ -422,26 +420,21 @@ sealed interface ModelController {
             renderState: PlayerEntityRenderState,
         ): Pair<AnimationItemInstance, Boolean>? {
             if (player.isUsingItem) {
-                // Trigger once on rising edge; holding right-click should not replay the animation every tick.
-                if (!prevIsUsingItem) {
-                    val usedArm = when (player.activeHand) {
-                        Hand.MAIN_HAND -> renderState.mainArm
-                        Hand.OFF_HAND -> if (renderState.mainArm == Arm.RIGHT) Arm.LEFT else Arm.RIGHT
-                        else -> renderState.mainArm
-                    }
-                    val stack = player.getStackInHand(player.activeHand)
-                    val itemId = Registries.ITEM.getId(stack.item)
-                    val itemActive = getItemActiveAnimation(
-                        itemId = itemId,
-                        arm = usedArm,
-                        actionType = AnimationSet.ItemActiveKey.ActionType.USING,
-                    )
-                    if (itemActive != null) {
-                        return Pair(itemActive, false)
-                    }
+                val usedArm = when (player.activeHand) {
+                    Hand.MAIN_HAND -> renderState.mainArm
+                    Hand.OFF_HAND -> if (renderState.mainArm == Arm.RIGHT) Arm.LEFT else Arm.RIGHT
+                    else -> renderState.mainArm
                 }
-                // While using (but not a new use), don't fall back to swing overlay.
-                return null
+                val stack = player.getStackInHand(player.activeHand)
+                val itemId = Registries.ITEM.getId(stack.item)
+                val itemActive = getItemActiveAnimation(
+                    itemId = itemId,
+                    arm = usedArm,
+                    actionType = AnimationSet.ItemActiveKey.ActionType.USING,
+                )
+                if (itemActive != null) {
+                    return Pair(itemActive, false)
+                }
             }
 
             if (renderState.handSwinging) {
@@ -532,11 +525,8 @@ sealed interface ModelController {
             }
 
             val (requestedOverlayItem, requestedOverlayLoop) = overlayRequest ?: Pair(null, null)
-            val nowTick = context.getGameTick()
             val handSwingingRisingEdge = renderState.handSwinging && !prevHandSwinging
-            val swingCooldownActive =
-                renderState.handSwinging && requestedOverlayLoop == false && (nowTick - lastSwingOverlayStartTick) <= 2
-            val shouldRestartOverlay = handSwingingRisingEdge && requestedOverlayLoop == false && !swingCooldownActive
+            val shouldRestartOverlay = handSwingingRisingEdge && requestedOverlayLoop == false
 
             val keepExistingOverlay =
                 requestedOverlayItem == null && keepOverlayUntilFinished && !isFinished(overlayState)
@@ -544,16 +534,12 @@ sealed interface ModelController {
             val effectiveOverlayLoop = if (keepExistingOverlay) overlayLoop else (requestedOverlayLoop ?: true)
             val effectiveKeepUntilFinished = if (keepExistingOverlay) keepOverlayUntilFinished else (requestedOverlayLoop == false)
 
-            val overlayChanged = (effectiveOverlayItem != overlayItem || shouldRestartOverlay) && !swingCooldownActive
+            val overlayChanged = effectiveOverlayItem != overlayItem || shouldRestartOverlay
             if (overlayChanged) {
                 overlayItem = effectiveOverlayItem
                 overlayLoop = effectiveOverlayLoop
                 keepOverlayUntilFinished = effectiveKeepUntilFinished
                 overlayState = effectiveOverlayItem?.createState(context)?.also { configureLoop(it, effectiveOverlayLoop) }
-
-                if (renderState.handSwinging && effectiveOverlayItem != null && effectiveOverlayLoop == false) {
-                    lastSwingOverlayStartTick = nowTick
-                }
             } else {
                 overlayLoop = effectiveOverlayLoop
                 keepOverlayUntilFinished = effectiveKeepUntilFinished
@@ -561,7 +547,6 @@ sealed interface ModelController {
             }
 
             prevHandSwinging = renderState.handSwinging
-            prevIsUsingItem = player.isUsingItem
 
             overlayState?.updateTime(context)
             val overlayPending = overlayItem?.let { item ->

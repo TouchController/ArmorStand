@@ -8,7 +8,6 @@ import net.minecraft.client.network.AbstractClientPlayerEntity
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState
 import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.entity.EntityPose
 import org.joml.Matrix4f
 import top.fifthlight.armorstand.config.ConfigHolder
 import top.fifthlight.armorstand.state.ModelInstanceManager
@@ -21,7 +20,6 @@ import java.util.*
 
 object PlayerRenderer {
     private const val NANOSECONDS_PER_SECOND = 1_000_000_000L
-    private const val CROUCH_Y_OFFSET = 0.125f
     private val startNanoTime = System.nanoTime()
     private var renderingWorld = false
 
@@ -108,9 +106,6 @@ object PlayerRenderer {
             instance.debugRender(matrixStack.peek().positionMatrix, consumers, time)
         } else {
             matrix.set(matrixStack.peek().positionMatrix)
-            if (vanillaState.pose == EntityPose.CROUCHING) {
-                matrix.translate(0f, CROUCH_Y_OFFSET, 0f)
-            }
             matrix.scale(ConfigHolder.config.value.modelScale)
             val currentRenderer = RendererManager.currentRenderer
             val task = instance.createRenderTask(matrix, light, overlay)
