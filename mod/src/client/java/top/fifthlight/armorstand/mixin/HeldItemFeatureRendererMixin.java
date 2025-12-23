@@ -22,9 +22,6 @@ import top.fifthlight.blazerod.model.NodeTransformView;
 @Mixin(HeldItemFeatureRenderer.class)
 public class HeldItemFeatureRendererMixin {
     private static final Matrix4f ARMORSTAND$HAND_WORLD_MATRIX = new Matrix4f();
-    private static final Matrix4f ARMORSTAND$ROOT_WORLD_MATRIX = new Matrix4f();
-    private static final Matrix4f ARMORSTAND$ROOT_WORLD_INV_MATRIX = new Matrix4f();
-    private static final Matrix4f ARMORSTAND$HAND_RELATIVE_MATRIX = new Matrix4f();
     private static final Matrix4f ARMORSTAND$ITEM_LOCAL_MATRIX = new Matrix4f();
 
     private static final float ARMORSTAND$CROUCH_Y_OFFSET = 0.125f;
@@ -67,7 +64,7 @@ public class HeldItemFeatureRendererMixin {
         var instance = modelItem.getInstance();
         var scene = instance.getScene();
 
-        var tag = renderArm == Arm.RIGHT ? HumanoidTag.RIGHT_HAND : HumanoidTag.LEFT_HAND;
+        var tag = arm == Arm.RIGHT ? HumanoidTag.RIGHT_HAND : HumanoidTag.LEFT_HAND;
         var node = scene.getHumanoidTagMap().get(tag);
         if (node == null) {
             model.setArmAngle(arm, matrices);
@@ -75,10 +72,6 @@ public class HeldItemFeatureRendererMixin {
         }
 
         instance.copyNodeWorldTransform(node.getNodeIndex(), ARMORSTAND$HAND_WORLD_MATRIX);
-
-        instance.copyNodeWorldTransform(scene.getRootNode().getNodeIndex(), ARMORSTAND$ROOT_WORLD_MATRIX);
-        ARMORSTAND$ROOT_WORLD_INV_MATRIX.set(ARMORSTAND$ROOT_WORLD_MATRIX).invert();
-        ARMORSTAND$HAND_RELATIVE_MATRIX.set(ARMORSTAND$ROOT_WORLD_INV_MATRIX).mul(ARMORSTAND$HAND_WORLD_MATRIX);
 
         ARMORSTAND$ITEM_LOCAL_MATRIX.identity();
         if (((PlayerEntityRenderState) state).pose == EntityPose.CROUCHING) {
@@ -91,7 +84,7 @@ public class HeldItemFeatureRendererMixin {
             renderTransform.applyOnMatrix(ARMORSTAND$ITEM_LOCAL_MATRIX);
         }
 
-        ARMORSTAND$ITEM_LOCAL_MATRIX.mul(ARMORSTAND$HAND_RELATIVE_MATRIX);
+        ARMORSTAND$ITEM_LOCAL_MATRIX.mul(ARMORSTAND$HAND_WORLD_MATRIX);
 
         matrices.multiplyPositionMatrix(ARMORSTAND$ITEM_LOCAL_MATRIX);
     }
