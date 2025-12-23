@@ -8,7 +8,6 @@ import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.client.render.item.ItemRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Arm;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,7 +22,6 @@ import top.fifthlight.blazerod.model.NodeTransformView;
 public class HeldItemFeatureRendererMixin {
     private static final Matrix4f ARMORSTAND$HAND_WORLD_MATRIX = new Matrix4f();
     private static final Matrix4f ARMORSTAND$ITEM_LOCAL_MATRIX = new Matrix4f();
-    private static final Matrix3f ARMORSTAND$ITEM_LOCAL_NORMAL_MATRIX = new Matrix3f();
 
     @Redirect(
         method = "renderItem(Lnet/minecraft/client/render/entity/state/ArmedEntityRenderState;Lnet/minecraft/client/render/item/ItemRenderState;Lnet/minecraft/util/Arm;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V",
@@ -63,7 +61,7 @@ public class HeldItemFeatureRendererMixin {
         var instance = modelItem.getInstance();
         var scene = instance.getScene();
 
-        var tag = renderArm == Arm.RIGHT ? HumanoidTag.RIGHT_HAND : HumanoidTag.LEFT_HAND;
+        var tag = arm == Arm.RIGHT ? HumanoidTag.RIGHT_HAND : HumanoidTag.LEFT_HAND;
         var node = scene.getHumanoidTagMap().get(tag);
         if (node == null) {
             model.setArmAngle(arm, matrices);
@@ -82,9 +80,6 @@ public class HeldItemFeatureRendererMixin {
 
         ARMORSTAND$ITEM_LOCAL_MATRIX.mul(ARMORSTAND$HAND_WORLD_MATRIX);
 
-        var entryMatrices = matrices.peek();
-        entryMatrices.getPositionMatrix().mul(ARMORSTAND$ITEM_LOCAL_MATRIX);
-        ARMORSTAND$ITEM_LOCAL_MATRIX.normal(ARMORSTAND$ITEM_LOCAL_NORMAL_MATRIX);
-        entryMatrices.getNormalMatrix().mul(ARMORSTAND$ITEM_LOCAL_NORMAL_MATRIX);
+        matrices.multiplyPositionMatrix(ARMORSTAND$ITEM_LOCAL_MATRIX);
     }
 }

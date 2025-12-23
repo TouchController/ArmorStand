@@ -98,38 +98,32 @@ object PlayerRenderer {
         controller.apply(uuid, instance, vanillaState)
         instance.updateRenderData(time)
 
-        val backupItem = matrixStack.peek().copy()
-        matrixStack.pop()
         matrixStack.push()
-
-        if (ArmorStandClient.instance.debugBone) {
-            instance.debugRender(matrixStack.peek().positionMatrix, consumers, time)
-        } else {
-            matrix.set(matrixStack.peek().positionMatrix)
-            matrix.scale(ConfigHolder.config.value.modelScale)
-            val currentRenderer = RendererManager.currentRenderer
-            val task = instance.createRenderTask(matrix, light, overlay)
-            if (currentRenderer is ScheduledRenderer<*, *> && renderingWorld) {
-                currentRenderer.schedule(task)
+        try {
+            if (ArmorStandClient.instance.debugBone) {
+                instance.debugRender(matrixStack.peek().positionMatrix, consumers, time)
             } else {
-                val mainTarget = MinecraftClient.getInstance().framebuffer
-                val colorFrameBuffer = RenderSystem.outputColorTextureOverride ?: mainTarget.colorAttachmentView!!
-                val depthFrameBuffer = RenderSystem.outputDepthTextureOverride ?: mainTarget.depthAttachmentView
-                currentRenderer.render(
-                    colorFrameBuffer = colorFrameBuffer,
-                    depthFrameBuffer = depthFrameBuffer,
-                    scene = instance.scene,
-                    task = task,
-                )
-                task.release()
+                matrix.set(matrixStack.peek().positionMatrix)
+                matrix.scale(ConfigHolder.config.value.modelScale)
+                val currentRenderer = RendererManager.currentRenderer
+                val task = instance.createRenderTask(matrix, light, overlay)
+                if (currentRenderer is ScheduledRenderer<*, *> && renderingWorld) {
+                    currentRenderer.schedule(task)
+                } else {
+                    val mainTarget = MinecraftClient.getInstance().framebuffer
+                    val colorFrameBuffer = RenderSystem.outputColorTextureOverride ?: mainTarget.colorAttachmentView!!
+                    val depthFrameBuffer = RenderSystem.outputDepthTextureOverride ?: mainTarget.depthAttachmentView
+                    currentRenderer.render(
+                        colorFrameBuffer = colorFrameBuffer,
+                        depthFrameBuffer = depthFrameBuffer,
+                        scene = instance.scene,
+                        task = task,
+                    )
+                    task.release()
+                }
             }
-        }
-
-        matrixStack.pop()
-        matrixStack.push()
-        matrixStack.peek().apply {
-            positionMatrix.set(backupItem.positionMatrix)
-            normalMatrix.set(backupItem.normalMatrix)
+        } finally {
+            matrixStack.pop()
         }
         return true
     }

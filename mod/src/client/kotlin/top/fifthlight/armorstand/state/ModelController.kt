@@ -334,6 +334,7 @@ sealed interface ModelController {
         private var overlayLoop: Boolean = true
         private var keepOverlayUntilFinished: Boolean = false
         private var prevHandSwinging: Boolean = false
+        private var prevUsingItem: Boolean = false
         private var reset = false
 
         companion object {
@@ -526,7 +527,12 @@ sealed interface ModelController {
 
             val (requestedOverlayItem, requestedOverlayLoop) = overlayRequest ?: Pair(null, null)
             val handSwingingRisingEdge = renderState.handSwinging && !prevHandSwinging
-            val shouldRestartOverlay = handSwingingRisingEdge && requestedOverlayLoop == false
+            val usingRisingEdge = player.isUsingItem && !prevUsingItem
+            val shouldRestartOverlay = when {
+                renderState.handSwinging -> handSwingingRisingEdge && requestedOverlayLoop == false
+                player.isUsingItem -> usingRisingEdge && requestedOverlayLoop == false && isFinished(overlayState)
+                else -> false
+            }
 
             val keepExistingOverlay =
                 requestedOverlayItem == null && keepOverlayUntilFinished && !isFinished(overlayState)
@@ -547,6 +553,7 @@ sealed interface ModelController {
             }
 
             prevHandSwinging = renderState.handSwinging
+            prevUsingItem = player.isUsingItem
 
             overlayState?.updateTime(context)
             val overlayPending = overlayItem?.let { item ->
