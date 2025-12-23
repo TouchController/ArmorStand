@@ -52,7 +52,7 @@ public class HeldItemFeatureRendererMixin {
             return;
         }
 
-        var entry = ModelInstanceManager.INSTANCE.get(uuid, System.nanoTime(), true);
+        var entry = ModelInstanceManager.INSTANCE.get(uuid, System.nanoTime(), false);
         if (!(entry instanceof ModelInstanceManager.ModelInstanceItem.Model modelItem)) {
             model.setArmAngle(arm, matrices);
             return;

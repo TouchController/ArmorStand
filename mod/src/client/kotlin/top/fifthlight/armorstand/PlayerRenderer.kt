@@ -8,6 +8,7 @@ import net.minecraft.client.network.AbstractClientPlayerEntity
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState
 import net.minecraft.client.util.math.MatrixStack
+import net.minecraft.entity.EntityPose
 import org.joml.Matrix4f
 import top.fifthlight.armorstand.config.ConfigHolder
 import top.fifthlight.armorstand.state.ModelInstanceManager
@@ -98,32 +99,42 @@ object PlayerRenderer {
         controller.apply(uuid, instance, vanillaState)
         instance.updateRenderData(time)
 
+        val backupItem = matrixStack.peek().copy()
+        matrixStack.pop()
         matrixStack.push()
-        try {
-            if (ArmorStandClient.instance.debugBone) {
-                instance.debugRender(matrixStack.peek().positionMatrix, consumers, time)
+
+        if (vanillaState.pose == EntityPose.CROUCHING) {
+            matrixStack.translate(0.0, 0.125, 0.0)
+        }
+
+        if (ArmorStandClient.instance.debugBone) {
+            instance.debugRender(matrixStack.peek().positionMatrix, consumers, time)
+        } else {
+            matrix.set(matrixStack.peek().positionMatrix)
+            matrix.scale(ConfigHolder.config.value.modelScale)
+            val currentRenderer = RendererManager.currentRenderer
+            val task = instance.createRenderTask(matrix, light, overlay)
+            if (currentRenderer is ScheduledRenderer<*, *> && renderingWorld) {
+                currentRenderer.schedule(task)
             } else {
-                matrix.set(matrixStack.peek().positionMatrix)
-                matrix.scale(ConfigHolder.config.value.modelScale)
-                val currentRenderer = RendererManager.currentRenderer
-                val task = instance.createRenderTask(matrix, light, overlay)
-                if (currentRenderer is ScheduledRenderer<*, *> && renderingWorld) {
-                    currentRenderer.schedule(task)
-                } else {
-                    val mainTarget = MinecraftClient.getInstance().framebuffer
-                    val colorFrameBuffer = RenderSystem.outputColorTextureOverride ?: mainTarget.colorAttachmentView!!
-                    val depthFrameBuffer = RenderSystem.outputDepthTextureOverride ?: mainTarget.depthAttachmentView
-                    currentRenderer.render(
-                        colorFrameBuffer = colorFrameBuffer,
-                        depthFrameBuffer = depthFrameBuffer,
-                        scene = instance.scene,
-                        task = task,
-                    )
-                    task.release()
-                }
+                val mainTarget = MinecraftClient.getInstance().framebuffer
+                val colorFrameBuffer = RenderSystem.outputColorTextureOverride ?: mainTarget.colorAttachmentView!!
+                val depthFrameBuffer = RenderSystem.outputDepthTextureOverride ?: mainTarget.depthAttachmentView
+                currentRenderer.render(
+                    colorFrameBuffer = colorFrameBuffer,
+                    depthFrameBuffer = depthFrameBuffer,
+                    scene = instance.scene,
+                    task = task,
+                )
+                task.release()
             }
-        } finally {
-            matrixStack.pop()
+        }
+
+        matrixStack.pop()
+        matrixStack.push()
+        matrixStack.peek().apply {
+            positionMatrix.set(backupItem.positionMatrix)
+            normalMatrix.set(backupItem.normalMatrix)
         }
         return true
     }
