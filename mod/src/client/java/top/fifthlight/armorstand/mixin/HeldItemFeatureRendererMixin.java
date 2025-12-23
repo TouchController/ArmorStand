@@ -7,6 +7,7 @@ import net.minecraft.client.render.entity.state.ArmedEntityRenderState;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.client.render.item.ItemRenderState;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.util.Arm;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,7 +22,12 @@ import top.fifthlight.blazerod.model.NodeTransformView;
 @Mixin(HeldItemFeatureRenderer.class)
 public class HeldItemFeatureRendererMixin {
     private static final Matrix4f ARMORSTAND$HAND_WORLD_MATRIX = new Matrix4f();
+    private static final Matrix4f ARMORSTAND$ROOT_WORLD_MATRIX = new Matrix4f();
+    private static final Matrix4f ARMORSTAND$ROOT_WORLD_INV_MATRIX = new Matrix4f();
+    private static final Matrix4f ARMORSTAND$HAND_RELATIVE_MATRIX = new Matrix4f();
     private static final Matrix4f ARMORSTAND$ITEM_LOCAL_MATRIX = new Matrix4f();
+
+    private static final float ARMORSTAND$CROUCH_Y_OFFSET = 0.125f;
 
     @Redirect(
         method = "renderItem(Lnet/minecraft/client/render/entity/state/ArmedEntityRenderState;Lnet/minecraft/client/render/item/ItemRenderState;Lnet/minecraft/util/Arm;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V",
@@ -61,7 +67,7 @@ public class HeldItemFeatureRendererMixin {
         var instance = modelItem.getInstance();
         var scene = instance.getScene();
 
-        var tag = arm == Arm.RIGHT ? HumanoidTag.RIGHT_HAND : HumanoidTag.LEFT_HAND;
+        var tag = renderArm == Arm.RIGHT ? HumanoidTag.RIGHT_HAND : HumanoidTag.LEFT_HAND;
         var node = scene.getHumanoidTagMap().get(tag);
         if (node == null) {
             model.setArmAngle(arm, matrices);
@@ -70,7 +76,14 @@ public class HeldItemFeatureRendererMixin {
 
         instance.copyNodeWorldTransform(node.getNodeIndex(), ARMORSTAND$HAND_WORLD_MATRIX);
 
+        instance.copyNodeWorldTransform(scene.getRootNode().getNodeIndex(), ARMORSTAND$ROOT_WORLD_MATRIX);
+        ARMORSTAND$ROOT_WORLD_INV_MATRIX.set(ARMORSTAND$ROOT_WORLD_MATRIX).invert();
+        ARMORSTAND$HAND_RELATIVE_MATRIX.set(ARMORSTAND$ROOT_WORLD_INV_MATRIX).mul(ARMORSTAND$HAND_WORLD_MATRIX);
+
         ARMORSTAND$ITEM_LOCAL_MATRIX.identity();
+        if (((PlayerEntityRenderState) state).pose == EntityPose.CROUCHING) {
+            ARMORSTAND$ITEM_LOCAL_MATRIX.translate(0.0f, ARMORSTAND$CROUCH_Y_OFFSET, 0.0f);
+        }
         ARMORSTAND$ITEM_LOCAL_MATRIX.scale(ConfigHolder.INSTANCE.getConfig().getValue().getModelScale());
 
         NodeTransformView renderTransform = scene.getRenderTransform();
@@ -78,7 +91,7 @@ public class HeldItemFeatureRendererMixin {
             renderTransform.applyOnMatrix(ARMORSTAND$ITEM_LOCAL_MATRIX);
         }
 
-        ARMORSTAND$ITEM_LOCAL_MATRIX.mul(ARMORSTAND$HAND_WORLD_MATRIX);
+        ARMORSTAND$ITEM_LOCAL_MATRIX.mul(ARMORSTAND$HAND_RELATIVE_MATRIX);
 
         matrices.multiplyPositionMatrix(ARMORSTAND$ITEM_LOCAL_MATRIX);
     }

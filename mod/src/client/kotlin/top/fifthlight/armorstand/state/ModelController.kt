@@ -333,6 +333,7 @@ sealed interface ModelController {
         private var overlayState: AnimationState? = null
         private var overlayLoop: Boolean = true
         private var keepOverlayUntilFinished: Boolean = false
+        private var prevIsUsingItem: Boolean = false
         private var prevHandSwinging: Boolean = false
         private var reset = false
 
@@ -420,21 +421,26 @@ sealed interface ModelController {
             renderState: PlayerEntityRenderState,
         ): Pair<AnimationItemInstance, Boolean>? {
             if (player.isUsingItem) {
-                val usedArm = when (player.activeHand) {
-                    Hand.MAIN_HAND -> renderState.mainArm
-                    Hand.OFF_HAND -> if (renderState.mainArm == Arm.RIGHT) Arm.LEFT else Arm.RIGHT
-                    else -> renderState.mainArm
+                // Trigger once on rising edge; holding right-click should not replay the animation every tick.
+                if (!prevIsUsingItem) {
+                    val usedArm = when (player.activeHand) {
+                        Hand.MAIN_HAND -> renderState.mainArm
+                        Hand.OFF_HAND -> if (renderState.mainArm == Arm.RIGHT) Arm.LEFT else Arm.RIGHT
+                        else -> renderState.mainArm
+                    }
+                    val stack = player.getStackInHand(player.activeHand)
+                    val itemId = Registries.ITEM.getId(stack.item)
+                    val itemActive = getItemActiveAnimation(
+                        itemId = itemId,
+                        arm = usedArm,
+                        actionType = AnimationSet.ItemActiveKey.ActionType.USING,
+                    )
+                    if (itemActive != null) {
+                        return Pair(itemActive, false)
+                    }
                 }
-                val stack = player.getStackInHand(player.activeHand)
-                val itemId = Registries.ITEM.getId(stack.item)
-                val itemActive = getItemActiveAnimation(
-                    itemId = itemId,
-                    arm = usedArm,
-                    actionType = AnimationSet.ItemActiveKey.ActionType.USING,
-                )
-                if (itemActive != null) {
-                    return Pair(itemActive, true)
-                }
+                // While using (but not a new use), don't fall back to swing overlay.
+                return null
             }
 
             if (renderState.handSwinging) {
@@ -547,6 +553,7 @@ sealed interface ModelController {
             }
 
             prevHandSwinging = renderState.handSwinging
+            prevIsUsingItem = player.isUsingItem
 
             overlayState?.updateTime(context)
             val overlayPending = overlayItem?.let { item ->
