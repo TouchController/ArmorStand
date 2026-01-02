@@ -3,6 +3,7 @@ package top.fifthlight.blazerod.animation
 import top.fifthlight.blazerod.api.animation.AnimationItem
 import top.fifthlight.blazerod.api.animation.AnimationItemInstance
 import top.fifthlight.blazerod.api.animation.AnimationItemPendingValues
+import top.fifthlight.blazerod.api.animation.MaskableAnimationItemInstance
 import top.fifthlight.blazerod.api.resource.ModelInstance
 import top.fifthlight.blazerod.api.resource.RenderScene
 import top.fifthlight.blazerod.model.animation.Animation
@@ -40,7 +41,7 @@ class AnimationItemPendingValuesImpl(animationItem: AnimationItemImpl) : Animati
 }
 
 @ActualImpl(AnimationItemInstance::class)
-class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : AnimationItemInstance {
+class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : MaskableAnimationItemInstance {
     @ActualConstructor("of")
     constructor(animationItem: AnimationItem) : this(animationItem as AnimationItemImpl)
 
@@ -83,7 +84,7 @@ class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : Animatio
         }
     }
 
-    fun applyMasked(
+    override fun applyMasked(
         instance: ModelInstance,
         pendingValues: AnimationItemPendingValues,
         allowedNodeIndices: BooleanArray,

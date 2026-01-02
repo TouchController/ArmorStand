@@ -13,10 +13,10 @@ import net.minecraft.util.math.MathHelper
 import top.fifthlight.armorstand.extension.internal.PlayerEntityRenderStateExtInternal
 import top.fifthlight.armorstand.util.toRadian
 import top.fifthlight.armorstand.vmc.VmcMarionetteManager
-import top.fifthlight.blazerod.animation.AnimationItemInstanceImpl
 import top.fifthlight.blazerod.api.animation.AnimationContextsFactory
 import top.fifthlight.blazerod.api.animation.AnimationItemInstance
 import top.fifthlight.blazerod.api.animation.AnimationItemPendingValues
+import top.fifthlight.blazerod.api.animation.MaskableAnimationItemInstance
 import top.fifthlight.blazerod.api.resource.ModelInstance
 import top.fifthlight.blazerod.api.resource.RenderExpression
 import top.fifthlight.blazerod.api.resource.RenderExpressionGroup
@@ -652,9 +652,9 @@ sealed interface ModelController {
                         } else {
                             rightUpperBodyMask
                         }
-                        val actionImpl = pending.actionItem as? AnimationItemInstanceImpl
-                        if (actionImpl != null) {
-                            actionImpl.applyMasked(instance, pending.actionPendingValues, mask)
+                        val maskable = pending.actionItem as? MaskableAnimationItemInstance
+                        if (maskable != null) {
+                            maskable.applyMasked(instance, pending.actionPendingValues, mask)
                         } else {
                             pending.actionItem.apply(instance, pending.actionPendingValues)
                         }
