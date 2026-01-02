@@ -13,6 +13,7 @@ import net.minecraft.util.math.MathHelper
 import top.fifthlight.armorstand.extension.internal.PlayerEntityRenderStateExtInternal
 import top.fifthlight.armorstand.util.toRadian
 import top.fifthlight.armorstand.vmc.VmcMarionetteManager
+import top.fifthlight.blazerod.animation.AnimationItemInstanceImpl
 import top.fifthlight.blazerod.api.animation.AnimationContextsFactory
 import top.fifthlight.blazerod.api.animation.AnimationItemInstance
 import top.fifthlight.blazerod.api.animation.AnimationItemPendingValues
@@ -26,7 +27,6 @@ import top.fifthlight.blazerod.model.NodeTransform
 import top.fifthlight.blazerod.model.TransformId
 import top.fifthlight.blazerod.model.animation.AnimationContext
 import top.fifthlight.blazerod.model.animation.AnimationState
-import top.fifthlight.blazerod.model.animation.SimpleAnimationState
 import java.util.*
 import kotlin.math.PI
 import kotlin.math.sin
@@ -319,22 +319,35 @@ sealed interface ModelController {
             }
         }
 
-        private data class LayeredPendingValues(
-            val baseInstance: AnimationItemInstance,
-            val baseValues: AnimationItemPendingValues,
-            val overlayInstance: AnimationItemInstance?,
-            val overlayValues: AnimationItemPendingValues?,
+        private data class ActionSelection(
+            val item: AnimationItemInstance,
+            val arm: Arm,
+        )
+
+        private class LayeredPendingValues(
+            val baseItem: AnimationItemInstance,
+            val basePendingValues: AnimationItemPendingValues,
+            val actionItem: AnimationItemInstance?,
+            val actionPendingValues: AnimationItemPendingValues?,
+            val actionArm: Arm?,
         ) : AnimationItemPendingValues
 
-        private var basePlayState: PlayState = PlayState.Idle
-        override var animationState: AnimationState = basePlayState.getItem(animationSet).createState(context)
-        private var baseItem: AnimationItemInstance = basePlayState.getItem(animationSet)
-        private var overlayItem: AnimationItemInstance? = null
-        private var overlayState: AnimationState? = null
-        private var overlayLoop: Boolean = true
-        private var keepOverlayUntilFinished: Boolean = false
-        private var prevHandSwinging: Boolean = false
+        private var playState: PlayState = PlayState.Idle
+        private var item: AnimationItemInstance = playState.getItem(animationSet)
+        override var animationState: AnimationState = item.createState(context)
+
+        private var actionItem: AnimationItemInstance? = null
+        private var actionAnimationState: AnimationState? = null
+        private var actionArm: Arm? = null
+        private var lastUsingItem: Boolean = false
+        private var lastHandSwinging: Boolean = false
+
         private var reset = false
+
+        private var upperBodyMaskNodeCount: Int = -1
+        private var upperBodyMaskScene: RenderScene? = null
+        private var leftUpperBodyMask: BooleanArray = BooleanArray(0)
+        private var rightUpperBodyMask: BooleanArray = BooleanArray(0)
 
         companion object {
             private val horseEntityTypes = listOf(
@@ -369,6 +382,142 @@ sealed interface ModelController {
             Hand.MAIN_HAND
         } else {
             Hand.OFF_HAND
+        }
+
+        private fun getActionSelection(
+            player: AbstractClientPlayerEntity,
+            renderState: PlayerEntityRenderState,
+        ): ActionSelection? {
+            if (player.isDead) {
+                return null
+            }
+
+            if (player.isUsingItem) {
+                val usedArm = when (player.activeHand) {
+                    Hand.MAIN_HAND -> renderState.mainArm
+                    Hand.OFF_HAND -> if (renderState.mainArm == Arm.RIGHT) Arm.LEFT else Arm.RIGHT
+                    else -> renderState.mainArm
+                }
+                val stack = player.getStackInHand(player.activeHand)
+                val itemId = Registries.ITEM.getId(stack.item)
+                val itemActive = getItemActiveAnimation(
+                    itemId = itemId,
+                    arm = usedArm,
+                    actionType = AnimationSet.ItemActiveKey.ActionType.USING,
+                ) ?: return null
+                return ActionSelection(item = itemActive, arm = usedArm)
+            }
+
+            if (renderState.handSwinging) {
+                return when (renderState.preferredArm) {
+                    Arm.LEFT -> {
+                        val stack = player.getStackInHand(getSwingingHand(renderState.mainArm, Arm.LEFT))
+                        val itemId = Registries.ITEM.getId(stack.item)
+                        val itemActive = getItemActiveAnimation(
+                            itemId = itemId,
+                            arm = Arm.LEFT,
+                            actionType = AnimationSet.ItemActiveKey.ActionType.SWINGING,
+                        )
+                        ActionSelection(item = itemActive ?: animationSet.swingLeft, arm = Arm.LEFT)
+                    }
+
+                    Arm.RIGHT -> {
+                        val stack = player.getStackInHand(getSwingingHand(renderState.mainArm, Arm.RIGHT))
+                        val itemId = Registries.ITEM.getId(stack.item)
+                        val itemActive = getItemActiveAnimation(
+                            itemId = itemId,
+                            arm = Arm.RIGHT,
+                            actionType = AnimationSet.ItemActiveKey.ActionType.SWINGING,
+                        )
+                        ActionSelection(item = itemActive ?: animationSet.swingRight, arm = Arm.RIGHT)
+                    }
+                }
+            }
+
+            return null
+        }
+
+        private fun ensureUpperBodyMasks(scene: RenderScene) {
+            val nodeCount = scene.nodes.size
+            if (upperBodyMaskScene === scene && upperBodyMaskNodeCount == nodeCount) {
+                return
+            }
+            upperBodyMaskScene = scene
+            upperBodyMaskNodeCount = nodeCount
+
+            fun BooleanArray.enable(tag: HumanoidTag) {
+                scene.humanoidTagMap[tag]?.let { node ->
+                    val idx = node.nodeIndex
+                    if (idx in indices) {
+                        this[idx] = true
+                    }
+                }
+            }
+
+            fun BooleanArray.enableAll(tags: Array<HumanoidTag>) {
+                for (tag in tags) {
+                    enable(tag)
+                }
+            }
+
+            val torsoTags = arrayOf(
+                HumanoidTag.SPINE,
+                HumanoidTag.CHEST,
+                HumanoidTag.UPPER_CHEST,
+                HumanoidTag.NECK,
+                HumanoidTag.HEAD,
+            )
+
+            val leftArmTags = arrayOf(
+                HumanoidTag.LEFT_SHOULDER,
+                HumanoidTag.LEFT_UPPER_ARM,
+                HumanoidTag.LEFT_LOWER_ARM,
+                HumanoidTag.LEFT_HAND,
+                HumanoidTag.LEFT_THUMB_METACARPAL,
+                HumanoidTag.LEFT_THUMB_PROXIMAL,
+                HumanoidTag.LEFT_THUMB_DISTAL,
+                HumanoidTag.LEFT_INDEX_PROXIMAL,
+                HumanoidTag.LEFT_INDEX_INTERMEDIATE,
+                HumanoidTag.LEFT_INDEX_DISTAL,
+                HumanoidTag.LEFT_MIDDLE_PROXIMAL,
+                HumanoidTag.LEFT_MIDDLE_INTERMEDIATE,
+                HumanoidTag.LEFT_MIDDLE_DISTAL,
+                HumanoidTag.LEFT_RING_PROXIMAL,
+                HumanoidTag.LEFT_RING_INTERMEDIATE,
+                HumanoidTag.LEFT_RING_DISTAL,
+                HumanoidTag.LEFT_LITTLE_PROXIMAL,
+                HumanoidTag.LEFT_LITTLE_INTERMEDIATE,
+                HumanoidTag.LEFT_LITTLE_DISTAL,
+            )
+
+            val rightArmTags = arrayOf(
+                HumanoidTag.RIGHT_SHOULDER,
+                HumanoidTag.RIGHT_UPPER_ARM,
+                HumanoidTag.RIGHT_LOWER_ARM,
+                HumanoidTag.RIGHT_HAND,
+                HumanoidTag.RIGHT_THUMB_METACARPAL,
+                HumanoidTag.RIGHT_THUMB_PROXIMAL,
+                HumanoidTag.RIGHT_THUMB_DISTAL,
+                HumanoidTag.RIGHT_INDEX_PROXIMAL,
+                HumanoidTag.RIGHT_INDEX_INTERMEDIATE,
+                HumanoidTag.RIGHT_INDEX_DISTAL,
+                HumanoidTag.RIGHT_MIDDLE_PROXIMAL,
+                HumanoidTag.RIGHT_MIDDLE_INTERMEDIATE,
+                HumanoidTag.RIGHT_MIDDLE_DISTAL,
+                HumanoidTag.RIGHT_RING_PROXIMAL,
+                HumanoidTag.RIGHT_RING_INTERMEDIATE,
+                HumanoidTag.RIGHT_RING_DISTAL,
+                HumanoidTag.RIGHT_LITTLE_PROXIMAL,
+                HumanoidTag.RIGHT_LITTLE_INTERMEDIATE,
+                HumanoidTag.RIGHT_LITTLE_DISTAL,
+            )
+
+            leftUpperBodyMask = BooleanArray(nodeCount)
+            rightUpperBodyMask = BooleanArray(nodeCount)
+            leftUpperBodyMask.enableAll(torsoTags)
+            rightUpperBodyMask.enableAll(torsoTags)
+            leftUpperBodyMask.enableAll(leftArmTags)
+            rightUpperBodyMask.enableAll(rightArmTags)
         }
 
         private fun getBaseState(
@@ -410,80 +559,7 @@ sealed interface ModelController {
                 player.isSprinting -> PlayState.Sprinting
 
                 player.movement.horizontalLength() > .05 -> PlayState.Walking
-
                 else -> PlayState.Idle
-            }
-        }
-
-        private fun getOverlayItem(
-            player: AbstractClientPlayerEntity,
-            renderState: PlayerEntityRenderState,
-        ): Pair<AnimationItemInstance, Boolean>? {
-            if (player.isUsingItem) {
-                val usedArm = when (player.activeHand) {
-                    Hand.MAIN_HAND -> renderState.mainArm
-                    Hand.OFF_HAND -> if (renderState.mainArm == Arm.RIGHT) Arm.LEFT else Arm.RIGHT
-                    else -> renderState.mainArm
-                }
-                val stack = player.getStackInHand(player.activeHand)
-                val itemId = Registries.ITEM.getId(stack.item)
-                val itemActive = getItemActiveAnimation(
-                    itemId = itemId,
-                    arm = usedArm,
-                    actionType = AnimationSet.ItemActiveKey.ActionType.USING,
-                )
-                if (itemActive != null) {
-                    return Pair(itemActive, true)
-                }
-            }
-
-            if (renderState.handSwinging) {
-                return when (renderState.preferredArm) {
-                    Arm.LEFT -> {
-                        val stack = player.getStackInHand(getSwingingHand(renderState.mainArm, Arm.LEFT))
-                        val itemId = Registries.ITEM.getId(stack.item)
-                        val itemActive = getItemActiveAnimation(
-                            itemId = itemId,
-                            arm = Arm.LEFT,
-                            actionType = AnimationSet.ItemActiveKey.ActionType.SWINGING,
-                        )
-                        Pair(itemActive ?: animationSet.swingLeft, false)
-                    }
-
-                    Arm.RIGHT -> {
-                        val stack = player.getStackInHand(getSwingingHand(renderState.mainArm, Arm.RIGHT))
-                        val itemId = Registries.ITEM.getId(stack.item)
-                        val itemActive = getItemActiveAnimation(
-                            itemId = itemId,
-                            arm = Arm.RIGHT,
-                            actionType = AnimationSet.ItemActiveKey.ActionType.SWINGING,
-                        )
-                        Pair(itemActive ?: animationSet.swingRight, false)
-                    }
-                }
-            }
-
-            return null
-        }
-
-        private fun configureLoop(state: AnimationState, loop: Boolean) {
-            if (state is SimpleAnimationState) {
-                state.loop = loop
-            }
-        }
-
-        private fun isFinished(state: AnimationState?): Boolean {
-            state ?: return true
-            return when (state) {
-                is SimpleAnimationState -> !state.loop && state.getTime() >= state.duration - 1e-4f
-                else -> {
-                    val duration = state.duration
-                    if (duration == null) {
-                        !state.playing
-                    } else {
-                        !state.playing && state.getTime() >= duration - 1e-4f
-                    }
-                }
             }
         }
 
@@ -492,79 +568,72 @@ sealed interface ModelController {
             player: AbstractClientPlayerEntity,
             renderState: PlayerEntityRenderState,
         ): Unit = AnimationContextsFactory.create().player(player).let { context ->
-            val newBaseState = getBaseState(player, renderState)
-            if (newBaseState != basePlayState) {
-                this.basePlayState = newBaseState
+            val newState = getBaseState(player, renderState)
+            if (newState != playState) {
+                playState = newState
             }
-            val newBaseItem = newBaseState.getItem(animationSet)
-            if (newBaseItem != baseItem) {
-                animationState = newBaseItem.createState(context).also { configureLoop(it, newBaseState.loop) }
-                baseItem = newBaseItem
+            val newItem = newState.getItem(animationSet)
+            if (newItem != item) {
+                item = newItem
+                animationState = newItem.createState(context)
                 reset = true
             }
-            configureLoop(animationState, newBaseState.loop)
             animationState.updateTime(context)
-            val basePending = baseItem.update(context, animationState)
+            val basePending = item.update(context, animationState)
 
-            val overlayRequest = when (newBaseState) {
-                PlayState.Dying,
-                PlayState.Sleeping,
-                PlayState.ElytraFly,
-                PlayState.Swimming,
-                PlayState.Crawling,
-                PlayState.CrawlIdle,
-                PlayState.OnClimbable,
-                PlayState.OnClimbableUp,
-                PlayState.OnClimbableDown,
-                PlayState.Riding,
-                PlayState.OnHorse,
-                PlayState.OnPig,
-                PlayState.OnBoat,
-            -> null
-                else -> getOverlayItem(player, renderState)
+            val actionSelection = getActionSelection(player, renderState)
+            if (actionSelection == null) {
+                actionItem = null
+                actionAnimationState = null
+                actionArm = null
+                lastUsingItem = player.isUsingItem
+                lastHandSwinging = renderState.handSwinging
+                renderState.animationPendingValues = LayeredPendingValues(
+                    baseItem = item,
+                    basePendingValues = basePending,
+                    actionItem = null,
+                    actionPendingValues = null,
+                    actionArm = null,
+                )
+                return@let
             }
 
-            val (requestedOverlayItem, requestedOverlayLoop) = overlayRequest ?: Pair(null, null)
-            val handSwingingRisingEdge = renderState.handSwinging && !prevHandSwinging
-            val shouldRestartOverlay = handSwingingRisingEdge && requestedOverlayLoop == false
+            val needRestartByEdge = (player.isUsingItem && !lastUsingItem) || (renderState.handSwinging && !lastHandSwinging)
 
-            val keepExistingOverlay =
-                requestedOverlayItem == null && keepOverlayUntilFinished && !isFinished(overlayState)
-            val effectiveOverlayItem = if (keepExistingOverlay) overlayItem else requestedOverlayItem
-            val effectiveOverlayLoop = if (keepExistingOverlay) overlayLoop else (requestedOverlayLoop ?: true)
-            val effectiveKeepUntilFinished = if (keepExistingOverlay) keepOverlayUntilFinished else (requestedOverlayLoop == false)
-
-            val overlayChanged = effectiveOverlayItem != overlayItem || shouldRestartOverlay
-            if (overlayChanged) {
-                overlayItem = effectiveOverlayItem
-                overlayLoop = effectiveOverlayLoop
-                keepOverlayUntilFinished = effectiveKeepUntilFinished
-                overlayState = effectiveOverlayItem?.createState(context)?.also { configureLoop(it, effectiveOverlayLoop) }
-            } else {
-                overlayLoop = effectiveOverlayLoop
-                keepOverlayUntilFinished = effectiveKeepUntilFinished
-                overlayState?.let { configureLoop(it, effectiveOverlayLoop) }
+            if (needRestartByEdge || actionSelection.item != actionItem || actionSelection.arm != actionArm) {
+                actionItem = actionSelection.item
+                actionAnimationState = actionSelection.item.createState(context)
+                actionArm = actionSelection.arm
             }
 
-            prevHandSwinging = renderState.handSwinging
-
-            overlayState?.let { state ->
-                if (overlayLoop || !isFinished(state)) {
-                    state.updateTime(context)
-                }
+            val actionItem = actionItem
+            val actionAnimationState = actionAnimationState
+            val actionArm = actionArm
+            if (actionItem == null || actionAnimationState == null || actionArm == null) {
+                lastUsingItem = player.isUsingItem
+                lastHandSwinging = renderState.handSwinging
+                renderState.animationPendingValues = LayeredPendingValues(
+                    baseItem = item,
+                    basePendingValues = basePending,
+                    actionItem = null,
+                    actionPendingValues = null,
+                    actionArm = null,
+                )
+                return@let
             }
-            val overlayPending = overlayItem?.let { item ->
-                overlayState?.let { state ->
-                    item.update(context, state)
-                }
-            }
 
+            actionAnimationState.updateTime(context)
+            val actionPending = actionItem.update(context, actionAnimationState)
             renderState.animationPendingValues = LayeredPendingValues(
-                baseInstance = baseItem,
-                baseValues = basePending,
-                overlayInstance = overlayItem,
-                overlayValues = overlayPending,
+                baseItem = item,
+                basePendingValues = basePending,
+                actionItem = actionItem,
+                actionPendingValues = actionPending,
+                actionArm = actionArm,
             )
+
+            lastUsingItem = player.isUsingItem
+            lastHandSwinging = renderState.handSwinging
         }
 
         override fun apply(uuid: UUID, instance: ModelInstance, renderState: PlayerEntityRenderState) {
@@ -572,22 +641,33 @@ sealed interface ModelController {
                 instance.clearTransform()
                 reset = false
             }
-            renderState.animationPendingValues?.let { pending ->
-                when (pending) {
-                    is LayeredPendingValues -> {
-                        pending.baseInstance.apply(instance, pending.baseValues)
-                        pending.overlayInstance?.let { overlayInstance ->
-                            pending.overlayValues?.let { overlayValues ->
-                                overlayInstance.apply(instance, overlayValues)
-                            }
+            val pending = renderState.animationPendingValues
+            when (pending) {
+                is LayeredPendingValues -> {
+                    pending.baseItem.apply(instance, pending.basePendingValues)
+                    if (pending.actionItem != null && pending.actionPendingValues != null && pending.actionArm != null) {
+                        ensureUpperBodyMasks(instance.scene)
+                        val mask = if (pending.actionArm == Arm.LEFT) {
+                            leftUpperBodyMask
+                        } else {
+                            rightUpperBodyMask
+                        }
+                        val actionImpl = pending.actionItem as? AnimationItemInstanceImpl
+                        if (actionImpl != null) {
+                            actionImpl.applyMasked(instance, pending.actionPendingValues, mask)
+                        } else {
+                            pending.actionItem.apply(instance, pending.actionPendingValues)
                         }
                     }
-
-                    else -> {
-                        baseItem.apply(instance, pending)
-                    }
+                    renderState.animationPendingValues = null
                 }
-                renderState.animationPendingValues = null
+
+                null -> Unit
+
+                else -> {
+                    item.apply(instance, pending)
+                    renderState.animationPendingValues = null
+                }
             }
 
             val sleepingDirection = renderState.sleepingDirection

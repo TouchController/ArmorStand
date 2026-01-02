@@ -82,4 +82,36 @@ class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : Animatio
             pendingStack.addLast(pendingValues)
         }
     }
+
+    fun applyMasked(
+        instance: ModelInstance,
+        pendingValues: AnimationItemPendingValues,
+        allowedNodeIndices: BooleanArray,
+    ) {
+        val instance = instance as ModelInstanceImpl
+        val pendingValues = pendingValues as AnimationItemPendingValuesImpl
+
+        animationItem.channels.forEachIndexed { index, channel ->
+            val targetNodeIndex = channel.targetNodeIndex
+            if (targetNodeIndex == null || targetNodeIndex !in allowedNodeIndices.indices || !allowedNodeIndices[targetNodeIndex]) {
+                return@forEachIndexed
+            }
+
+            pendingValues.pendingValues[index].let { pendingValue ->
+                channel.applyUnsafe(instance, pendingValue)
+            }
+        }
+        if (!pendingValues.applied) {
+            pendingValues.applied = true
+            pendingStack.addLast(pendingValues)
+        }
+    }
+
+    fun recyclePendingValues(pendingValues: AnimationItemPendingValues) {
+        val pendingValues = pendingValues as? AnimationItemPendingValuesImpl ?: return
+        if (!pendingValues.applied) {
+            pendingValues.applied = true
+            pendingStack.addLast(pendingValues)
+        }
+    }
 }
