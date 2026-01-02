@@ -33,7 +33,7 @@ interface AnimationItemInstance {
     }
 }
 
-interface MaskableAnimationItemInstance : AnimationItemInstance {
+interface MaskableAnimationItemInstance {
     fun applyMasked(
         instance: ModelInstance,
         pendingValues: AnimationItemPendingValues,

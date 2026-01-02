@@ -41,7 +41,7 @@ class AnimationItemPendingValuesImpl(animationItem: AnimationItemImpl) : Animati
 }
 
 @ActualImpl(AnimationItemInstance::class)
-class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : MaskableAnimationItemInstance {
+class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : AnimationItemInstance, MaskableAnimationItemInstance {
     @ActualConstructor("of")
     constructor(animationItem: AnimationItem) : this(animationItem as AnimationItemImpl)
 
