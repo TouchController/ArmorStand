@@ -308,9 +308,9 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         auto rigidbody = std::make_unique<btRigidBody>(rigidbody_info);
         rigidbody->setSleepingThresholds(0.01f, 0.0017453293f);
         this->world->addRigidBody(rigidbody.get(), rigidbody_item.collision_group, rigidbody_item.collision_mask);
-        rigidbody->setActivationState(DISABLE_DEACTIVATION);
         if (rigidbody_item.physics_mode == PhysicsMode::FOLLOW_BONE) {
             rigidbody->setCollisionFlags(rigidbody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+            rigidbody->setActivationState(DISABLE_DEACTIVATION);
         }
 
         rigidbody_data.shape = std::move(shape);
@@ -437,6 +437,28 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
             constraint->enableSpring(5, true);
             constraint->setStiffness(5, joint_item.rotation_spring.z);
         }
+
+        const btScalar spring_damping = 0.5f;
+        if (joint_item.position_spring.x != 0.0f) {
+            constraint->setDamping(0, spring_damping);
+        }
+        if (joint_item.position_spring.y != 0.0f) {
+            constraint->setDamping(1, spring_damping);
+        }
+        if (joint_item.position_spring.z != 0.0f) {
+            constraint->setDamping(2, spring_damping);
+        }
+        if (joint_item.rotation_spring.x != 0.0f) {
+            constraint->setDamping(3, spring_damping);
+        }
+        if (joint_item.rotation_spring.y != 0.0f) {
+            constraint->setDamping(4, spring_damping);
+        }
+        if (joint_item.rotation_spring.z != 0.0f) {
+            constraint->setDamping(5, spring_damping);
+        }
+
+        constraint->setEquilibriumPoint();
 
         this->world->addConstraint(constraint.get(), false);
         this->joints.push_back(std::move(constraint));

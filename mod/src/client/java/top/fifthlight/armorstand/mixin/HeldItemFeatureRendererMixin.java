@@ -80,6 +80,6 @@ public class HeldItemFeatureRendererMixin {
 
         ARMORSTAND$ITEM_LOCAL_MATRIX.mul(ARMORSTAND$HAND_WORLD_MATRIX);
 
-        matrices.multiplyPositionMatrix(ARMORSTAND$ITEM_LOCAL_MATRIX);
+        renderMatrices.multiplyPositionMatrix(ARMORSTAND$ITEM_LOCAL_MATRIX);
     }
 }
