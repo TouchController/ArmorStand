@@ -101,6 +101,7 @@ object PlayerRenderer {
         instance.copyNodeWorldTransform(node.nodeIndex, handWorldMatrix)
         handWorldMatrix.getTranslation(handWorldPos)
         handWorldMatrix.getUnnormalizedRotation(handWorldRot)
+        handWorldRot.normalize()
         handWorldNoScaleMatrix.translationRotate(
             handWorldPos.x,
             handWorldPos.y,
@@ -115,6 +116,18 @@ object PlayerRenderer {
         itemLocalMatrix.scale(ConfigHolder.config.value.modelScale)
         instance.scene.renderTransform?.applyOnMatrix(itemLocalMatrix)
         itemLocalMatrix.mul(handWorldNoScaleMatrix)
+        itemLocalMatrix.getTranslation(handWorldPos)
+        itemLocalMatrix.getUnnormalizedRotation(handWorldRot)
+        handWorldRot.normalize()
+        itemLocalMatrix.translationRotate(
+            handWorldPos.x,
+            handWorldPos.y,
+            handWorldPos.z,
+            handWorldRot.x,
+            handWorldRot.y,
+            handWorldRot.z,
+            handWorldRot.w,
+        )
 
         matrixStack.push()
         matrixStack.multiplyPositionMatrix(itemLocalMatrix)
@@ -122,8 +135,6 @@ object PlayerRenderer {
         matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180f))
         val handSign = if (tag == HumanoidTag.LEFT_HAND) -1.0 else 1.0
         matrixStack.translate(handSign / 16.0, 0.125, -0.625)
-        val inverseModelScale = 1f / ConfigHolder.config.value.modelScale
-        matrixStack.scale(inverseModelScale, inverseModelScale, inverseModelScale)
         matrixStack.peek().normalMatrix.set(
             itemNormalMatrix.set(matrixStack.peek().positionMatrix).invert().transpose()
         )
