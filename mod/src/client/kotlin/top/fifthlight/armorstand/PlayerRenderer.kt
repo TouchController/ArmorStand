@@ -13,7 +13,6 @@ import net.minecraft.item.ItemDisplayContext
 import net.minecraft.item.ItemStack
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.EntityPose
-import net.minecraft.util.math.RotationAxis
 import net.minecraft.util.Arm
 import org.joml.Matrix3f
 import org.joml.Matrix4f
@@ -97,6 +96,7 @@ object PlayerRenderer {
             return
         }
 
+        val config = ConfigHolder.config.value
         val node = instance.scene.humanoidTagMap[tag] ?: return
         instance.copyNodeWorldTransform(node.nodeIndex, handWorldMatrix)
         handWorldMatrix.getTranslation(handWorldPos)
@@ -113,9 +113,19 @@ object PlayerRenderer {
         )
 
         itemLocalMatrix.identity()
-        itemLocalMatrix.scale(ConfigHolder.config.value.modelScale)
+        itemLocalMatrix.scale(config.modelScale)
         instance.scene.renderTransform?.applyOnMatrix(itemLocalMatrix)
         itemLocalMatrix.mul(handWorldNoScaleMatrix)
+
+        itemLocalMatrix.rotateX(Math.toRadians(config.heldItemRotX.toDouble()).toFloat())
+        itemLocalMatrix.rotateY(Math.toRadians(config.heldItemRotY.toDouble()).toFloat())
+        itemLocalMatrix.rotateZ(Math.toRadians(config.heldItemRotZ.toDouble()).toFloat())
+        val handSign = if (tag == HumanoidTag.LEFT_HAND) -1f else 1f
+        itemLocalMatrix.translate(
+            handSign * config.heldItemOffsetX,
+            config.heldItemOffsetY,
+            config.heldItemOffsetZ,
+        )
         itemLocalMatrix.getTranslation(handWorldPos)
         itemLocalMatrix.getUnnormalizedRotation(handWorldRot)
         handWorldRot.normalize()
@@ -131,10 +141,7 @@ object PlayerRenderer {
 
         matrixStack.push()
         matrixStack.multiplyPositionMatrix(itemLocalMatrix)
-        matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-90f))
-        matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180f))
-        val handSign = if (tag == HumanoidTag.LEFT_HAND) -1.0 else 1.0
-        matrixStack.translate(handSign / 16.0, 0.125, -0.625)
+        matrixStack.scale(config.heldItemScale, config.heldItemScale, config.heldItemScale)
         matrixStack.peek().normalMatrix.set(
             itemNormalMatrix.set(matrixStack.peek().positionMatrix).invert().transpose()
         )
