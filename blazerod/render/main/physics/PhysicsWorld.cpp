@@ -397,7 +397,7 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
             constraint->setStiffness(5, joint_item.rotation_spring.z);
         }
 
-        this->world->addConstraint(constraint.get(), false);
+        this->world->addConstraint(constraint.get(), true);
         this->joints.push_back(std::move(constraint));
     }
 }

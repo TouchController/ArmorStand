@@ -1213,7 +1213,8 @@ class PmxLoader : ModelFileLoader {
                                     }
 
                                     val baseGroup = 1 shl rigidBody.groupId
-                                    var collisionMask = rigidBody.nonCollisionGroup and 0xFFFF
+                                    val nonCollisionMask = rigidBody.nonCollisionGroup and 0xFFFF
+                                    var collisionMask = nonCollisionMask.inv() and 0xFFFF
                                     val defaultMask = collisionMask
                                     println(
                                         "PHYSDBG RB_GROUP " +
