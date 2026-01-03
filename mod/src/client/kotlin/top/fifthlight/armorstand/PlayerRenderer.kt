@@ -93,6 +93,8 @@ object PlayerRenderer {
 
         matrixStack.push()
         matrixStack.multiplyPositionMatrix(itemLocalMatrix)
+        val inverseModelScale = 1f / ConfigHolder.config.value.modelScale
+        matrixStack.scale(inverseModelScale, inverseModelScale, inverseModelScale)
         matrixStack.peek().normalMatrix.set(
             itemNormalMatrix.set(matrixStack.peek().positionMatrix).invert().transpose()
         )
