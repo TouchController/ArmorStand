@@ -42,6 +42,7 @@ class RenderSceneImpl(
         private const val PHYSICS_FPS = 120f
         private const val PHYSICS_TIME_STEP = 1f / PHYSICS_FPS
         private const val PHYSICS_ENABLE_CLAMP = false
+        private const val PHYSICS_DEBUG_LOG = false
     }
 
     override val typeId: String
@@ -182,10 +183,14 @@ class RenderSceneImpl(
             instance.updateWorldTransformsNoPhysics()
             executePhase(instance, UpdatePhase.PhysicsUpdatePre)
             data.world.pushTransforms(data.transformArray)
-            measureTime {
+            if (PHYSICS_DEBUG_LOG) {
+                measureTime {
+                    data.world.step(clampedTimeStep, PHYSICS_MAX_SUB_STEP_COUNT, PHYSICS_TIME_STEP)
+                }.let {
+                    println("Physics step time: $it, timeStep: $clampedTimeStep")
+                }
+            } else {
                 data.world.step(clampedTimeStep, PHYSICS_MAX_SUB_STEP_COUNT, PHYSICS_TIME_STEP)
-            }.let {
-                println("Physics step time: $it, timeStep: $clampedTimeStep")
             }
             data.world.pullTransforms(data.transformArray)
 
@@ -272,7 +277,7 @@ class RenderSceneImpl(
                 }
             }
 
-            if (data.debugStepCount < 10) {
+            if (PHYSICS_DEBUG_LOG && data.debugStepCount < 10) {
                 val maxLogged = minOf(rigidBodyComponents.size, 160)
                 for (i in 0 until maxLogged) {
                     val (nodeIndex, component) = rigidBodyComponents[i]

@@ -308,9 +308,11 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         auto rigidbody = std::make_unique<btRigidBody>(rigidbody_info);
         rigidbody->setSleepingThresholds(0.01f, 0.0017453293f);
         this->world->addRigidBody(rigidbody.get(), rigidbody_item.collision_group, rigidbody_item.collision_mask);
+        if (rigidbody_item.physics_mode != PhysicsMode::PHYSICS) {
+            rigidbody->setActivationState(DISABLE_DEACTIVATION);
+        }
         if (rigidbody_item.physics_mode == PhysicsMode::FOLLOW_BONE) {
             rigidbody->setCollisionFlags(rigidbody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
-            rigidbody->setActivationState(DISABLE_DEACTIVATION);
         }
 
         rigidbody_data.shape = std::move(shape);
@@ -438,28 +440,6 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
             constraint->setStiffness(5, joint_item.rotation_spring.z);
         }
 
-        const btScalar spring_damping = 0.5f;
-        if (joint_item.position_spring.x != 0.0f) {
-            constraint->setDamping(0, spring_damping);
-        }
-        if (joint_item.position_spring.y != 0.0f) {
-            constraint->setDamping(1, spring_damping);
-        }
-        if (joint_item.position_spring.z != 0.0f) {
-            constraint->setDamping(2, spring_damping);
-        }
-        if (joint_item.rotation_spring.x != 0.0f) {
-            constraint->setDamping(3, spring_damping);
-        }
-        if (joint_item.rotation_spring.y != 0.0f) {
-            constraint->setDamping(4, spring_damping);
-        }
-        if (joint_item.rotation_spring.z != 0.0f) {
-            constraint->setDamping(5, spring_damping);
-        }
-
-        constraint->setEquilibriumPoint();
-
         this->world->addConstraint(constraint.get(), false);
         this->joints.push_back(std::move(constraint));
     }
@@ -513,7 +493,13 @@ void PhysicsWorld::Step(float delta_time, int max_sub_steps, float fixed_time_st
     size_t rigidbody_index = 0;
     for (auto& rigidbody : this->rigidbodies) {
         if (rigidbody.physics_mode == PhysicsMode::FOLLOW_BONE || rigidbody.physics_mode == PhysicsMode::PHYSICS_PLUS_BONE) {
-             rigidbody.motion_state->GetFromWorld(this, rigidbody_index);
+            rigidbody.motion_state->GetFromWorld(this, rigidbody_index);
+            btTransform world_transform;
+            rigidbody.motion_state->getWorldTransform(world_transform);
+            rigidbody.rigidbody->setWorldTransform(world_transform);
+            rigidbody.rigidbody->setInterpolationWorldTransform(world_transform);
+            rigidbody.rigidbody->activate(true);
+            this->world->updateSingleAabb(rigidbody.rigidbody.get());
         }
         rigidbody_index++;
     }
