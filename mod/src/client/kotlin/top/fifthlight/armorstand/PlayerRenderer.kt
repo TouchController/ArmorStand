@@ -7,14 +7,17 @@ import net.minecraft.client.MinecraftClient
 import net.minecraft.client.network.AbstractClientPlayerEntity
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState
+import net.minecraft.client.render.item.ItemRenderState
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.EntityPose
+import org.joml.Matrix3f
 import org.joml.Matrix4f
 import top.fifthlight.armorstand.config.ConfigHolder
 import top.fifthlight.armorstand.state.ModelInstanceManager
 import top.fifthlight.armorstand.util.RendererManager
 import top.fifthlight.blazerod.api.render.ScheduledRenderer
 import top.fifthlight.blazerod.api.resource.CameraTransform
+import top.fifthlight.blazerod.model.HumanoidTag
 import top.fifthlight.blazerod.model.Camera
 import java.lang.ref.WeakReference
 import java.util.*
@@ -23,6 +26,10 @@ object PlayerRenderer {
     private const val NANOSECONDS_PER_SECOND = 1_000_000_000L
     private val startNanoTime = System.nanoTime()
     private var renderingWorld = false
+
+    private val handWorldMatrix = Matrix4f()
+    private val itemLocalMatrix = Matrix4f()
+    private val itemNormalMatrix = Matrix3f()
 
     private var prevModelItem = WeakReference<ModelInstanceManager.ModelInstanceItem.Model?>(null)
     val selectedCameraIndex = MutableStateFlow<Int?>(null)
@@ -62,6 +69,36 @@ object PlayerRenderer {
     }
 
     private val matrix = Matrix4f()
+
+    private fun renderHeldItem(
+        instance: top.fifthlight.blazerod.api.resource.ModelInstance,
+        itemState: ItemRenderState,
+        tag: HumanoidTag,
+        matrixStack: MatrixStack,
+        consumers: VertexConsumerProvider,
+        light: Int,
+        overlay: Int,
+    ) {
+        if (itemState.isEmpty) {
+            return
+        }
+
+        val node = instance.scene.humanoidTagMap[tag] ?: return
+        instance.copyNodeWorldTransform(node.nodeIndex, handWorldMatrix)
+
+        itemLocalMatrix.identity()
+        itemLocalMatrix.scale(ConfigHolder.config.value.modelScale)
+        instance.scene.renderTransform?.applyOnMatrix(itemLocalMatrix)
+        itemLocalMatrix.mul(handWorldMatrix)
+
+        matrixStack.push()
+        matrixStack.multiplyPositionMatrix(itemLocalMatrix)
+        matrixStack.peek().normalMatrix.set(
+            itemNormalMatrix.set(matrixStack.peek().positionMatrix).invert().transpose()
+        )
+        itemState.render(matrixStack, consumers, light, overlay)
+        matrixStack.pop()
+    }
 
     @JvmStatic
     fun updatePlayer(
@@ -128,6 +165,25 @@ object PlayerRenderer {
                 )
                 task.release()
             }
+
+            renderHeldItem(
+                instance = instance,
+                itemState = vanillaState.rightHandItemState,
+                tag = HumanoidTag.RIGHT_HAND,
+                matrixStack = matrixStack,
+                consumers = consumers,
+                light = light,
+                overlay = overlay,
+            )
+            renderHeldItem(
+                instance = instance,
+                itemState = vanillaState.leftHandItemState,
+                tag = HumanoidTag.LEFT_HAND,
+                matrixStack = matrixStack,
+                consumers = consumers,
+                light = light,
+                overlay = overlay,
+            )
         }
 
         matrixStack.pop()

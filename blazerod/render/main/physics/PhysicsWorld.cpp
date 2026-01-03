@@ -320,22 +320,6 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         rigidbody_data.rigidbody = std::move(rigidbody);
         rigidbody_data.physics_mode = rigidbody_item.physics_mode;
         this->rigidbodies.push_back(std::move(rigidbody_data));
-
-        if (rigidbody_index < 16) {
-            const btTransform& rb_world = this->rigidbodies[rigidbody_index].rigidbody->getWorldTransform();
-            btVector3 rb_pos = rb_world.getOrigin();
-            btQuaternion rb_rot = rb_world.getRotation();
-            std::cout << "PHYSDBG RB_CPP "
-                      << "idx=" << rigidbody_index
-                      << " mode=" << rigidbody_item.physics_mode
-                      << " shapePos=(" << rigidbody_item.shape_position.x << "," << rigidbody_item.shape_position.y
-                      << "," << rigidbody_item.shape_position.z << ")"
-                      << " shapeRot=(" << rigidbody_item.shape_rotation.x << "," << rigidbody_item.shape_rotation.y
-                      << "," << rigidbody_item.shape_rotation.z << ")"
-                      << " bodyPos=(" << rb_pos.x() << "," << rb_pos.y() << "," << rb_pos.z() << ")"
-                      << " bodyRot=(" << rb_rot.x() << "," << rb_rot.y() << "," << rb_rot.z() << "," << rb_rot.w()
-                      << ")" << std::endl;
-        }
     }
 
     const auto& joints = scene.GetJoints();
@@ -387,33 +371,6 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
             btVector3(joint_item.rotation_min.x, joint_item.rotation_min.y, joint_item.rotation_min.z));
         constraint->setAngularUpperLimit(
             btVector3(joint_item.rotation_max.x, joint_item.rotation_max.y, joint_item.rotation_max.z));
-
-        if (joint_index < 16) {
-            btVector3 body_a_pos = body_a_transform.getOrigin();
-            btVector3 body_b_pos = body_b_transform.getOrigin();
-            btVector3 anchor_pos = transform.getOrigin();
-            btVector3 lin_ll, lin_ul, ang_ll, ang_ul;
-            constraint->getLinearLowerLimit(lin_ll);
-            constraint->getLinearUpperLimit(lin_ul);
-            constraint->getAngularLowerLimit(ang_ll);
-            constraint->getAngularUpperLimit(ang_ul);
-
-            std::cout << "PHYSDBG JOINT_CPP "
-                      << "idx=" << joint_index
-                      << " A=" << rigidbody_a_index
-                      << " B=" << rigidbody_b_index
-                      << " anchor=(" << anchor_pos.x() << "," << anchor_pos.y() << "," << anchor_pos.z()
-                      << ")"
-                      << " bodyAPos=(" << body_a_pos.x() << "," << body_a_pos.y() << "," << body_a_pos.z()
-                      << ")"
-                      << " bodyBPos=(" << body_b_pos.x() << "," << body_b_pos.y() << "," << body_b_pos.z()
-                      << ")"
-                      << " linLL=(" << lin_ll.x() << "," << lin_ll.y() << "," << lin_ll.z() << ")"
-                      << " linUL=(" << lin_ul.x() << "," << lin_ul.y() << "," << lin_ul.z() << ")"
-                      << " angLL=(" << ang_ll.x() << "," << ang_ll.y() << "," << ang_ll.z() << ")"
-                      << " angUL=(" << ang_ul.x() << "," << ang_ul.y() << "," << ang_ul.z() << ")"
-                      << std::endl;
-        }
 
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
