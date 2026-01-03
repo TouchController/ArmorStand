@@ -8,6 +8,7 @@ import net.minecraft.client.network.AbstractClientPlayerEntity
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState
 import net.minecraft.client.render.item.ItemRenderState
+import net.minecraft.entity.LivingEntity
 import net.minecraft.item.ItemDisplayContext
 import net.minecraft.item.ItemStack
 import net.minecraft.client.util.math.MatrixStack
@@ -83,7 +84,7 @@ object PlayerRenderer {
     private fun renderHeldItem(
         instance: ModelInstance,
         itemState: ItemRenderState,
-        player: AbstractClientPlayerEntity?,
+        player: LivingEntity?,
         itemStack: ItemStack?,
         displayContext: ItemDisplayContext,
         tag: HumanoidTag,
