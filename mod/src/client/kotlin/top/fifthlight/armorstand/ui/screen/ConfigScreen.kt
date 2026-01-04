@@ -29,6 +29,10 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
     viewModelFactory = ::ConfigViewModel,
     title = Text.translatable("armorstand.config"),
 ) {
+    init {
+        ConfigHolder.read()
+    }
+
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
         if (keyCode == GLFW.GLFW_KEY_1 && hasControlDown() && ArmorStandClient.instance.debug) {
             client?.setScreen(DebugScreen(this))
@@ -228,6 +232,93 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
         )
     }
 
+    private val heldItemScaleSlider by lazy {
+        slider(
+            textFactory = { _, text -> Text.literal("Held item scale: $text") },
+            min = 0.05,
+            max = 2.0,
+            value = viewModel.uiState.map { it.heldItemScale.toDouble() }.distinctUntilChanged(),
+            onValueChanged = { _, value ->
+                viewModel.updateHeldItemScale(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemOffsetXSlider by lazy {
+        slider(
+            textFactory = { _, text -> Text.literal("Held item offset X: $text") },
+            min = -0.5,
+            max = 0.5,
+            value = viewModel.uiState.map { it.heldItemOffsetX.toDouble() }.distinctUntilChanged(),
+            onValueChanged = { _, value ->
+                viewModel.updateHeldItemOffsetX(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemOffsetYSlider by lazy {
+        slider(
+            textFactory = { _, text -> Text.literal("Held item offset Y: $text") },
+            min = -0.5,
+            max = 0.5,
+            value = viewModel.uiState.map { it.heldItemOffsetY.toDouble() }.distinctUntilChanged(),
+            onValueChanged = { _, value ->
+                viewModel.updateHeldItemOffsetY(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemOffsetZSlider by lazy {
+        slider(
+            textFactory = { _, text -> Text.literal("Held item offset Z: $text") },
+            min = -0.5,
+            max = 0.5,
+            value = viewModel.uiState.map { it.heldItemOffsetZ.toDouble() }.distinctUntilChanged(),
+            onValueChanged = { _, value ->
+                viewModel.updateHeldItemOffsetZ(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemRotXSlider by lazy {
+        slider(
+            textFactory = { _, text -> Text.literal("Held item rot X: $text") },
+            min = -180.0,
+            max = 180.0,
+            decimalPlaces = 0,
+            value = viewModel.uiState.map { it.heldItemRotX.toDouble() }.distinctUntilChanged(),
+            onValueChanged = { _, value ->
+                viewModel.updateHeldItemRotX(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemRotYSlider by lazy {
+        slider(
+            textFactory = { _, text -> Text.literal("Held item rot Y: $text") },
+            min = -180.0,
+            max = 180.0,
+            decimalPlaces = 0,
+            value = viewModel.uiState.map { it.heldItemRotY.toDouble() }.distinctUntilChanged(),
+            onValueChanged = { _, value ->
+                viewModel.updateHeldItemRotY(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemRotZSlider by lazy {
+        slider(
+            textFactory = { _, text -> Text.literal("Held item rot Z: $text") },
+            min = -180.0,
+            max = 180.0,
+            decimalPlaces = 0,
+            value = viewModel.uiState.map { it.heldItemRotZ.toDouble() }.distinctUntilChanged(),
+            onValueChanged = { _, value ->
+                viewModel.updateHeldItemRotZ(value.toFloat())
+            },
+        )
+    }
+
     private val thirdPersonDistanceScaleSlider = slider(
         textFactory = { slider, text -> Text.translatable("armorstand.config.third_person_distance_scale", text) },
         min = 0.05,
@@ -268,6 +359,13 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
                 ).apply {
                     listOf(
                         modelScaleSlider,
+                        heldItemScaleSlider,
+                        heldItemOffsetXSlider,
+                        heldItemOffsetYSlider,
+                        heldItemOffsetZSlider,
+                        heldItemRotXSlider,
+                        heldItemRotYSlider,
+                        heldItemRotZSlider,
                     ).forEach {
                         add(
                             it,

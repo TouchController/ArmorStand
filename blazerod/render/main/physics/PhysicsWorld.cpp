@@ -314,9 +314,6 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         if (rigidbody_item.physics_mode == PhysicsMode::FOLLOW_BONE) {
             rigidbody->setCollisionFlags(rigidbody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
         }
-        if (rigidbody_item.physics_mode == PhysicsMode::PHYSICS_PLUS_BONE) {
-            rigidbody->setLinearFactor(btVector3(0.0f, 0.0f, 0.0f));
-        }
 
         rigidbody_data.shape = std::move(shape);
         rigidbody_data.motion_state = std::move(motion_state);
@@ -345,7 +342,6 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         btMatrix3x3 rot_z(cos(rz_val), -sin(rz_val), 0,
                           sin(rz_val),  cos(rz_val), 0,
                           0,           0,           1);
-
         rotation_matrix = rot_y * rot_x * rot_z;
 
         btTransform transform;
@@ -388,34 +384,27 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
             constraint->setStiffness(0, joint_item.position_spring.x);
-            constraint->setDamping(0, 0.5f);
         }
         if (joint_item.position_spring.y != 0.0f) {
             constraint->enableSpring(1, true);
             constraint->setStiffness(1, joint_item.position_spring.y);
-            constraint->setDamping(1, 0.5f);
         }
         if (joint_item.position_spring.z != 0.0f) {
             constraint->enableSpring(2, true);
             constraint->setStiffness(2, joint_item.position_spring.z);
-            constraint->setDamping(2, 0.5f);
         }
         if (joint_item.rotation_spring.x != 0.0f) {
             constraint->enableSpring(3, true);
             constraint->setStiffness(3, joint_item.rotation_spring.x);
-            constraint->setDamping(3, 0.5f);
         }
         if (joint_item.rotation_spring.y != 0.0f) {
             constraint->enableSpring(4, true);
             constraint->setStiffness(4, joint_item.rotation_spring.y);
-            constraint->setDamping(4, 0.5f);
         }
         if (joint_item.rotation_spring.z != 0.0f) {
             constraint->enableSpring(5, true);
             constraint->setStiffness(5, joint_item.rotation_spring.z);
-            constraint->setDamping(5, 0.5f);
         }
-        constraint->setEquilibriumPoint();
 
         this->world->addConstraint(constraint.get(), false);
         this->joints.push_back(std::move(constraint));

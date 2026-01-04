@@ -88,6 +88,13 @@ class ConfigViewModel(scope: CoroutineScope) : ViewModel(scope) {
                             hidePlayerShadow = config.hidePlayerShadow,
                             hidePlayerArmor = config.hidePlayerArmor,
                             modelScale = config.modelScale,
+                            heldItemScale = config.heldItemScale,
+                            heldItemOffsetX = config.heldItemOffsetX,
+                            heldItemOffsetY = config.heldItemOffsetY,
+                            heldItemOffsetZ = config.heldItemOffsetZ,
+                            heldItemRotX = config.heldItemRotX,
+                            heldItemRotY = config.heldItemRotY,
+                            heldItemRotZ = config.heldItemRotZ,
                             thirdPersonDistanceScale = config.thirdPersonDistanceScale,
                         )
                     }
@@ -176,6 +183,48 @@ class ConfigViewModel(scope: CoroutineScope) : ViewModel(scope) {
     fun updateModelScale(modelScale: Float) {
         ConfigHolder.update {
             copy(modelScale = modelScale)
+        }
+    }
+
+    fun updateHeldItemScale(heldItemScale: Float) {
+        ConfigHolder.update {
+            copy(heldItemScale = heldItemScale)
+        }
+    }
+
+    fun updateHeldItemOffsetX(heldItemOffsetX: Float) {
+        ConfigHolder.update {
+            copy(heldItemOffsetX = heldItemOffsetX)
+        }
+    }
+
+    fun updateHeldItemOffsetY(heldItemOffsetY: Float) {
+        ConfigHolder.update {
+            copy(heldItemOffsetY = heldItemOffsetY)
+        }
+    }
+
+    fun updateHeldItemOffsetZ(heldItemOffsetZ: Float) {
+        ConfigHolder.update {
+            copy(heldItemOffsetZ = heldItemOffsetZ)
+        }
+    }
+
+    fun updateHeldItemRotX(heldItemRotX: Float) {
+        ConfigHolder.update {
+            copy(heldItemRotX = heldItemRotX)
+        }
+    }
+
+    fun updateHeldItemRotY(heldItemRotY: Float) {
+        ConfigHolder.update {
+            copy(heldItemRotY = heldItemRotY)
+        }
+    }
+
+    fun updateHeldItemRotZ(heldItemRotZ: Float) {
+        ConfigHolder.update {
+            copy(heldItemRotZ = heldItemRotZ)
         }
     }
 
