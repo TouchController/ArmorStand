@@ -314,6 +314,9 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         if (rigidbody_item.physics_mode == PhysicsMode::FOLLOW_BONE) {
             rigidbody->setCollisionFlags(rigidbody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
         }
+        if (rigidbody_item.physics_mode == PhysicsMode::PHYSICS_PLUS_BONE) {
+            rigidbody->setLinearFactor(btVector3(0.0f, 0.0f, 0.0f));
+        }
 
         rigidbody_data.shape = std::move(shape);
         rigidbody_data.motion_state = std::move(motion_state);
@@ -329,11 +332,21 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     for (const Joint& joint_item : joints) {
         size_t joint_index = joint_count++;
         btMatrix3x3 rotation_matrix;
-        // Match Saba's MMDPhysics PMX joint path: use preprocessed joint rotation directly.
-        rotation_matrix.setEulerZYX(
-            joint_item.rotation.x,
-            joint_item.rotation.y,
-            joint_item.rotation.z);
+        float rx_val = joint_item.rotation.x;
+        float ry_val = joint_item.rotation.y;
+        float rz_val = joint_item.rotation.z;
+
+        btMatrix3x3 rot_x(1, 0, 0,
+                          0, cos(rx_val), -sin(rx_val),
+                          0, sin(rx_val),  cos(rx_val));
+        btMatrix3x3 rot_y(cos(ry_val), 0, sin(ry_val),
+                          0,          1,          0,
+                          -sin(ry_val), 0, cos(ry_val));
+        btMatrix3x3 rot_z(cos(rz_val), -sin(rz_val), 0,
+                          sin(rz_val),  cos(rz_val), 0,
+                          0,           0,           1);
+
+        rotation_matrix = rot_y * rot_x * rot_z;
 
         btTransform transform;
         transform.setIdentity();
@@ -375,29 +388,36 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
         if (joint_item.position_spring.x != 0.0f) {
             constraint->enableSpring(0, true);
             constraint->setStiffness(0, joint_item.position_spring.x);
+            constraint->setDamping(0, 0.5f);
         }
         if (joint_item.position_spring.y != 0.0f) {
             constraint->enableSpring(1, true);
             constraint->setStiffness(1, joint_item.position_spring.y);
+            constraint->setDamping(1, 0.5f);
         }
         if (joint_item.position_spring.z != 0.0f) {
             constraint->enableSpring(2, true);
             constraint->setStiffness(2, joint_item.position_spring.z);
+            constraint->setDamping(2, 0.5f);
         }
         if (joint_item.rotation_spring.x != 0.0f) {
             constraint->enableSpring(3, true);
             constraint->setStiffness(3, joint_item.rotation_spring.x);
+            constraint->setDamping(3, 0.5f);
         }
         if (joint_item.rotation_spring.y != 0.0f) {
             constraint->enableSpring(4, true);
             constraint->setStiffness(4, joint_item.rotation_spring.y);
+            constraint->setDamping(4, 0.5f);
         }
         if (joint_item.rotation_spring.z != 0.0f) {
             constraint->enableSpring(5, true);
             constraint->setStiffness(5, joint_item.rotation_spring.z);
+            constraint->setDamping(5, 0.5f);
         }
+        constraint->setEquilibriumPoint();
 
-        this->world->addConstraint(constraint.get(), true);
+        this->world->addConstraint(constraint.get(), false);
         this->joints.push_back(std::move(constraint));
     }
 }

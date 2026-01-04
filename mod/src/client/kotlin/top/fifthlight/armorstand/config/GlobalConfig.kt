@@ -79,13 +79,29 @@ data class GlobalConfig(
 
 object ConfigHolder {
     private val configFile = GameDirectoryGetter.configDirectory.resolve("armorstand.json")
+    private val logger = LoggerFactory.getLogger(ConfigHolder::class.java)
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
     private val _config = MutableStateFlow(GlobalConfig())
     val config = _config.asStateFlow()
 
     @OptIn(ExperimentalSerializationApi::class)
     fun read() {
         runCatching {
-            _config.value = configFile.inputStream().use { Json.decodeFromStream<GlobalConfig>(it) }
+            configFile.inputStream().use { json.decodeFromStream<GlobalConfig>(it) }
+        }.onSuccess { loaded ->
+            _config.value = loaded
+            logger.info(
+                "Loaded ArmorStand config from $configFile: " +
+                    "modelScale=${loaded.modelScale}, " +
+                    "heldItemScale=${loaded.heldItemScale}, " +
+                    "heldItemOffset=(${loaded.heldItemOffsetX},${loaded.heldItemOffsetY},${loaded.heldItemOffsetZ}), " +
+                    "heldItemRot=(${loaded.heldItemRotX},${loaded.heldItemRotY},${loaded.heldItemRotZ})"
+            )
+        }.onFailure { ex ->
+            logger.warn("Failed to load config file: $configFile", ex)
         }
     }
 
@@ -96,6 +112,6 @@ object ConfigHolder {
     @OptIn(ExperimentalSerializationApi::class)
     private fun save(config: GlobalConfig) {
         configFile.parent.createDirectories()
-        configFile.outputStream().use { Json.encodeToStream<GlobalConfig>(config, it) }
+        configFile.outputStream().use { json.encodeToStream<GlobalConfig>(config, it) }
     }
 }
