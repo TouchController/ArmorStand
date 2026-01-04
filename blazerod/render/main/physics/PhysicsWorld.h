@@ -27,6 +27,12 @@ class PhysicsMotionState : public btMotionState {
     void setWorldTransform(const btTransform& world_transform) override;
     bool IsDirty() const { return isDirty; }
 
+    const btTransform& GetFromNodeToWorld() const { return from_node_to_world; }
+    void SetWorldTransformDirect(const btTransform& world_transform) {
+        transform = world_transform;
+        isDirty = true;
+    }
+
     virtual void GetFromWorld(const PhysicsWorld* world, size_t rigidbody_index) = 0;
     virtual void SetToWorld(PhysicsWorld* world, size_t rigidbody_index) = 0;
 };
@@ -35,6 +41,7 @@ struct RigidBodyData {
     std::unique_ptr<btCollisionShape> shape;
     std::unique_ptr<PhysicsMotionState> motion_state;
     std::unique_ptr<btRigidBody> rigidbody;
+    PhysicsMode physics_mode;
 };
 
 class PhysicsWorld {
@@ -60,7 +67,9 @@ class PhysicsWorld {
     ~PhysicsWorld();
 
     float* GetTransformBuffer() const { return transform_buffer.get(); }
-    size_t GetTransformBufferSize() { return rigidbodies.size() * 16 * sizeof(float); }
+    size_t GetTransformBufferSize() { return rigidbodies.size() * 7 * sizeof(float); }
+    void ResetRigidBody(size_t rigidbody_index, float px, float py, float pz,
+                        float qx, float qy, float qz, float qw);
     void Step(float delta_time, int max_sub_steps, float fixed_time_step);
 };
 }  // namespace blazerod::physics

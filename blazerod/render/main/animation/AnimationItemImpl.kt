@@ -3,6 +3,7 @@ package top.fifthlight.blazerod.animation
 import top.fifthlight.blazerod.api.animation.AnimationItem
 import top.fifthlight.blazerod.api.animation.AnimationItemInstance
 import top.fifthlight.blazerod.api.animation.AnimationItemPendingValues
+import top.fifthlight.blazerod.api.animation.MaskableAnimationItemInstance
 import top.fifthlight.blazerod.api.resource.ModelInstance
 import top.fifthlight.blazerod.api.resource.RenderScene
 import top.fifthlight.blazerod.model.animation.Animation
@@ -40,7 +41,7 @@ class AnimationItemPendingValuesImpl(animationItem: AnimationItemImpl) : Animati
 }
 
 @ActualImpl(AnimationItemInstance::class)
-class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : AnimationItemInstance {
+class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : AnimationItemInstance, MaskableAnimationItemInstance {
     @ActualConstructor("of")
     constructor(animationItem: AnimationItem) : this(animationItem as AnimationItemImpl)
 
@@ -76,10 +77,42 @@ class AnimationItemInstanceImpl(val animationItem: AnimationItemImpl) : Animatio
             pendingValues.pendingValues[index].let { pendingValue ->
                 channel.applyUnsafe(instance, pendingValue)
             }
-            if (!pendingValues.applied) {
-                pendingValues.applied = true
-                pendingStack.addLast(pendingValues)
+        }
+        if (!pendingValues.applied) {
+            pendingValues.applied = true
+            pendingStack.addLast(pendingValues)
+        }
+    }
+
+    override fun applyMasked(
+        instance: ModelInstance,
+        pendingValues: AnimationItemPendingValues,
+        allowedNodeIndices: BooleanArray,
+    ) {
+        val instance = instance as ModelInstanceImpl
+        val pendingValues = pendingValues as AnimationItemPendingValuesImpl
+
+        animationItem.channels.forEachIndexed { index, channel ->
+            val targetNodeIndex = channel.targetNodeIndex
+            if (targetNodeIndex == null || targetNodeIndex !in allowedNodeIndices.indices || !allowedNodeIndices[targetNodeIndex]) {
+                return@forEachIndexed
             }
+
+            pendingValues.pendingValues[index].let { pendingValue ->
+                channel.applyUnsafe(instance, pendingValue)
+            }
+        }
+        if (!pendingValues.applied) {
+            pendingValues.applied = true
+            pendingStack.addLast(pendingValues)
+        }
+    }
+
+    fun recyclePendingValues(pendingValues: AnimationItemPendingValues) {
+        val pendingValues = pendingValues as? AnimationItemPendingValuesImpl ?: return
+        if (!pendingValues.applied) {
+            pendingValues.applied = true
+            pendingStack.addLast(pendingValues)
         }
     }
 }

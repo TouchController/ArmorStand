@@ -16,6 +16,7 @@ import top.fifthlight.blazerod.api.render.RendererTypeHolderFactory
 import java.nio.file.InvalidPathException
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
 
@@ -27,6 +28,13 @@ data class GlobalConfig(
     val hidePlayerShadow: Boolean = false,
     val hidePlayerArmor: Boolean = false,
     val modelScale: Float = 1f,
+    val heldItemScale: Float = 0.9f,
+    val heldItemOffsetX: Float = 0f,
+    val heldItemOffsetY: Float = 0f,
+    val heldItemOffsetZ: Float = 0f,
+    val heldItemRotX: Float = -90f,
+    val heldItemRotY: Float = 180f,
+    val heldItemRotZ: Float = 0f,
     val thirdPersonDistanceScale: Float = 1f,
     val renderer: RendererKey = RendererKey.VERTEX_SHADER_TRANSFORM,
     val vmcUdpPort: Int = 9000,
@@ -75,11 +83,20 @@ object ConfigHolder {
     private val _config = MutableStateFlow(GlobalConfig())
     val config = _config.asStateFlow()
 
+    private val json = Json {
+        encodeDefaults = true
+        prettyPrint = true
+        ignoreUnknownKeys = true
+    }
+
     @OptIn(ExperimentalSerializationApi::class)
     fun read() {
-        runCatching {
-            _config.value = configFile.inputStream().use { Json.decodeFromStream<GlobalConfig>(it) }
+        if (configFile.exists()) {
+            runCatching {
+                _config.value = configFile.inputStream().use { json.decodeFromStream<GlobalConfig>(it) }
+            }
         }
+        save(_config.value)
     }
 
     fun update(editor: GlobalConfig.() -> GlobalConfig) {
@@ -89,6 +106,6 @@ object ConfigHolder {
     @OptIn(ExperimentalSerializationApi::class)
     private fun save(config: GlobalConfig) {
         configFile.parent.createDirectories()
-        configFile.outputStream().use { Json.encodeToStream<GlobalConfig>(config, it) }
+        configFile.outputStream().use { json.encodeToStream<GlobalConfig>(config, it) }
     }
 }

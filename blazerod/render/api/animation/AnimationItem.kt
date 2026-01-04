@@ -32,3 +32,11 @@ interface AnimationItemInstance {
         fun of(animation: AnimationItem): AnimationItemInstance
     }
 }
+
+interface MaskableAnimationItemInstance {
+    fun applyMasked(
+        instance: ModelInstance,
+        pendingValues: AnimationItemPendingValues,
+        allowedNodeIndices: BooleanArray,
+    )
+}

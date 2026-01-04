@@ -2,13 +2,16 @@ package top.fifthlight.blazerod.runtime.node.component
 
 import net.minecraft.util.Colors
 import org.joml.Matrix4f
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import top.fifthlight.blazerod.model.RigidBody
 import top.fifthlight.blazerod.model.TransformId
 import top.fifthlight.blazerod.runtime.ModelInstanceImpl
 import top.fifthlight.blazerod.runtime.node.RenderNodeImpl
 import top.fifthlight.blazerod.runtime.node.UpdatePhase
+import top.fifthlight.blazerod.runtime.node.getTransformMap
 import top.fifthlight.blazerod.runtime.node.getWorldTransform
+import top.fifthlight.blazerod.runtime.node.getWorldTransformNoPhysics
 
 class RigidBodyComponent(
     val rigidBodyIndex: Int,
@@ -30,6 +33,12 @@ class RigidBodyComponent(
 
     private val physicsMatrix = Matrix4f()
     private val inverseNodeWorldMatrix = Matrix4f()
+    private val baseWorldMatrix = Matrix4f()
+    private val parentWorldMatrix = Matrix4f()
+
+    private val tempPos = Vector3f()
+    private val tempRot = Quaternionf()
+
     override fun update(
         phase: UpdatePhase,
         node: RenderNodeImpl,
@@ -40,8 +49,19 @@ class RigidBodyComponent(
             is UpdatePhase.PhysicsUpdatePre -> {
                 when (rigidBodyData.physicsMode) {
                     RigidBody.PhysicsMode.FOLLOW_BONE, RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
-                        val nodeTransformMatrix = instance.getWorldTransform(node)
-                        physicsData.world.setTransform(rigidBodyIndex, nodeTransformMatrix)
+                        val nodeTransformMatrix = instance.getWorldTransformNoPhysics(node)
+                        nodeTransformMatrix.getTranslation(tempPos)
+                        nodeTransformMatrix.getUnnormalizedRotation(tempRot)
+                        
+                        val offset = rigidBodyIndex * 7
+                        val array = physicsData.transformArray
+                        array[offset + 0] = tempPos.x
+                        array[offset + 1] = tempPos.y
+                        array[offset + 2] = tempPos.z
+                        array[offset + 3] = tempRot.x
+                        array[offset + 4] = tempRot.y
+                        array[offset + 5] = tempRot.z
+                        array[offset + 6] = tempRot.w
                     }
 
                     RigidBody.PhysicsMode.PHYSICS -> {
@@ -53,11 +73,52 @@ class RigidBodyComponent(
             is UpdatePhase.PhysicsUpdatePost -> {
                 when (rigidBodyData.physicsMode) {
                     RigidBody.PhysicsMode.PHYSICS, RigidBody.PhysicsMode.PHYSICS_PLUS_BONE -> {
-                        val physicsMatrix = physicsData.world.getTransform(rigidBodyIndex, physicsMatrix)
-                        val inverseNodeWorldMatrix = instance.getWorldTransform(node).invert(inverseNodeWorldMatrix)
-                        val deltaTransformMatrix = physicsMatrix.mul(inverseNodeWorldMatrix)
+                        val offset = rigidBodyIndex * 7
+
+                        val array = physicsData.transformArray
+
+                        val px = array[offset + 0]
+                        val py = array[offset + 1]
+                        val pz = array[offset + 2]
+                        val qx = array[offset + 3]
+                        val qy = array[offset + 4]
+                        val qz = array[offset + 5]
+                        val qw = array[offset + 6]
+                        physicsMatrix.translationRotate(px, py, pz, qx, qy, qz, qw)
+
+                        val localBase = instance.getTransformMap(node).getSum(TransformId.EXTERNAL_PARENT_DEFORM)
+                        baseWorldMatrix.set(localBase)
+                        val parent = node.parent
+                        if (parent != null) {
+                            val parentRigidBody = parent
+                                .getComponentsOfType(RenderNodeComponent.Type.RigidBody)
+                                .firstOrNull()
+                            if (parentRigidBody != null) {
+                                val parentOffset = parentRigidBody.rigidBodyIndex * 7
+                                parentWorldMatrix.translationRotate(
+                                    physicsData.transformArray[parentOffset + 0],
+                                    physicsData.transformArray[parentOffset + 1],
+                                    physicsData.transformArray[parentOffset + 2],
+                                    physicsData.transformArray[parentOffset + 3],
+                                    physicsData.transformArray[parentOffset + 4],
+                                    physicsData.transformArray[parentOffset + 5],
+                                    physicsData.transformArray[parentOffset + 6],
+                                )
+                            } else {
+                                parentWorldMatrix.set(instance.getWorldTransform(parent))
+                            }
+                            parentWorldMatrix.mul(baseWorldMatrix, baseWorldMatrix)
+                        }
+                        if (rigidBodyData.physicsMode == RigidBody.PhysicsMode.PHYSICS_PLUS_BONE) {
+                            baseWorldMatrix.getTranslation(tempPos)
+                            physicsMatrix.setTranslation(tempPos)
+                        }
+
+                        baseWorldMatrix.invert(inverseNodeWorldMatrix)
+                        inverseNodeWorldMatrix.mul(physicsMatrix)
+
                         instance.setTransformMatrix(node.nodeIndex, TransformId.PHYSICS) {
-                            matrix.mul(deltaTransformMatrix)
+                            this.matrix.set(inverseNodeWorldMatrix)
                         }
                     }
 

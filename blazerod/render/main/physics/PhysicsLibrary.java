@@ -31,6 +31,10 @@ public class PhysicsLibrary {
 
     public native static void stepPhysicsWorld(long physicsWorld, float deltaTime, int maxSubSteps, float fixedTimeStep);
 
+    public native static void resetRigidBody(long physicsWorld, int rigidBodyIndex,
+                                             float px, float py, float pz,
+                                             float qx, float qy, float qz, float qw);
+
     public native static void destroyPhysicsWorld(long physicsWorld);
 
     public static boolean isPhysicsAvailable() {

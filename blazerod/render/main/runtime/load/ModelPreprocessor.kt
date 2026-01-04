@@ -4,6 +4,7 @@ import com.mojang.blaze3d.textures.TextureFormat
 import com.mojang.blaze3d.vertex.VertexFormat
 import com.mojang.blaze3d.vertex.VertexFormatElement
 import kotlinx.coroutines.*
+import org.joml.Vector3f
 import top.fifthlight.blazerod.api.resource.RenderExpression
 import top.fifthlight.blazerod.api.resource.RenderExpressionGroup
 import top.fifthlight.blazerod.extension.NativeImageExt
@@ -632,22 +633,215 @@ class ModelPreprocessor private constructor(
         return Pair(expressions, expressionGroups)
     }
 
-    private fun loadPhysicalJoints(modelPhysicalJoints: List<PhysicalJoint>) = modelPhysicalJoints.mapNotNull {
-        RenderPhysicsJoint(
-            name = it.name,
-            type = it.type,
-            rigidBodyAIndex = rigidBodyIdToIndexMap[it.rigidBodyA] ?: return@mapNotNull null,
-            rigidBodyBIndex = rigidBodyIdToIndexMap[it.rigidBodyB] ?: return@mapNotNull null,
-            position = it.position,
-            rotation = it.rotation,
-            positionMin = it.positionMin,
-            positionMax = it.positionMax,
-            rotationMin = it.rotationMin,
-            rotationMax = it.rotationMax,
-            positionSpring = it.positionSpring,
-            rotationSpring = it.rotationSpring,
-        )
-    }
+    private fun loadPhysicalJoints(modelPhysicalJoints: List<PhysicalJoint>) =
+        modelPhysicalJoints.mapIndexedNotNull { index, joint ->
+
+                val name = joint.name
+
+                val rigidBodyAIndex = rigidBodyIdToIndexMap[joint.rigidBodyA] ?: return@mapIndexedNotNull null
+                val rigidBodyBIndex = rigidBodyIdToIndexMap[joint.rigidBodyB] ?: return@mapIndexedNotNull null
+
+                var position = joint.position
+                var rotation = joint.rotation
+                var positionMin = joint.positionMin
+                var positionMax = joint.positionMax
+                var rotationMin = joint.rotationMin
+                var rotationMax = joint.rotationMax
+                var positionSpring = joint.positionSpring
+                var rotationSpring = joint.rotationSpring
+
+                val enableNameBasedPhysicsTuning = false
+
+                if (enableNameBasedPhysicsTuning && name != null && (name.startsWith("Skirt_") || name.startsWith("スカート"))) {
+                    val isAsciiSkirt = name.startsWith("Skirt_")
+                    val ringChar = if (isAsciiSkirt) {
+                        name.substringAfter("Skirt_").substringBefore('_').singleOrNull()
+                    } else {
+                        null
+                    }
+                    val segmentIndex = if (isAsciiSkirt) {
+                        val parts = name.substringAfter("Skirt_").split('_')
+                        parts.getOrNull(1)?.toIntOrNull()
+                    } else {
+                        null
+                    }
+                    val isOuterAsciiSkirt = ringChar != null && ringChar in 'B'..'Z'
+                    val isDeepSegment = segmentIndex != null && segmentIndex >= 4
+
+                    if (isAsciiSkirt && ringChar != null && ringChar in 'A'..'D') {
+                        rotation = Vector3f(0f, 0f, 0f)
+                    }
+
+                    val angleScale = when (ringChar) {
+                        'B' -> 5f
+                        in 'C'..'Z' -> 3f
+                        else -> 8f
+                    }
+                    rotationMin = Vector3f(rotationMin).mul(angleScale)
+                    rotationMax = Vector3f(rotationMax).mul(angleScale)
+
+                    if (isOuterAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
+
+                        val (baseMaxBend, baseMaxYaw) = when (ringChar) {
+                            'B' -> 1.2f to 0.8f
+                            else -> 1.0f to 0.6f
+                        }
+                        val bendDepthScale = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.7f
+                            else -> 0.45f
+                        }
+
+                        val yawDepthScale = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.6f
+                            else -> 0.4f
+                        }
+                        val maxBend = baseMaxBend * bendDepthScale
+                        val maxYaw = baseMaxYaw * yawDepthScale
+                        rotationMin = Vector3f(-maxBend, -maxYaw, -maxBend)
+                        rotationMax = Vector3f(maxBend, maxYaw, maxBend)
+                    } else if (isOuterAsciiSkirt && ringChar == 'D') {
+                        val baseMaxBend = 0.8f
+                        val baseMaxYaw = 0.5f
+                        val bendDepthScale = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.8f
+                            else -> 0.6f
+                        }
+                        val yawDepthScale = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.7f
+                            else -> 0.5f
+                        }
+                        val maxBend = baseMaxBend * bendDepthScale
+                        val maxYaw = baseMaxYaw * yawDepthScale
+                        rotationMin = Vector3f(-maxBend, -maxYaw, -maxBend)
+                        rotationMax = Vector3f(maxBend, maxYaw, maxBend)
+                    } else if (isOuterAsciiSkirt) {
+                        val (baseMaxBend, baseMaxYaw) = 1.0f to 0.6f
+                        val (maxBend, maxYaw) = if (isDeepSegment) {
+                            baseMaxBend * 0.6f to baseMaxYaw * 0.3f
+                        } else {
+                            baseMaxBend to baseMaxYaw
+                        }
+                        rotationMin = rotationMin.set(
+                            rotationMin.x().coerceIn(-maxBend, maxBend),
+                            rotationMin.y().coerceIn(-maxYaw, maxYaw),
+                            rotationMin.z().coerceIn(-maxBend, maxBend),
+                        )
+                        rotationMax = rotationMax.set(
+                            rotationMax.x().coerceIn(-maxBend, maxBend),
+                            rotationMax.y().coerceIn(-maxYaw, maxYaw),
+                            rotationMax.z().coerceIn(-maxBend, maxBend),
+                        )
+                    }
+
+                    if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
+                        val smallYaw = 0.1f
+                        rotationMin = Vector3f(rotationMin.x(), -smallYaw, rotationMin.z())
+                        rotationMax = Vector3f(rotationMax.x(), smallYaw, rotationMax.z())
+                    }
+
+                    val allowLinearSlack =
+                        isAsciiSkirt && ringChar != null &&
+                            (ringChar == 'B' || ringChar == 'C' || ringChar == 'D') &&
+                            segmentIndex != null && segmentIndex >= 3
+
+                    if (allowLinearSlack) {
+                        val slack = 0.04f
+                        positionMin = Vector3f(-slack, -slack, -slack)
+                        positionMax = Vector3f(slack, slack, slack)
+                    } else {
+                        positionMin = Vector3f(0f, 0f, 0f)
+                        positionMax = Vector3f(0f, 0f, 0f)
+                    }
+
+                    val skirtSpring = 4.0f
+                    val baseSpringScale = when (ringChar) {
+                        'B' -> 0.75f
+                        'D' -> 0.75f
+                        in 'C'..'Z' -> 0.5f
+                        else -> 1.0f
+                    }
+                    val springScale = if (isDeepSegment) baseSpringScale * 0.5f else baseSpringScale
+                    val effectiveSpring = skirtSpring * springScale
+
+                    if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C' || ringChar == 'D')) {
+                        if (ringChar == 'B' || ringChar == 'C') {
+                            positionSpring = Vector3f(0f, 0f, 0f)
+                        } else {
+                            val linearSpring = (skirtSpring * 0.5f) * springScale
+                            if (linearSpring > 0f) {
+                                // Apply linear spring only on the vertical axis so we pull the skirt
+                                // panels toward the correct height without introducing a sideways bias.
+                                positionSpring = Vector3f(0f, linearSpring, 0f)
+                            }
+                        }
+                    }
+
+                    rotationSpring = if (isAsciiSkirt && ringChar != null && (ringChar == 'B' || ringChar == 'C')) {
+                        val base = when (ringChar) {
+                            'B' -> 5.0f
+                            'C' -> 4.0f
+                            else -> effectiveSpring
+                        }
+                        val depthScaleForSpring = when {
+                            segmentIndex == null || segmentIndex <= 2 -> 1.0f
+                            segmentIndex == 3 -> 0.8f
+                            else -> 0.6f
+                        }
+                        val spring = base * depthScaleForSpring * 0.25f
+                        Vector3f(spring, spring * 0.35f, spring)
+                    } else if (name.startsWith("スカート横_")) {
+                        Vector3f(effectiveSpring, effectiveSpring, effectiveSpring)
+                    } else {
+                        Vector3f(
+                            if (rotationSpring.x() == 0f) effectiveSpring else rotationSpring.x() * springScale,
+                            if (rotationSpring.y() == 0f) effectiveSpring else rotationSpring.y() * springScale,
+                            if (rotationSpring.z() == 0f) effectiveSpring else rotationSpring.z() * springScale,
+                        )
+                    }
+                }
+
+                if (enableNameBasedPhysicsTuning && name != null && (name.startsWith("Hair_") || name.startsWith("Braid_") || name.startsWith("Ribbon_"))) {
+                    val hairSpringScale = 0.25f
+                    rotationSpring = Vector3f(rotationSpring).mul(hairSpringScale)
+                }
+
+                if (index < 128) {
+                    println(
+                        "PHYSDBG JOINT_KT " +
+                            "idx=$index " +
+                            "name=$name " +
+                            "A=$rigidBodyAIndex " +
+                            "B=$rigidBodyBIndex " +
+                            "pos=(${position.x()},${position.y()},${position.z()}) " +
+                            "rot=(${rotation.x()},${rotation.y()},${rotation.z()}) " +
+                            "posMin=(${positionMin.x()},${positionMin.y()},${positionMin.z()}) " +
+                            "posMax=(${positionMax.x()},${positionMax.y()},${positionMax.z()}) " +
+                            "rotMin=(${rotationMin.x()},${rotationMin.y()},${rotationMin.z()}) " +
+                            "rotMax=(${rotationMax.x()},${rotationMax.y()},${rotationMax.z()}) " +
+                            "posSpring=(${positionSpring.x()},${positionSpring.y()},${positionSpring.z()}) " +
+                            "rotSpring=(${rotationSpring.x()},${rotationSpring.y()},${rotationSpring.z()})"
+                    )
+                }
+
+            RenderPhysicsJoint(
+                name = joint.name,
+                type = joint.type,
+                rigidBodyAIndex = rigidBodyAIndex,
+                rigidBodyBIndex = rigidBodyBIndex,
+                position = position,
+                rotation = rotation,
+                positionMin = positionMin,
+                positionMax = positionMax,
+                rotationMin = rotationMin,
+                rotationMax = rotationMax,
+                positionSpring = positionSpring,
+                rotationSpring = rotationSpring,
+            )
+        }
 
     private fun loadScene(scene: Scene, expressions: List<Expression>): PreProcessModelLoadInfo {
         val rootNode = NodeLoadInfo(

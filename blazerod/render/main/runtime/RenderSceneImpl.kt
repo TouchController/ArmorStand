@@ -2,7 +2,10 @@ package top.fifthlight.blazerod.runtime
 
 import it.unimi.dsi.fastutil.ints.Int2ReferenceOpenHashMap
 import net.minecraft.client.render.VertexConsumerProvider
+import org.joml.Matrix4f
 import org.joml.Matrix4fc
+import org.joml.Quaternionf
+import org.joml.Vector3f
 import top.fifthlight.blazerod.api.refcount.AbstractRefCount
 import top.fifthlight.blazerod.api.resource.RenderExpression
 import top.fifthlight.blazerod.api.resource.RenderExpressionGroup
@@ -32,12 +35,14 @@ class RenderSceneImpl(
     override val expressionGroups: List<RenderExpressionGroup>,
     override val cameras: List<Camera>,
     val physicsJoints: List<RenderPhysicsJoint>,
-    val renderTransform: NodeTransform?,
+    override val renderTransform: NodeTransform?,
 ) : AbstractRefCount(), RenderScene {
     companion object {
-        private const val PHYSICS_MAX_SUB_STEP_COUNT = 1
+        private const val PHYSICS_MAX_SUB_STEP_COUNT = 10
         private const val PHYSICS_FPS = 120f
         private const val PHYSICS_TIME_STEP = 1f / PHYSICS_FPS
+        private const val PHYSICS_ENABLE_CLAMP = false
+        private const val PHYSICS_DEBUG_LOG = false
     }
 
     override val typeId: String
@@ -148,6 +153,21 @@ class RenderSceneImpl(
         instance.physicsData?.let { data ->
             if (data.lastPhysicsTime < 0) {
                 data.lastPhysicsTime = time
+
+                instance.updateWorldTransformsNoPhysics()
+                executePhase(instance, UpdatePhase.PhysicsUpdatePre)
+                data.world.pushTransforms(data.transformArray)
+
+                val initPos = Vector3f()
+                val initRot = Quaternionf()
+                for ((nodeIndex, component) in rigidBodyComponents) {
+                    val nodeWorld = instance.modelData.worldTransforms[nodeIndex]
+                    nodeWorld.getTranslation(initPos)
+                    nodeWorld.getUnnormalizedRotation(initRot)
+                    data.world.resetRigidBody(component.rigidBodyIndex, initPos, initRot)
+                }
+                data.world.pullTransforms(data.transformArray)
+
                 return@let
             }
             val timeStep = time - data.lastPhysicsTime
@@ -155,14 +175,162 @@ class RenderSceneImpl(
                 return@let
             }
 
+            val maxTimeStep = PHYSICS_MAX_SUB_STEP_COUNT * PHYSICS_TIME_STEP
+            val clampedTimeStep = minOf(timeStep, maxTimeStep)
+
             data.lastPhysicsTime = time
 
+            instance.updateWorldTransformsNoPhysics()
             executePhase(instance, UpdatePhase.PhysicsUpdatePre)
-            measureTime {
-                data.world.step(timeStep, PHYSICS_MAX_SUB_STEP_COUNT, PHYSICS_TIME_STEP)
-            }.let {
-                println("Physics step time: $it, timeStep: $timeStep")
+            data.world.pushTransforms(data.transformArray)
+            if (PHYSICS_DEBUG_LOG) {
+                measureTime {
+                    data.world.step(clampedTimeStep, PHYSICS_MAX_SUB_STEP_COUNT, PHYSICS_TIME_STEP)
+                }.let {
+                    println("Physics step time: $it, timeStep: $clampedTimeStep")
+                }
+            } else {
+                data.world.step(clampedTimeStep, PHYSICS_MAX_SUB_STEP_COUNT, PHYSICS_TIME_STEP)
             }
+            data.world.pullTransforms(data.transformArray)
+
+            if (PHYSICS_ENABLE_CLAMP) {
+                val array = data.transformArray
+                val basePos = Vector3f()
+                val baseRot = Quaternionf()
+                val clampMatrix = Matrix4f()
+                val maxDistSq = 4.0f
+                val maxRadiusSq = 100.0f
+
+                for (i in 0 until rigidBodyComponents.size) {
+                    val (nodeIndex, component) = rigidBodyComponents[i]
+                    val offset = component.rigidBodyIndex * 7
+
+                    val px = array[offset + 0]
+                    val py = array[offset + 1]
+                    val pz = array[offset + 2]
+
+                    val baseWorld = instance.modelData.worldTransformsNoPhysics[nodeIndex]
+                    baseWorld.getTranslation(basePos)
+                    baseWorld.getUnnormalizedRotation(baseRot)
+
+                    val dx = px - basePos.x
+                    val dy = py - basePos.y
+                    val dz = pz - basePos.z
+                    val distSq = dx * dx + dy * dy + dz * dz
+                    val bodyRadiusSq = px * px + py * py + pz * pz
+
+                    if (distSq > maxDistSq || bodyRadiusSq > maxRadiusSq) {
+                        array[offset + 0] = basePos.x
+                        array[offset + 1] = basePos.y
+                        array[offset + 2] = basePos.z
+                        array[offset + 3] = baseRot.x
+                        array[offset + 4] = baseRot.y
+                        array[offset + 5] = baseRot.z
+                        array[offset + 6] = baseRot.w
+
+                        clampMatrix.translationRotate(basePos, baseRot)
+                        data.world.resetRigidBody(component.rigidBodyIndex, basePos, baseRot)
+                    }
+                }
+            }
+
+            if (data.explosionLogCount < 64) {
+                val array = data.transformArray
+                val bonePos = Vector3f()
+                for (i in 0 until rigidBodyComponents.size) {
+                    val (nodeIndex, component) = rigidBodyComponents[i]
+                    val offset = component.rigidBodyIndex * 7
+                    val px = array[offset + 0]
+                    val py = array[offset + 1]
+                    val pz = array[offset + 2]
+
+                    val boneWorld = instance.modelData.worldTransforms[nodeIndex]
+                    boneWorld.getTranslation(bonePos)
+
+                    val dx = px - bonePos.x
+                    val dy = py - bonePos.y
+                    val dz = pz - bonePos.z
+                    val distSq = dx * dx + dy * dy + dz * dz
+                    val bodyRadiusSq = px * px + py * py + pz * pz
+
+                    if (distSq > 9.0f || bodyRadiusSq > 400.0f) {
+                        val node = nodes[nodeIndex]
+                        val mode = component.rigidBodyData.physicsMode
+                        println(
+                            "PHYSERR RB_EXPLODE " +
+                                "step=${data.debugStepCount} " +
+                                "idx=${component.rigidBodyIndex} " +
+                                "nodeIndex=$nodeIndex " +
+                                "nodeName=${node.nodeName} " +
+                                "mode=$mode " +
+                                "bodyPos=($px,$py,$pz) " +
+                                "bonePos=(${bonePos.x},${bonePos.y},${bonePos.z}) " +
+                                "distSq=$distSq " +
+                                "bodyRadiusSq=$bodyRadiusSq"
+                        )
+                        data.explosionLogCount++
+                        if (data.explosionLogCount >= 64) {
+                            break
+                        }
+                    }
+                }
+            }
+
+            if (PHYSICS_DEBUG_LOG && data.debugStepCount < 10) {
+                val maxLogged = minOf(rigidBodyComponents.size, 160)
+                for (i in 0 until maxLogged) {
+                    val (nodeIndex, component) = rigidBodyComponents[i]
+                    val node = nodes[nodeIndex]
+
+                    val boneWorld = instance.modelData.worldTransforms[nodeIndex]
+                    val bonePos = Vector3f()
+                    val boneRot = Quaternionf()
+                    boneWorld.getTranslation(bonePos)
+                    boneWorld.getUnnormalizedRotation(boneRot)
+
+                    val offset = component.rigidBodyIndex * 7
+                    val array = data.transformArray
+                    val px = array[offset + 0]
+                    val py = array[offset + 1]
+                    val pz = array[offset + 2]
+                    val qx = array[offset + 3]
+                    val qy = array[offset + 4]
+                    val qz = array[offset + 5]
+                    val qw = array[offset + 6]
+
+                    println(
+                        "PHYSDBG RB_STEP " +
+                            "step=${data.debugStepCount} " +
+                            "idx=${component.rigidBodyIndex} " +
+                            "nodeIndex=$nodeIndex " +
+                            "nodeName=${node.nodeName} " +
+                            "mode=${component.rigidBodyData.physicsMode} " +
+                            "bonePos=(${bonePos.x},${bonePos.y},${bonePos.z}) " +
+                            "boneRot=(${boneRot.x},${boneRot.y},${boneRot.z},${boneRot.w}) " +
+                            "bodyPos=($px,$py,$pz) " +
+                            "bodyRot=($qx,$qy,$qz,$qw)"
+                    )
+
+                    if (node.nodeName != null && node.nodeName.startsWith("Skirt_")) {
+                        val shapePos = component.rigidBodyData.shapePosition
+                        val shapeRot = component.rigidBodyData.shapeRotation
+                        println(
+                            "PHYSDBG RB_SKIRT " +
+                                "step=${data.debugStepCount} " +
+                                "idx=${component.rigidBodyIndex} " +
+                                "nodeIndex=$nodeIndex " +
+                                "nodeName=${node.nodeName} " +
+                                "shapePos=(${shapePos.x()},${shapePos.y()},${shapePos.z()}) " +
+                                "shapeRot=(${shapeRot.x()},${shapeRot.y()},${shapeRot.z()}) " +
+                                "bonePos=(${bonePos.x},${bonePos.y},${bonePos.z}) " +
+                                "bodyPos=($px,$py,$pz)"
+                        )
+                    }
+                }
+            }
+            data.debugStepCount++
+
             executePhase(instance, UpdatePhase.PhysicsUpdatePost)
             executePhase(instance, UpdatePhase.GlobalTransformPropagation)
         }

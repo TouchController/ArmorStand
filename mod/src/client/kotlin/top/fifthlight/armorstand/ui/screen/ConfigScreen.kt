@@ -81,6 +81,40 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
         }
     }
 
+    private val heldItemTab by lazy {
+        LayoutScreenTab(
+            title = Text.translatable("armorstand.config.tab.held_item"),
+            padding = Insets(8),
+        ) {
+            BorderLayout(
+                direction = BorderLayout.Direction.VERTICAL,
+            ).apply {
+                setCenterElement(
+                    LinearLayout(
+                        direction = LinearLayout.Direction.VERTICAL,
+                        padding = Insets(top = 8),
+                        gap = 8,
+                    ).apply {
+                        listOf(
+                            heldItemScaleSlider,
+                            heldItemOffsetXSlider,
+                            heldItemOffsetYSlider,
+                            heldItemOffsetZSlider,
+                            heldItemRotXSlider,
+                            heldItemRotYSlider,
+                            heldItemRotZSlider,
+                        ).forEach {
+                            add(
+                                it,
+                                expand = true
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    }
+
     private val refreshButton by lazy {
         autoWidthButton(Text.translatable("armorstand.config.refresh")) {
             viewModel.refreshModels()
@@ -228,6 +262,96 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
         )
     }
 
+    private val heldItemScaleSlider by lazy {
+        slider(
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_scale", text) },
+            min = 0.0,
+            max = 2.0,
+            value = viewModel.uiState.map { it.heldItemScale.toDouble() },
+            onValueChanged = { userTriggered, value ->
+                viewModel.updateHeldItemScale(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemOffsetXSlider by lazy {
+        slider(
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_offset_x", text) },
+            min = -1.0,
+            max = 1.0,
+            decimalPlaces = 3,
+            value = viewModel.uiState.map { it.heldItemOffsetX.toDouble() },
+            onValueChanged = { userTriggered, value ->
+                viewModel.updateHeldItemOffsetX(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemOffsetYSlider by lazy {
+        slider(
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_offset_y", text) },
+            min = -1.0,
+            max = 1.0,
+            decimalPlaces = 3,
+            value = viewModel.uiState.map { it.heldItemOffsetY.toDouble() },
+            onValueChanged = { userTriggered, value ->
+                viewModel.updateHeldItemOffsetY(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemOffsetZSlider by lazy {
+        slider(
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_offset_z", text) },
+            min = -1.0,
+            max = 1.0,
+            decimalPlaces = 3,
+            value = viewModel.uiState.map { it.heldItemOffsetZ.toDouble() },
+            onValueChanged = { userTriggered, value ->
+                viewModel.updateHeldItemOffsetZ(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemRotXSlider by lazy {
+        slider(
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_rot_x", text) },
+            min = -180.0,
+            max = 180.0,
+            decimalPlaces = 1,
+            value = viewModel.uiState.map { it.heldItemRotX.toDouble() },
+            onValueChanged = { userTriggered, value ->
+                viewModel.updateHeldItemRotX(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemRotYSlider by lazy {
+        slider(
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_rot_y", text) },
+            min = -180.0,
+            max = 180.0,
+            decimalPlaces = 1,
+            value = viewModel.uiState.map { it.heldItemRotY.toDouble() },
+            onValueChanged = { userTriggered, value ->
+                viewModel.updateHeldItemRotY(value.toFloat())
+            },
+        )
+    }
+
+    private val heldItemRotZSlider by lazy {
+        slider(
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_rot_z", text) },
+            min = -180.0,
+            max = 180.0,
+            decimalPlaces = 1,
+            value = viewModel.uiState.map { it.heldItemRotZ.toDouble() },
+            onValueChanged = { userTriggered, value ->
+                viewModel.updateHeldItemRotZ(value.toFloat())
+            },
+        )
+    }
+
     private val thirdPersonDistanceScaleSlider = slider(
         textFactory = { slider, text -> Text.translatable("armorstand.config.third_person_distance_scale", text) },
         min = 0.05,
@@ -341,7 +465,7 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
     )
 
     private var tabNavigationWidget = TabNavigationWidget.builder(tabManager, width)
-        .tabs(previewTab, settingsTab, metadataTab)
+        .tabs(previewTab, settingsTab, heldItemTab, metadataTab)
         .build()
 
     private var initialized = false

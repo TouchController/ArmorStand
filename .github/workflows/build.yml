@@ -15,7 +15,7 @@ jobs:
       - uses: bazel-contrib/setup-bazel@0.14.0
         with:
           bazelisk-cache: true
-          disk-cache: ${{ github.workflow }}
+          disk-cache: true
           repository-cache: true
       - name: build
         run: |
@@ -39,20 +39,24 @@ jobs:
             --verbose_failures \
             //blazerod/model:test \
             //blazerod/render:test
+      - name: collect artifacts
+        run: |
+          mkdir -p artifacts
+          BAZEL_BIN=$(bazel info bazel-bin --config opt)
+          cp "$BAZEL_BIN/mod/mod_fabric.jar" artifacts/
+          cp "$BAZEL_BIN/mod/mod_neoforge.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/blazerod_fabric.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/blazerod_neoforge.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/model/model-base/model-base.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/model/model-formats/model-formats.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/model/model-gltf/model-gltf.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/model/model-pmd/model-pmd.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/model/model-pmx/model-pmx.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/model/model-vmd/model-vmd.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/model/model-assimp/model-assimp-merged.jar" artifacts/
+          cp "$BAZEL_BIN/blazerod/example/ball_block/ball_block.jar" artifacts/
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-bazel
-          path: |
-            bazel-bin/mod/mod_fabric.jar
-            bazel-bin/mod/mod_neoforge.jar
-            bazel-bin/blazerod/blazerod_fabric.jar
-            bazel-bin/blazerod/blazerod_neoforge.jar
-            bazel-bin/blazerod/model/model-base/model-base.jar
-            bazel-bin/blazerod/model/model-formats/model-formats.jar
-            bazel-bin/blazerod/model/model-gltf/model-gltf.jar
-            bazel-bin/blazerod/model/model-pmd/model-pmd.jar
-            bazel-bin/blazerod/model/model-pmx/model-pmx.jar
-            bazel-bin/blazerod/model/model-vmd/model-vmd.jar
-            bazel-bin/blazerod/model/model-assimp/model-assimp-merged.jar
-            bazel-bin/blazerod/example/ball_block/ball_block.jar
+          path: artifacts/

@@ -2,6 +2,7 @@ package top.fifthlight.blazerod.physics
 
 import org.joml.Vector3fc
 import top.fifthlight.blazerod.model.RigidBody
+import top.fifthlight.blazerod.model.util.MMD_SCALE
 import top.fifthlight.blazerod.runtime.resource.RenderPhysicsJoint
 import java.lang.ref.Reference
 import java.nio.ByteBuffer
