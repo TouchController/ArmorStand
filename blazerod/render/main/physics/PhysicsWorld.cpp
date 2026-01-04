@@ -329,20 +329,11 @@ PhysicsWorld::PhysicsWorld(const PhysicsScene& scene, size_t initial_transform_c
     for (const Joint& joint_item : joints) {
         size_t joint_index = joint_count++;
         btMatrix3x3 rotation_matrix;
-        float rx_val = joint_item.rotation.x;
-        float ry_val = joint_item.rotation.y;
-        float rz_val = joint_item.rotation.z;
-
-        btMatrix3x3 rot_x(1, 0, 0,
-                          0, cos(rx_val), -sin(rx_val),
-                          0, sin(rx_val),  cos(rx_val));
-        btMatrix3x3 rot_y(cos(ry_val), 0, sin(ry_val),
-                          0,          1,          0,
-                          -sin(ry_val), 0, cos(ry_val));
-        btMatrix3x3 rot_z(cos(rz_val), -sin(rz_val), 0,
-                          sin(rz_val),  cos(rz_val), 0,
-                          0,           0,           1);
-        rotation_matrix = rot_y * rot_x * rot_z;
+        // Match Saba's MMDPhysics PMX joint path: use preprocessed joint rotation directly.
+        rotation_matrix.setEulerZYX(
+            joint_item.rotation.x,
+            joint_item.rotation.y,
+            joint_item.rotation.z);
 
         btTransform transform;
         transform.setIdentity();

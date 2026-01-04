@@ -29,10 +29,6 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
     viewModelFactory = ::ConfigViewModel,
     title = Text.translatable("armorstand.config"),
 ) {
-    init {
-        ConfigHolder.read()
-    }
-
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
         if (keyCode == GLFW.GLFW_KEY_1 && hasControlDown() && ArmorStandClient.instance.debug) {
             client?.setScreen(DebugScreen(this))
@@ -81,6 +77,40 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
                 viewModel.uiState.collect { state ->
                     button.message = Text.translatable(sortText(state.order, state.sortAscend))
                 }
+            }
+        }
+    }
+
+    private val heldItemTab by lazy {
+        LayoutScreenTab(
+            title = Text.translatable("armorstand.config.tab.held_item"),
+            padding = Insets(8),
+        ) {
+            BorderLayout(
+                direction = BorderLayout.Direction.VERTICAL,
+            ).apply {
+                setCenterElement(
+                    LinearLayout(
+                        direction = LinearLayout.Direction.VERTICAL,
+                        padding = Insets(top = 8),
+                        gap = 8,
+                    ).apply {
+                        listOf(
+                            heldItemScaleSlider,
+                            heldItemOffsetXSlider,
+                            heldItemOffsetYSlider,
+                            heldItemOffsetZSlider,
+                            heldItemRotXSlider,
+                            heldItemRotYSlider,
+                            heldItemRotZSlider,
+                        ).forEach {
+                            add(
+                                it,
+                                expand = true
+                            )
+                        }
+                    }
+                )
             }
         }
     }
@@ -234,11 +264,11 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
 
     private val heldItemScaleSlider by lazy {
         slider(
-            textFactory = { _, text -> Text.literal("Held item scale: $text") },
-            min = 0.05,
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_scale", text) },
+            min = 0.0,
             max = 2.0,
-            value = viewModel.uiState.map { it.heldItemScale.toDouble() }.distinctUntilChanged(),
-            onValueChanged = { _, value ->
+            value = viewModel.uiState.map { it.heldItemScale.toDouble() },
+            onValueChanged = { userTriggered, value ->
                 viewModel.updateHeldItemScale(value.toFloat())
             },
         )
@@ -246,11 +276,12 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
 
     private val heldItemOffsetXSlider by lazy {
         slider(
-            textFactory = { _, text -> Text.literal("Held item offset X: $text") },
-            min = -0.5,
-            max = 0.5,
-            value = viewModel.uiState.map { it.heldItemOffsetX.toDouble() }.distinctUntilChanged(),
-            onValueChanged = { _, value ->
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_offset_x", text) },
+            min = -1.0,
+            max = 1.0,
+            decimalPlaces = 3,
+            value = viewModel.uiState.map { it.heldItemOffsetX.toDouble() },
+            onValueChanged = { userTriggered, value ->
                 viewModel.updateHeldItemOffsetX(value.toFloat())
             },
         )
@@ -258,11 +289,12 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
 
     private val heldItemOffsetYSlider by lazy {
         slider(
-            textFactory = { _, text -> Text.literal("Held item offset Y: $text") },
-            min = -0.5,
-            max = 0.5,
-            value = viewModel.uiState.map { it.heldItemOffsetY.toDouble() }.distinctUntilChanged(),
-            onValueChanged = { _, value ->
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_offset_y", text) },
+            min = -1.0,
+            max = 1.0,
+            decimalPlaces = 3,
+            value = viewModel.uiState.map { it.heldItemOffsetY.toDouble() },
+            onValueChanged = { userTriggered, value ->
                 viewModel.updateHeldItemOffsetY(value.toFloat())
             },
         )
@@ -270,11 +302,12 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
 
     private val heldItemOffsetZSlider by lazy {
         slider(
-            textFactory = { _, text -> Text.literal("Held item offset Z: $text") },
-            min = -0.5,
-            max = 0.5,
-            value = viewModel.uiState.map { it.heldItemOffsetZ.toDouble() }.distinctUntilChanged(),
-            onValueChanged = { _, value ->
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_offset_z", text) },
+            min = -1.0,
+            max = 1.0,
+            decimalPlaces = 3,
+            value = viewModel.uiState.map { it.heldItemOffsetZ.toDouble() },
+            onValueChanged = { userTriggered, value ->
                 viewModel.updateHeldItemOffsetZ(value.toFloat())
             },
         )
@@ -282,12 +315,12 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
 
     private val heldItemRotXSlider by lazy {
         slider(
-            textFactory = { _, text -> Text.literal("Held item rot X: $text") },
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_rot_x", text) },
             min = -180.0,
             max = 180.0,
-            decimalPlaces = 0,
-            value = viewModel.uiState.map { it.heldItemRotX.toDouble() }.distinctUntilChanged(),
-            onValueChanged = { _, value ->
+            decimalPlaces = 1,
+            value = viewModel.uiState.map { it.heldItemRotX.toDouble() },
+            onValueChanged = { userTriggered, value ->
                 viewModel.updateHeldItemRotX(value.toFloat())
             },
         )
@@ -295,12 +328,12 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
 
     private val heldItemRotYSlider by lazy {
         slider(
-            textFactory = { _, text -> Text.literal("Held item rot Y: $text") },
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_rot_y", text) },
             min = -180.0,
             max = 180.0,
-            decimalPlaces = 0,
-            value = viewModel.uiState.map { it.heldItemRotY.toDouble() }.distinctUntilChanged(),
-            onValueChanged = { _, value ->
+            decimalPlaces = 1,
+            value = viewModel.uiState.map { it.heldItemRotY.toDouble() },
+            onValueChanged = { userTriggered, value ->
                 viewModel.updateHeldItemRotY(value.toFloat())
             },
         )
@@ -308,12 +341,12 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
 
     private val heldItemRotZSlider by lazy {
         slider(
-            textFactory = { _, text -> Text.literal("Held item rot Z: $text") },
+            textFactory = { slider, text -> Text.translatable("armorstand.config.held_item_rot_z", text) },
             min = -180.0,
             max = 180.0,
-            decimalPlaces = 0,
-            value = viewModel.uiState.map { it.heldItemRotZ.toDouble() }.distinctUntilChanged(),
-            onValueChanged = { _, value ->
+            decimalPlaces = 1,
+            value = viewModel.uiState.map { it.heldItemRotZ.toDouble() },
+            onValueChanged = { userTriggered, value ->
                 viewModel.updateHeldItemRotZ(value.toFloat())
             },
         )
@@ -359,13 +392,6 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
                 ).apply {
                     listOf(
                         modelScaleSlider,
-                        heldItemScaleSlider,
-                        heldItemOffsetXSlider,
-                        heldItemOffsetYSlider,
-                        heldItemOffsetZSlider,
-                        heldItemRotXSlider,
-                        heldItemRotYSlider,
-                        heldItemRotZSlider,
                     ).forEach {
                         add(
                             it,
@@ -439,7 +465,7 @@ class ConfigScreen(parent: Screen? = null) : ArmorStandScreen<ConfigScreen, Conf
     )
 
     private var tabNavigationWidget = TabNavigationWidget.builder(tabManager, width)
-        .tabs(previewTab, settingsTab, metadataTab)
+        .tabs(previewTab, settingsTab, heldItemTab, metadataTab)
         .build()
 
     private var initialized = false

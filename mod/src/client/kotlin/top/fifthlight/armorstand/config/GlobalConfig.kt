@@ -16,6 +16,7 @@ import top.fifthlight.blazerod.api.render.RendererTypeHolderFactory
 import java.nio.file.InvalidPathException
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
 
@@ -83,18 +84,19 @@ object ConfigHolder {
     val config = _config.asStateFlow()
 
     private val json = Json {
-        ignoreUnknownKeys = true
         encodeDefaults = true
+        prettyPrint = true
+        ignoreUnknownKeys = true
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     fun read() {
-        runCatching {
-            _config.value = configFile.inputStream().use { json.decodeFromStream<GlobalConfig>(it) }
+        if (configFile.exists()) {
+            runCatching {
+                _config.value = configFile.inputStream().use { json.decodeFromStream<GlobalConfig>(it) }
+            }
         }
-        runCatching {
-            save(_config.value)
-        }
+        save(_config.value)
     }
 
     fun update(editor: GlobalConfig.() -> GlobalConfig) {

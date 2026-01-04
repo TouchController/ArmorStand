@@ -53,7 +53,8 @@ private class RangedSliderWidgetImpl(
 
     private fun updateProgressValue() {
         val progressValue = (realValue - min) / (max - min)
-        setValue(progressValue.coerceIn(0.0, 1.0))
+        this.value = MathHelper.clamp(progressValue, 0.0, 1.0)
+        this.updateMessage()
     }
 
     override fun updateValue(value: Double) {
@@ -77,7 +78,12 @@ private class RangedSliderWidgetImpl(
     fun updateText() = updateMessage()
 
     fun setValue(value: Double) {
+        val prevValue = this.value
         this.value = MathHelper.clamp(value, 0.0, 1.0)
+        if (prevValue != this.value) {
+            this.applyValue(false)
+        }
+
         this.updateMessage()
     }
 
