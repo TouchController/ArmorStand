@@ -1,3 +1,13 @@
+> [!WARNING]
+> The development is moved to [TouchController/TouchController-Monorepo](https://github.com/TouchController/TouchController-Monorepo).
+> 
+> Check out link above for latest development progress.
+
+> [!WARNING]
+> 开发已经移动到了 [TouchController/TouchController-Monorepo](https://github.com/TouchController/TouchController-Monorepo)。
+> 
+> 在上面的链接里查看最新的开发进度。
+
 # 盔甲架
 
 盔甲架是一款 Minecraft 1.21.8 的玩家模型 mod，支持加载外部模型以替换原版的玩家模型。
