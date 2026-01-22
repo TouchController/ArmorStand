@@ -1,12 +1,12 @@
 > [!WARNING]
 > The development is moved to [TouchController/TouchController-Monorepo](https://github.com/TouchController/TouchController-Monorepo).
 > 
-> Check out link above for latest development progress.
+> Check out link above for latest development progress. You can still post issues here.
 
 > [!WARNING]
 > 开发已经移动到了 [TouchController/TouchController-Monorepo](https://github.com/TouchController/TouchController-Monorepo)。
 > 
-> 在上面的链接里查看最新的开发进度。
+> 在上面的链接里查看最新的开发进度。你仍然可以在这里发布 issue。
 
 # 盔甲架
 
